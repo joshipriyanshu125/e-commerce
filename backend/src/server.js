@@ -1,10 +1,23 @@
+import express from "express";
 import dotenv from "dotenv";
-dotenv.config();
-
-import app from "./app.js";
 import connectDB from "./config/db.js";
 
+import userRoutes from "./routes/userRoutes.js";
+
+dotenv.config();
+
 connectDB();
+
+const app = express();
+
+app.use(express.json());
+
+
+
+// ROUTES
+app.use("/api/users", userRoutes);
+
+
 
 const PORT = process.env.PORT || 5000;
 
