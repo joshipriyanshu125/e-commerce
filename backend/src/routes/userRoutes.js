@@ -8,7 +8,7 @@ import {
 import {
     protect,
     admin
-} from "../middlewares/authMiddleware.js";
+} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 

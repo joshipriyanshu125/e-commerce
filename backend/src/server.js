@@ -6,6 +6,11 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 
+import {
+  notFound,
+  errorHandler,
+} from "./middleware/errorMiddleware.js";
+
 dotenv.config();
 
 connectDB();
@@ -14,9 +19,16 @@ const app = express();
 
 app.use(express.json());
 
+
+// ROUTES
 app.use("/api/users", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
+
+
+// ERROR MIDDLEWARE
+app.use(notFound);
+app.use(errorHandler);
 
 
 const PORT = process.env.PORT || 5000;
