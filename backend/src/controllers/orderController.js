@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 
@@ -109,6 +110,13 @@ export const getMyOrders = async (req, res) => {
 export const getSingleOrder = async (req, res) => {
     try {
 
+        // VALIDATE OBJECT ID
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                message: "Invalid order ID"
+            });
+        }
+
         const order = await Order.findById(req.params.id)
             .populate("user", "name email");
 
@@ -167,6 +175,13 @@ export const getAllOrders = async (req, res) => {
 // ADMIN — UPDATE ORDER STATUS
 export const updateOrderStatus = async (req, res) => {
     try {
+
+        // VALIDATE OBJECT ID
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({
+                message: "Invalid order ID"
+            });
+        }
 
         const order = await Order.findById(req.params.id);
 
