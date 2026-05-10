@@ -1,40 +1,52 @@
 import jwt from "jsonwebtoken";
-import asyncHandler from "../middleware/asyncHandler.js";
 import User from "../models/userModel.js";
 
+export const protect = async (req, res, next) => {
+    try {
+        let token;
 
-export const protect = asyncHandler(async (req, res, next) => {
+        // Check token exists
+        if (
+            req.headers.authorization &&
+            req.headers.authorization.startsWith("Bearer")
+        ) {
 
-    let token;
+            // Get token from header
+            token = req.headers.authorization.split(" ")[1];
 
-    // Check token exists
-    if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith("Bearer")
-    ) {
+            // Verify token
+            const decoded = jwt.verify(
+                token,
+                process.env.JWT_SECRET
+            );
 
-        // Get token from header
-        token = req.headers.authorization.split(" ")[1];
+            // Get user from token
+            req.user = await User.findById(decoded.id).select("-password");
 
-        // Verify token
-        const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET
-        );
+            // Check if user exists
+            if (!req.user) {
+                return res.status(401).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
 
-        // Get user from token
-        req.user = await User.findById(decoded.id).select("-password");
+            next();
 
-        next();
+        } else {
+            return res.status(401).json({
+                success: false,
+                message: "Not authorized, no token"
+            });
+        }
 
-    } else {
-
-        res.status(401);
-        throw new Error("Not authorized, no token");
-
+    } catch (error) {
+        return res.status(401).json({
+            success: false,
+            message: "Token failed"
+        });
     }
-
-});
+};
 
 
 
@@ -47,9 +59,9 @@ export const admin = (req, res, next) => {
 
     } else {
 
-        res.status(403);
-        throw new Error("Admin access only");
-
+        return res.status(403).json({
+            success: false,
+            message: "Admin access only"
+        });
     }
-
 };
