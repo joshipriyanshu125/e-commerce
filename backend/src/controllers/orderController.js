@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Cart from "../models/cartModel.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 
@@ -10,12 +11,23 @@ export const createOrder = async (req, res) => {
         const {
             orderItems,
             shippingInfo,
-            paymentInfo,
             itemsPrice,
             shippingPrice,
             taxPrice,
-            totalPrice
+            totalPrice,
+            addressId
         } = req.body;
+
+        // GET USER CART
+        const cart = await Cart.findOne({
+            user: req.user._id
+        });
+
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({
+                message: "Cart is empty"
+            });
+        }
 
         // CHECK STOCK
         for (const item of orderItems) {
@@ -28,7 +40,7 @@ export const createOrder = async (req, res) => {
                 });
             }
 
-            // CHECK countInStock
+            // CHECK STOCK
             if (product.countInStock < item.quantity) {
                 return res.status(400).json({
                     message: `${product.name} is out of stock`
@@ -44,7 +56,7 @@ export const createOrder = async (req, res) => {
 
             shippingInfo,
 
-            paymentInfo,
+            shippingAddress: addressId,
 
             itemsPrice,
 
@@ -52,7 +64,13 @@ export const createOrder = async (req, res) => {
 
             taxPrice,
 
-            totalPrice
+            totalPrice,
+
+            paymentMethod: "Cash On Delivery",
+
+            isPaid: false,
+
+            orderStatus: "Processing"
         });
 
         // REDUCE STOCK
@@ -64,6 +82,13 @@ export const createOrder = async (req, res) => {
 
             await product.save();
         }
+
+        // CLEAR CART
+        cart.items = [];
+
+        cart.totalPrice = 0;
+
+        await cart.save();
 
         res.status(201).json({
             success: true,

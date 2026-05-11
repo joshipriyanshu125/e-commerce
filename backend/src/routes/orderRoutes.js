@@ -15,7 +15,7 @@ import { isAdmin } from "../middleware/adminMiddleware.js";
 const router = express.Router();
 
 
-// USER
+// USER ROUTES
 router.post("/", protect, createOrder);
 
 router.get("/my-orders", protect, getMyOrders);
@@ -23,7 +23,7 @@ router.get("/my-orders", protect, getMyOrders);
 router.get("/:id", protect, getSingleOrder);
 
 
-// ADMIN
+// ADMIN ROUTES
 router.get("/", protect, isAdmin, getAllOrders);
 
 router.put("/:id", protect, isAdmin, updateOrderStatus);
