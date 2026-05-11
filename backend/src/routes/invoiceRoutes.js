@@ -1,9 +1,11 @@
 import express from "express";
-import { getInvoice } from "../controllers/invoiceController.js";
+
+import { createInvoice } from "../controllers/invoiceController.js";
+
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// GET INVOICE BY ORDER ID
-router.get("/:id", getInvoice);
+router.post("/", protect, createInvoice);
 
 export default router;
