@@ -10,7 +10,7 @@ import {
 
 import { protect } from "../middleware/authMiddleware.js";
 
-import isAdmin from "../middleware/adminMiddleware.js";
+import { isAdmin } from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
 
