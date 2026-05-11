@@ -1,9 +1,11 @@
 import Order from "../models/Order.js";
 
-// GENERATE INVOICE (Placeholder)
-export const getInvoice = async (req, res) => {
+// CREATE INVOICE
+export const createInvoice = async (req, res) => {
     try {
-        const order = await Order.findById(req.params.id);
+        const { orderId } = req.body;
+
+        const order = await Order.findById(orderId);
 
         if (!order) {
             return res.status(404).json({
@@ -14,7 +16,7 @@ export const getInvoice = async (req, res) => {
         // Logic for invoice generation would go here
         res.status(200).json({
             success: true,
-            message: "Invoice feature coming soon",
+            message: "Invoice created successfully (Placeholder)",
             order
         });
 
