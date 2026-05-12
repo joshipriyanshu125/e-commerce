@@ -3,9 +3,9 @@ import express from "express";
 const router = express.Router();
 
 import {
+    createProduct,
     getProducts,
     getProductById,
-    createProduct,
     updateProduct,
     deleteProduct,
     createProductReview,
@@ -16,20 +16,51 @@ import {
     admin,
 } from "../middleware/authMiddleware.js";
 
-router
-    .route("/")
-    .get(getProducts)
-    .post(protect, admin, createProduct);
+import upload from "../middleware/uploadMiddleware.js";
 
-router
-    .route("/:id")
-    .get(getProductById)
-    .put(protect, admin, updateProduct)
-    .delete(protect, admin, deleteProduct);
 
-router
-    .route("/:id/reviews")
-    .post(protect, createProductReview);
+// GET ALL PRODUCTS
+router.get("/", getProducts);
 
+
+// GET PRODUCT BY ID
+router.get("/:id", getProductById);
+
+
+// CREATE PRODUCT
+router.post(
+    "/",
+    protect,
+    admin,
+    upload.array("images", 5),
+    createProduct
+);
+
+
+// UPDATE PRODUCT
+router.put(
+    "/:id",
+    protect,
+    admin,
+    upload.array("images", 5),
+    updateProduct
+);
+
+
+// DELETE PRODUCT
+router.delete(
+    "/:id",
+    protect,
+    admin,
+    deleteProduct
+);
+
+
+// CREATE REVIEW
+router.post(
+    "/:id/reviews",
+    protect,
+    createProductReview
+);
 
 export default router;

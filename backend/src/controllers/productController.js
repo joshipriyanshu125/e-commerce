@@ -1,6 +1,34 @@
 import asyncHandler from "../middleware/asyncHandler.js";
 import Product from "../models/Product.js";
 
+import cloudinary from "../config/cloudinary.js";
+import streamifier from "streamifier";
+
+
+// CLOUDINARY STREAM FUNCTION
+const streamUpload = (buffer) => {
+    return new Promise((resolve, reject) => {
+
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: "products",
+            },
+            (error, result) => {
+
+                if (result) {
+                    resolve(result);
+                } else {
+                    reject(error);
+                }
+
+            }
+        );
+
+        streamifier.createReadStream(buffer).pipe(stream);
+
+    });
+};
+
 
 // CREATE PRODUCT
 export const createProduct = asyncHandler(async (req, res) => {
@@ -10,19 +38,36 @@ export const createProduct = asyncHandler(async (req, res) => {
         description,
         price,
         countInStock,
-        image,
         category,
         brand,
     } = req.body;
+
+    const images = [];
+
+    // UPLOAD IMAGES TO CLOUDINARY
+    if (req.files && req.files.length > 0) {
+
+        for (const file of req.files) {
+
+            const result = await streamUpload(file.buffer);
+
+            images.push({
+                public_id: result.public_id,
+                url: result.secure_url,
+            });
+
+        }
+
+    }
 
     const product = new Product({
         name,
         description,
         price,
         countInStock,
-        image,
         category,
         brand,
+        images,
         user: req.user._id,
     });
 
@@ -40,7 +85,6 @@ export const getProducts = asyncHandler(async (req, res) => {
 
     const page = Number(req.query.page) || 1;
 
-
     const keyword = req.query.keyword
         ? {
             name: {
@@ -56,7 +100,6 @@ export const getProducts = asyncHandler(async (req, res) => {
         }
         : {};
 
-
     let sortOption = {};
 
     if (req.query.sort === "lowToHigh") {
@@ -71,15 +114,12 @@ export const getProducts = asyncHandler(async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
-
     const query = {
         ...keyword,
         ...category,
     };
 
-
     const count = await Product.countDocuments(query);
-
 
     const products = await Product.find(query)
         .sort(sortOption)
@@ -134,14 +174,36 @@ export const updateProduct = asyncHandler(async (req, res) => {
         product.countInStock =
             req.body.countInStock || product.countInStock;
 
-        product.image =
-            req.body.image || product.image;
-
         product.category =
             req.body.category || product.category;
 
         product.brand =
             req.body.brand || product.brand;
+
+        // OPTIONAL IMAGE UPDATE
+        if (req.files && req.files.length > 0) {
+
+            // DELETE OLD IMAGES
+            for (const image of product.images) {
+                await cloudinary.uploader.destroy(image.public_id);
+            }
+
+            const images = [];
+
+            for (const file of req.files) {
+
+                const result = await streamUpload(file.buffer);
+
+                images.push({
+                    public_id: result.public_id,
+                    url: result.secure_url,
+                });
+
+            }
+
+            product.images = images;
+
+        }
 
         const updatedProduct = await product.save();
 
@@ -163,6 +225,13 @@ export const deleteProduct = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
+
+        // DELETE IMAGES FROM CLOUDINARY
+        for (const image of product.images) {
+
+            await cloudinary.uploader.destroy(image.public_id);
+
+        }
 
         await product.deleteOne();
 

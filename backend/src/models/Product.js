@@ -16,6 +16,8 @@ const reviewSchema = new mongoose.Schema(
         rating: {
             type: Number,
             required: true,
+            min: 1,
+            max: 5,
         },
 
         comment: {
@@ -48,17 +50,7 @@ const productSchema = new mongoose.Schema(
         countInStock: {
             type: Number,
             required: true,
-        },
-
-        stock: {
-            type: Number,
-            required: true,
             default: 0,
-        },
-
-        image: {
-            type: String,
-            default: "",
         },
 
         category: {
@@ -70,6 +62,20 @@ const productSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+
+        images: [
+            {
+                public_id: {
+                    type: String,
+                    required: true,
+                },
+
+                url: {
+                    type: String,
+                    required: true,
+                },
+            },
+        ],
 
         reviews: [reviewSchema],
 
