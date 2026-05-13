@@ -1,67 +1,98 @@
 import jwt from "jsonwebtoken";
+
 import User from "../models/userModel.js";
 
+
+// ========================= PROTECT MIDDLEWARE =========================
+
 export const protect = async (req, res, next) => {
+
     try {
+
         let token;
 
-        // Check token exists
+
+        // CHECK AUTH HEADER
         if (
             req.headers.authorization &&
             req.headers.authorization.startsWith("Bearer")
         ) {
 
-            // Get token from header
-            token = req.headers.authorization.split(" ")[1];
+            // GET TOKEN
+            token =
+                req.headers.authorization.split(" ")[1];
 
-            // Verify token
+
+            // VERIFY TOKEN
             const decoded = jwt.verify(
                 token,
                 process.env.JWT_SECRET
             );
 
-            // Get user from token
-            req.user = await User.findById(decoded.id).select("-password");
 
-            // Check if user exists
+            // FIND USER
+            req.user = await User.findById(
+                decoded.id
+            ).select("-password");
+
+
+            // USER NOT FOUND
             if (!req.user) {
+
                 return res.status(401).json({
                     success: false,
                     message: "User not found"
                 });
             }
 
+
             next();
 
         } else {
+
             return res.status(401).json({
                 success: false,
-                message: "Not authorized, no token"
+                message: "Not authorized, token missing"
             });
         }
 
     } catch (error) {
+
         return res.status(401).json({
             success: false,
-            message: "Token failed"
+            message: "Not authorized, token failed"
         });
     }
 };
 
 
+// ========================= ADMIN MIDDLEWARE =========================
 
-// ADMIN MIDDLEWARE
 export const admin = (req, res, next) => {
 
-    if (req.user && req.user.role === "admin") {
+    try {
 
-        next();
+        // CHECK ADMIN ROLE
+        if (
+            req.user &&
+            req.user.role === "admin"
+        ) {
 
-    } else {
+            next();
 
-        return res.status(403).json({
+        } else {
+
+            return res.status(403).json({
+                success: false,
+                message: "Admin access only"
+            });
+        }
+
+    } catch (error) {
+
+        return res.status(500).json({
             success: false,
-            message: "Admin access only"
+            message: error.message
         });
     }
 };

@@ -1,11 +1,30 @@
 import express from "express";
 
-import { applyCoupon } from "../controllers/couponController.js";
+import {
+    createCoupon,
+    applyCoupon
+} from "../controllers/couponController.js";
 
-import { protect } from "../middleware/authMiddleware.js";
+import {
+    protect,
+    admin
+} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/apply", protect, applyCoupon);
+router.post(
+    "/create",
+    protect,
+    admin,
+    createCoupon
+);
+
+
+router.post(
+    "/apply",
+    protect,
+    applyCoupon
+);
+
 
 export default router;
