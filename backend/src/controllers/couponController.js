@@ -1,5 +1,7 @@
 import Coupon from "../models/couponModel.js";
 
+
+// CREATE COUPON
 export const createCoupon = async (req, res) => {
 
     try {
@@ -10,17 +12,22 @@ export const createCoupon = async (req, res) => {
             expiryDate
         } = req.body;
 
+
+        // VALIDATION
         if (
             !code ||
             !discountPercentage ||
             !expiryDate
         ) {
+
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
             });
         }
 
+
+        // CHECK EXISTING COUPON
         const existingCoupon =
             await Coupon.findOne({
                 code: code.toUpperCase()
@@ -28,23 +35,33 @@ export const createCoupon = async (req, res) => {
 
 
         if (existingCoupon) {
+
             return res.status(400).json({
                 success: false,
                 message: "Coupon already exists"
             });
         }
 
+
+        // CREATE COUPON
         const coupon = await Coupon.create({
+
             code: code.toUpperCase(),
+
             discountPercentage,
+
             expiryDate,
+
             isActive: true
         });
 
 
         res.status(201).json({
+
             success: true,
+
             message: "Coupon created successfully",
+
             coupon
         });
 
@@ -58,25 +75,34 @@ export const createCoupon = async (req, res) => {
 };
 
 
+
+// APPLY COUPON
 export const applyCoupon = async (req, res) => {
 
     try {
 
         const { code, totalAmount } = req.body;
 
+
+        // VALIDATION
         if (!code || !totalAmount) {
 
             return res.status(400).json({
                 success: false,
-                message: "Coupon code and total amount are required"
+                message:
+                    "Coupon code and total amount are required"
             });
         }
 
+
+        // FIND COUPON
         const coupon = await Coupon.findOne({
             code: code.toUpperCase(),
             isActive: true
         });
 
+
+        // INVALID COUPON
         if (!coupon) {
 
             return res.status(404).json({
@@ -85,6 +111,8 @@ export const applyCoupon = async (req, res) => {
             });
         }
 
+
+        // EXPIRED COUPON
         if (coupon.expiryDate < Date.now()) {
 
             return res.status(400).json({
@@ -93,14 +121,19 @@ export const applyCoupon = async (req, res) => {
             });
         }
 
+
+        // CALCULATE DISCOUNT
         const discount =
             (totalAmount *
                 coupon.discountPercentage) / 100;
 
 
+        // FINAL AMOUNT
         const finalAmount =
             totalAmount - discount;
 
+
+        // RESPONSE
         res.status(200).json({
 
             success: true,
