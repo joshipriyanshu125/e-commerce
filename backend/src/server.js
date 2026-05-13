@@ -33,7 +33,6 @@ const app = express();
 
 app.use(express.json());
 
-
 app.use("/api/users", authRoutes);
 
 app.use("/api/users", userRoutes);
@@ -56,43 +55,43 @@ app.use(notFound);
 
 app.use(errorHandler);
 
-
 const PORT = Number(process.env.PORT) || 5000;
-
 
 const startServer = (port) => {
 
   const server = app.listen(port, () => {
 
-    console.log(`Server running on port ${port}`);
+    console.log(
+      `Server running on port ${port}`
+    );
 
-  })
+  }).on("error", (err) => {
 
-    .on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
 
-      if (err.code === "EADDRINUSE") {
+      console.log(
+        `Port ${port} is in use, trying ${port + 1}...`
+      );
 
-        console.log(
-          `Port ${port} is in use, trying ${port + 1}...`
-        );
+      startServer(port + 1);
 
-        startServer(port + 1);
+    } else {
 
-      } else {
-
-        console.error("Server error:", err);
-      }
-    });
+      console.error(
+        "Server error:",
+        err
+      );
+    }
+  });
 };
-
 
 startServer(PORT);
 
-
 process.on("unhandledRejection", (err) => {
 
-  console.log(`Error: ${err.message}`);
+  console.log(
+    `Error: ${err.message}`
+  );
 
   process.exit(1);
-
 });
