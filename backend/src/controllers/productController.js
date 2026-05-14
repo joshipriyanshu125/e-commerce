@@ -4,6 +4,8 @@ import Product from "../models/Product.js";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
+import { deleteCache } from "../utils/cache.js";
+
 
 // CLOUDINARY STREAM FUNCTION
 const streamUpload = (buffer) => {
@@ -72,6 +74,9 @@ export const createProduct = asyncHandler(async (req, res) => {
     });
 
     const createdProduct = await product.save();
+
+    // CLEAR REDIS CACHE
+    await deleteCache("all_products");
 
     res.status(201).json(createdProduct);
 
@@ -207,6 +212,10 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
         const updatedProduct = await product.save();
 
+        // CLEAR REDIS CACHE
+        await deleteCache("all_products");
+        await deleteCache(`product_${req.params.id}`);
+
         res.json(updatedProduct);
 
     } else {
@@ -234,6 +243,10 @@ export const deleteProduct = asyncHandler(async (req, res) => {
         }
 
         await product.deleteOne();
+
+        // CLEAR REDIS CACHE
+        await deleteCache("all_products");
+        await deleteCache(`product_${req.params.id}`);
 
         res.json({
             message: "Product removed",
@@ -288,6 +301,9 @@ export const createProductReview = asyncHandler(async (req, res) => {
             ) / product.reviews.length;
 
         await product.save();
+
+        // CLEAR SINGLE PRODUCT CACHE
+        await deleteCache(`product_${req.params.id}`);
 
         res.status(201).json({
             message: "Review added",
