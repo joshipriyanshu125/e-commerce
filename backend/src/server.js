@@ -2,6 +2,10 @@ import "./config/env.js";
 
 import express from "express";
 
+import http from "http";
+
+import cors from "cors";
+
 import connectDB from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -22,6 +26,10 @@ import invoiceRoutes from "./routes/invoiceRoutes.js";
 
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 
+import notificationRoutes from "./routes/notificationRoutes.js";
+
+import { initSocket } from "./config/socket.js";
+
 import {
   notFound,
   errorHandler,
@@ -31,7 +39,22 @@ connectDB();
 
 const app = express();
 
+
+const server = http.createServer(app);
+
+
+initSocket(server);
+
+
 app.use(express.json());
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 
 app.use("/api/users", authRoutes);
 
@@ -51,18 +74,22 @@ app.use("/api/invoice", invoiceRoutes);
 
 app.use("/api/wishlist", wishlistRoutes);
 
+app.use("/api/notifications", notificationRoutes);
+
+
 app.use(notFound);
 
 app.use(errorHandler);
 
 const PORT = Number(process.env.PORT) || 5000;
 
+
 const startServer = (port) => {
 
-  const server = app.listen(port, () => {
+  server.listen(port, () => {
 
     console.log(
-      `Server running on port ${port}`
+      `🚀 Server running on port ${port}`
     );
 
   }).on("error", (err) => {
@@ -70,7 +97,7 @@ const startServer = (port) => {
     if (err.code === "EADDRINUSE") {
 
       console.log(
-        `Port ${port} is in use, trying ${port + 1}...`
+        `⚠️ Port ${port} is in use, trying ${port + 1}...`
       );
 
       startServer(port + 1);
@@ -78,11 +105,14 @@ const startServer = (port) => {
     } else {
 
       console.error(
-        "Server error:",
+        "❌ Server error:",
         err
       );
+
     }
+
   });
+
 };
 
 startServer(PORT);
@@ -90,8 +120,9 @@ startServer(PORT);
 process.on("unhandledRejection", (err) => {
 
   console.log(
-    `Error: ${err.message}`
+    `❌ Error: ${err.message}`
   );
 
   process.exit(1);
+
 });

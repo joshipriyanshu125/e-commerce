@@ -9,6 +9,7 @@ import { deleteCache } from "../utils/cache.js";
 
 // CLOUDINARY STREAM FUNCTION
 const streamUpload = (buffer) => {
+
     return new Promise((resolve, reject) => {
 
         const stream = cloudinary.uploader.upload_stream(
@@ -18,17 +19,24 @@ const streamUpload = (buffer) => {
             (error, result) => {
 
                 if (result) {
+
                     resolve(result);
+
                 } else {
+
                     reject(error);
+
                 }
 
             }
         );
 
-        streamifier.createReadStream(buffer).pipe(stream);
+        streamifier
+            .createReadStream(buffer)
+            .pipe(stream);
 
     });
+
 };
 
 
@@ -51,7 +59,9 @@ export const createProduct = asyncHandler(async (req, res) => {
 
         for (const file of req.files) {
 
-            const result = await streamUpload(file.buffer);
+            const result = await streamUpload(
+                file.buffer
+            );
 
             images.push({
                 public_id: result.public_id,
@@ -63,14 +73,23 @@ export const createProduct = asyncHandler(async (req, res) => {
     }
 
     const product = new Product({
+
         name,
+
         description,
+
         price,
+
         countInStock,
+
         category,
+
         brand,
+
         images,
+
         user: req.user._id,
+
     });
 
     const createdProduct = await product.save();
@@ -78,7 +97,15 @@ export const createProduct = asyncHandler(async (req, res) => {
     // CLEAR REDIS CACHE
     await deleteCache("all_products");
 
-    res.status(201).json(createdProduct);
+    res.status(201).json({
+
+        success: true,
+
+        message: "Product created successfully",
+
+        product: createdProduct,
+
+    });
 
 });
 
@@ -91,51 +118,76 @@ export const getProducts = asyncHandler(async (req, res) => {
     const page = Number(req.query.page) || 1;
 
     const keyword = req.query.keyword
+
         ? {
             name: {
                 $regex: req.query.keyword,
                 $options: "i",
             },
         }
+
         : {};
 
     const category = req.query.category
+
         ? {
             category: req.query.category,
         }
+
         : {};
 
     let sortOption = {};
 
     if (req.query.sort === "lowToHigh") {
+
         sortOption = { price: 1 };
+
     }
 
     if (req.query.sort === "highToLow") {
+
         sortOption = { price: -1 };
+
     }
 
     if (req.query.sort === "newest") {
+
         sortOption = { createdAt: -1 };
+
     }
 
     const query = {
+
         ...keyword,
+
         ...category,
+
     };
 
-    const count = await Product.countDocuments(query);
+    const count = await Product.countDocuments(
+        query
+    );
 
     const products = await Product.find(query)
+
         .sort(sortOption)
+
         .limit(pageSize)
+
         .skip(pageSize * (page - 1));
 
     res.status(200).json({
+
+        success: true,
+
         products,
+
         page,
+
         pages: Math.ceil(count / pageSize),
+
         totalProducts: count,
+
     });
 
 });
@@ -144,15 +196,24 @@ export const getProducts = asyncHandler(async (req, res) => {
 // GET PRODUCT BY ID
 export const getProductById = asyncHandler(async (req, res) => {
 
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(
+        req.params.id
+    );
 
     if (product) {
 
-        res.json(product);
+        res.status(200).json({
+
+            success: true,
+
+            product,
+
+        });
 
     } else {
 
         res.status(404);
+
         throw new Error("Product not found");
 
     }
@@ -163,7 +224,9 @@ export const getProductById = asyncHandler(async (req, res) => {
 // UPDATE PRODUCT
 export const updateProduct = asyncHandler(async (req, res) => {
 
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(
+        req.params.id
+    );
 
     if (product) {
 
@@ -185,19 +248,26 @@ export const updateProduct = asyncHandler(async (req, res) => {
         product.brand =
             req.body.brand || product.brand;
 
+
         // OPTIONAL IMAGE UPDATE
         if (req.files && req.files.length > 0) {
 
             // DELETE OLD IMAGES
             for (const image of product.images) {
-                await cloudinary.uploader.destroy(image.public_id);
+
+                await cloudinary.uploader.destroy(
+                    image.public_id
+                );
+
             }
 
             const images = [];
 
             for (const file of req.files) {
 
-                const result = await streamUpload(file.buffer);
+                const result = await streamUpload(
+                    file.buffer
+                );
 
                 images.push({
                     public_id: result.public_id,
@@ -214,13 +284,25 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
         // CLEAR REDIS CACHE
         await deleteCache("all_products");
-        await deleteCache(`product_${req.params.id}`);
 
-        res.json(updatedProduct);
+        await deleteCache(
+            `product_${req.params.id}`
+        );
+
+        res.status(200).json({
+
+            success: true,
+
+            message: "Product updated successfully",
+
+            product: updatedProduct,
+
+        });
 
     } else {
 
         res.status(404);
+
         throw new Error("Product not found");
 
     }
@@ -231,14 +313,18 @@ export const updateProduct = asyncHandler(async (req, res) => {
 // DELETE PRODUCT
 export const deleteProduct = asyncHandler(async (req, res) => {
 
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(
+        req.params.id
+    );
 
     if (product) {
 
         // DELETE IMAGES FROM CLOUDINARY
         for (const image of product.images) {
 
-            await cloudinary.uploader.destroy(image.public_id);
+            await cloudinary.uploader.destroy(
+                image.public_id
+            );
 
         }
 
@@ -246,15 +332,23 @@ export const deleteProduct = asyncHandler(async (req, res) => {
 
         // CLEAR REDIS CACHE
         await deleteCache("all_products");
-        await deleteCache(`product_${req.params.id}`);
 
-        res.json({
+        await deleteCache(
+            `product_${req.params.id}`
+        );
+
+        res.status(200).json({
+
+            success: true,
+
             message: "Product removed",
+
         });
 
     } else {
 
         res.status(404);
+
         throw new Error("Product not found");
 
     }
@@ -267,51 +361,79 @@ export const createProductReview = asyncHandler(async (req, res) => {
 
     const { rating, comment } = req.body;
 
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(
+        req.params.id
+    );
 
     if (product) {
 
         const alreadyReviewed = product.reviews.find(
+
             (review) =>
-                review.user.toString() === req.user._id.toString()
+
+                review.user.toString()
+
+                === req.user._id.toString()
+
         );
 
         if (alreadyReviewed) {
 
             res.status(400);
-            throw new Error("Product already reviewed");
+
+            throw new Error(
+                "Product already reviewed"
+            );
 
         }
 
         const review = {
+
             name: req.user.name,
+
             rating: Number(rating),
+
             comment,
+
             user: req.user._id,
+
         };
 
         product.reviews.push(review);
 
-        product.numReviews = product.reviews.length;
+        product.numReviews =
+            product.reviews.length;
 
         product.rating =
+
             product.reviews.reduce(
-                (acc, item) => item.rating + acc,
+
+                (acc, item) =>
+                    item.rating + acc,
+
                 0
+
             ) / product.reviews.length;
 
         await product.save();
 
         // CLEAR SINGLE PRODUCT CACHE
-        await deleteCache(`product_${req.params.id}`);
+        await deleteCache(
+            `product_${req.params.id}`
+        );
 
         res.status(201).json({
+
+            success: true,
+
             message: "Review added",
+
         });
 
     } else {
 
         res.status(404);
+
         throw new Error("Product not found");
 
     }

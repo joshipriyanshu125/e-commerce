@@ -17,6 +17,25 @@ export const orderConfirmationTemplate = (
   `;
 };
 
+export const orderDeliveredTemplate = (
+    userName,
+    orderId
+) => {
+    return `
+    <div style="font-family: Arial; padding: 20px;">
+      <h2>Order Delivered 🚚</h2>
+
+      <p>Hello ${userName},</p>
+
+      <p>Your order ${orderId} has been delivered successfully.</p>
+
+      <p>We hope you enjoy your purchase!</p>
+
+      <p>Thank you for shopping with us.</p>
+    </div>
+  `;
+};
+
 export const passwordResetTemplate = (
     resetLink
 ) => {

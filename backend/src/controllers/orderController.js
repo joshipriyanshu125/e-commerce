@@ -1,11 +1,26 @@
 import mongoose from "mongoose";
+
 import Cart from "../models/cartModel.js";
+
 import Order from "../models/Order.js";
+
 import Product from "../models/Product.js";
+
+import sendEmail from "../utils/sendEmail.js";
+
+import {
+    orderConfirmationTemplate,
+    orderDeliveredTemplate,
+} from "../utils/emailTemplates.js";
+
+import {
+    sendNotification,
+} from "../services/notificationService.js";
 
 
 // CREATE ORDER
 export const createOrder = async (req, res) => {
+
     try {
 
         const {
@@ -18,38 +33,52 @@ export const createOrder = async (req, res) => {
             addressId
         } = req.body;
 
+
         // GET USER CART
         const cart = await Cart.findOne({
             user: req.user._id
         });
 
         if (!cart || cart.items.length === 0) {
+
             return res.status(400).json({
                 message: "Cart is empty"
             });
+
         }
+
 
         // CHECK STOCK
         for (const item of orderItems) {
 
-            const product = await Product.findById(item.product);
+            const product = await Product.findById(
+                item.product
+            );
 
             if (!product) {
+
                 return res.status(404).json({
                     message: `Product not found`
                 });
+
             }
+
 
             // CHECK STOCK
             if (product.countInStock < item.quantity) {
+
                 return res.status(400).json({
                     message: `${product.name} is out of stock`
                 });
+
             }
+
         }
+
 
         // CREATE ORDER
         const order = await Order.create({
+
             user: req.user._id,
 
             orderItems,
@@ -71,17 +100,23 @@ export const createOrder = async (req, res) => {
             isPaid: false,
 
             orderStatus: "Processing"
+
         });
+
 
         // REDUCE STOCK
         for (const item of orderItems) {
 
-            const product = await Product.findById(item.product);
+            const product = await Product.findById(
+                item.product
+            );
 
             product.countInStock -= item.quantity;
 
             await product.save();
+
         }
+
 
         // CLEAR CART
         cart.items = [];
@@ -90,10 +125,48 @@ export const createOrder = async (req, res) => {
 
         await cart.save();
 
+
+        // GET USER DETAILS
+        const populatedOrder = await Order.findById(
+            order._id
+        ).populate("user", "name email");
+
+
+        // SEND ORDER CONFIRMATION EMAIL
+        await sendEmail({
+
+            to: populatedOrder.user.email,
+
+            subject: "Order Confirmation",
+
+            html: orderConfirmationTemplate(
+                populatedOrder.user.name,
+                order._id
+            ),
+
+        });
+
+
+        // SEND REAL-TIME NOTIFICATION
+        await sendNotification({
+
+            userId: req.user._id,
+
+            title: "Order Placed",
+
+            message: `Your order ${order._id} has been placed successfully.`
+
+        });
+
+
         res.status(201).json({
+
             success: true,
+
             message: "Order placed successfully",
+
             order
+
         });
 
     } catch (error) {
@@ -101,7 +174,9 @@ export const createOrder = async (req, res) => {
         res.status(500).json({
             message: error.message
         });
+
     }
+
 };
 
 
@@ -109,15 +184,22 @@ export const createOrder = async (req, res) => {
 
 // GET MY ORDERS
 export const getMyOrders = async (req, res) => {
+
     try {
 
         const orders = await Order.find({
+
             user: req.user._id
+
         }).sort({ createdAt: -1 });
 
+
         res.status(200).json({
+
             success: true,
+
             orders
+
         });
 
     } catch (error) {
@@ -125,7 +207,9 @@ export const getMyOrders = async (req, res) => {
         res.status(500).json({
             message: error.message
         });
+
     }
+
 };
 
 
@@ -133,27 +217,46 @@ export const getMyOrders = async (req, res) => {
 
 // GET SINGLE ORDER
 export const getSingleOrder = async (req, res) => {
+
     try {
 
         // VALIDATE OBJECT ID
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        if (
+            !mongoose.Types.ObjectId.isValid(
+                req.params.id
+            )
+        ) {
+
             return res.status(400).json({
                 message: "Invalid order ID"
             });
+
         }
 
-        const order = await Order.findById(req.params.id)
-            .populate("user", "name email");
+
+        const order = await Order.findById(
+            req.params.id
+        ).populate(
+            "user",
+            "name email"
+        );
+
 
         if (!order) {
+
             return res.status(404).json({
                 message: "Order not found"
             });
+
         }
 
+
         res.status(200).json({
+
             success: true,
+
             order
+
         });
 
     } catch (error) {
@@ -161,7 +264,9 @@ export const getSingleOrder = async (req, res) => {
         res.status(500).json({
             message: error.message
         });
+
     }
+
 };
 
 
@@ -169,21 +274,36 @@ export const getSingleOrder = async (req, res) => {
 
 // ADMIN — GET ALL ORDERS
 export const getAllOrders = async (req, res) => {
+
     try {
 
         const orders = await Order.find()
-            .populate("user", "name email")
+
+            .populate(
+                "user",
+                "name email"
+            )
+
             .sort({ createdAt: -1 });
 
+
         const totalAmount = orders.reduce(
+
             (acc, order) => acc + order.totalPrice,
+
             0
+
         );
 
+
         res.status(200).json({
+
             success: true,
+
             totalAmount,
+
             orders
+
         });
 
     } catch (error) {
@@ -191,7 +311,9 @@ export const getAllOrders = async (req, res) => {
         res.status(500).json({
             message: error.message
         });
+
     }
+
 };
 
 
@@ -199,35 +321,89 @@ export const getAllOrders = async (req, res) => {
 
 // ADMIN — UPDATE ORDER STATUS
 export const updateOrderStatus = async (req, res) => {
+
     try {
 
         // VALIDATE OBJECT ID
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        if (
+            !mongoose.Types.ObjectId.isValid(
+                req.params.id
+            )
+        ) {
+
             return res.status(400).json({
                 message: "Invalid order ID"
             });
+
         }
 
-        const order = await Order.findById(req.params.id);
+
+        const order = await Order.findById(
+            req.params.id
+        ).populate(
+            "user",
+            "name email"
+        );
+
 
         if (!order) {
+
             return res.status(404).json({
                 message: "Order not found"
             });
+
         }
+
 
         order.orderStatus = req.body.status;
 
+
+        // DELIVERED STATUS
         if (req.body.status === "Delivered") {
+
             order.deliveredAt = Date.now();
+
+
+            // SEND DELIVERED EMAIL
+            await sendEmail({
+
+                to: order.user.email,
+
+                subject: "Order Delivered",
+
+                html: orderDeliveredTemplate(
+                    order.user.name,
+                    order._id
+                ),
+
+            });
+
+
+            // SEND REAL-TIME NOTIFICATION
+            await sendNotification({
+
+                userId: order.user._id,
+
+                title: "Order Delivered",
+
+                message: `Your order ${order._id} has been delivered.`
+
+            });
+
         }
+
 
         await order.save();
 
+
         res.status(200).json({
+
             success: true,
+
             message: "Order status updated",
+
             order
+
         });
 
     } catch (error) {
@@ -235,5 +411,7 @@ export const updateOrderStatus = async (req, res) => {
         res.status(500).json({
             message: error.message
         });
+
     }
+
 };
