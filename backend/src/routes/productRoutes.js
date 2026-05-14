@@ -18,16 +18,26 @@ import {
 
 import upload from "../middleware/uploadMiddleware.js";
 
-
-// GET ALL PRODUCTS
-router.get("/", getProducts);
+import cacheMiddleware from "../middleware/cacheMiddleware.js";
 
 
-// GET PRODUCT BY ID
-router.get("/:id", getProductById);
+router.get(
+    "/",
+    cacheMiddleware(() => "all_products", 3600),
+    getProducts
+);
 
 
-// CREATE PRODUCT
+router.get(
+    "/:id",
+    cacheMiddleware(
+        (req) => `product_${req.params.id}`,
+        3600
+    ),
+    getProductById
+);
+
+
 router.post(
     "/",
     protect,
@@ -37,7 +47,6 @@ router.post(
 );
 
 
-// UPDATE PRODUCT
 router.put(
     "/:id",
     protect,
@@ -47,7 +56,6 @@ router.put(
 );
 
 
-// DELETE PRODUCT
 router.delete(
     "/:id",
     protect,
@@ -55,8 +63,6 @@ router.delete(
     deleteProduct
 );
 
-
-// CREATE REVIEW
 router.post(
     "/:id/reviews",
     protect,
