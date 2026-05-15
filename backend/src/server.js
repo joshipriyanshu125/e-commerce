@@ -6,6 +6,16 @@ import http from "http";
 
 import cors from "cors";
 
+import helmet from "helmet";
+
+import rateLimit from "express-rate-limit";
+
+import mongoSanitize from "express-mongo-sanitize";
+
+import xss from "xss-clean";
+
+import hpp from "hpp";
+
 import connectDB from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -46,6 +56,28 @@ const server = http.createServer(app);
 initSocket(server);
 
 app.use(express.json());
+
+// SECURITY HEADERS
+app.use(helmet());
+
+// PREVENT MONGODB INJECTION
+app.use(mongoSanitize());
+
+// PREVENT XSS ATTACKS
+app.use(xss());
+
+// PREVENT HTTP PARAM POLLUTION
+app.use(hpp());
+
+// RATE LIMITING
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message:
+    "Too many requests from this IP, please try again later."
+});
+
+app.use(limiter);
 
 app.use(
   cors({

@@ -7,10 +7,9 @@ import User from "../models/userModel.js";
 
 export const protect = async (req, res, next) => {
 
+    let token;
+
     try {
-
-        let token;
-
 
         // CHECK AUTH HEADER
         if (
@@ -48,11 +47,14 @@ export const protect = async (req, res, next) => {
 
             next();
 
-        } else {
+        }
+
+        // NO TOKEN
+        if (!token) {
 
             return res.status(401).json({
                 success: false,
-                message: "Not authorized, token missing"
+                message: "Not authorized, no token"
             });
         }
 
