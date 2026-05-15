@@ -28,6 +28,8 @@ import wishlistRoutes from "./routes/wishlistRoutes.js";
 
 import notificationRoutes from "./routes/notificationRoutes.js";
 
+import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
+
 import { initSocket } from "./config/socket.js";
 
 import {
@@ -39,12 +41,9 @@ connectDB();
 
 const app = express();
 
-
 const server = http.createServer(app);
 
-
 initSocket(server);
-
 
 app.use(express.json());
 
@@ -54,7 +53,6 @@ app.use(
     credentials: true,
   })
 );
-
 
 app.use("/api/users", authRoutes);
 
@@ -76,13 +74,17 @@ app.use("/api/wishlist", wishlistRoutes);
 
 app.use("/api/notifications", notificationRoutes);
 
+// ADMIN ANALYTICS ROUTE
+app.use(
+  "/api/admin/analytics",
+  adminAnalyticsRoutes
+);
 
 app.use(notFound);
 
 app.use(errorHandler);
 
 const PORT = Number(process.env.PORT) || 5000;
-
 
 const startServer = (port) => {
 

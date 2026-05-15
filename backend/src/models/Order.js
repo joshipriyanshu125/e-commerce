@@ -88,9 +88,15 @@ const orderSchema = new mongoose.Schema(
             required: true
         },
 
+        // ORDER STATUS
         orderStatus: {
             type: String,
-            enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
+            enum: [
+                "Processing",
+                "Shipped",
+                "Delivered",
+                "Cancelled"
+            ],
             default: "Processing"
         },
 
@@ -101,6 +107,9 @@ const orderSchema = new mongoose.Schema(
     }
 );
 
-const Order = mongoose.model("Order", orderSchema);
+const Order = mongoose.model(
+    "Order",
+    orderSchema
+);
 
 export default Order;
