@@ -57,6 +57,8 @@ initSocket(server);
 
 app.use(express.json());
 
+// ================= SECURITY MIDDLEWARES =================
+
 // SECURITY HEADERS
 app.use(helmet());
 
@@ -72,12 +74,16 @@ app.use(hpp());
 // RATE LIMITING
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
+
   max: 100,
+
   message:
     "Too many requests from this IP, please try again later."
 });
 
 app.use(limiter);
+
+// ================= CORS =================
 
 app.use(
   cors({
@@ -85,6 +91,8 @@ app.use(
     credentials: true,
   })
 );
+
+// ================= ROUTES =================
 
 app.use("/api/users", authRoutes);
 
@@ -106,17 +114,23 @@ app.use("/api/wishlist", wishlistRoutes);
 
 app.use("/api/notifications", notificationRoutes);
 
-// ADMIN ANALYTICS ROUTE
+// ================= ADMIN ANALYTICS =================
+
 app.use(
   "/api/admin/analytics",
   adminAnalyticsRoutes
 );
 
+// ================= ERROR MIDDLEWARE =================
+
 app.use(notFound);
 
 app.use(errorHandler);
 
-const PORT = Number(process.env.PORT) || 5000;
+// ================= SERVER =================
+
+const PORT =
+  Number(process.env.PORT) || 5000;
 
 const startServer = (port) => {
 
@@ -151,12 +165,17 @@ const startServer = (port) => {
 
 startServer(PORT);
 
-process.on("unhandledRejection", (err) => {
+// ================= UNHANDLED REJECTION =================
 
-  console.log(
-    `❌ Error: ${err.message}`
-  );
+process.on(
+  "unhandledRejection",
+  (err) => {
 
-  process.exit(1);
+    console.log(
+      `❌ Error: ${err.message}`
+    );
 
-});
+    process.exit(1);
+
+  }
+);
