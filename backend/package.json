@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "build": "npm install",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -49,5 +50,8 @@
     "mongodb"
   ],
   "author": "Piyush Sharma",
-  "license": "ISC"
+  "license": "ISC",
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }
