@@ -10,30 +10,22 @@ import productRoutes from "./routes/productRoutes.js";
 
 const app = express();
 
-// CORS CONFIGURATION
 app.use(
     cors({
-        origin: [
-            "http://localhost:5173",
-            "http://frontend:80",
-            "https://your-frontend.vercel.app"
-        ],
+        origin: ["http://localhost:5173"],
         credentials: true,
     })
 );
 
-// MIDDLEWARES
 app.use(express.json());
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(cookieParser());
 
-// ROUTES
 app.use("/api/users", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
 
-// TEST ROUTE
 app.get("/", (req, res) => {
     res.send("API Running...");
 });
