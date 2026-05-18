@@ -1,8 +1,8 @@
-import Order from "../models/Order.js";
+import Order from "../src/models/Order.js";
 
-import Cart from "../models/cartModel.js";
+import Cart from "../src/models/cartModel.js";
 
-import Product from "../models/Product.js";
+import Product from "../src/models/Product.js";
 
 /*
 ==============================

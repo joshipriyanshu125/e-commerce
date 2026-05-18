@@ -1,19 +1,317 @@
+import mongoose from "mongoose";
+
+import sendEmail from "../utils/sendEmail.js";
+
 import {
-    createOrder,
-} from "../repositories/orderRepository.js";
+    orderConfirmationTemplate,
+    orderDeliveredTemplate,
+} from "../utils/emailTemplates.js";
 
-const createOrderService = async (
-    orderData
-) => {
+import {
+    sendNotification,
+} from "./notificationService.js";
 
-    // BUSINESS LOGIC HERE
+import {
+    getUserCartRepository,
+    getProductByIdRepository,
+    createOrderRepository,
+    getOrderByIdRepository,
+    getUserOrdersRepository,
+    getAllOrdersRepository,
+} from "../../repositories/orderRepository.js";
 
+/*
+==============================
+CREATE ORDER SERVICE
+==============================
+*/
+const createOrderService = async ({
+    body,
+    user,
+}) => {
+
+    const {
+        orderItems,
+        shippingInfo,
+        itemsPrice,
+        shippingPrice,
+        taxPrice,
+        totalPrice,
+        addressId,
+    } = body;
+
+    // GET USER CART
+    const cart =
+        await getUserCartRepository(
+            user._id
+        );
+
+    if (
+        !cart ||
+        cart.items.length === 0
+    ) {
+
+        throw new Error(
+            "Cart is empty"
+        );
+    }
+
+    // CHECK STOCK
+    for (const item of orderItems) {
+
+        const product =
+            await getProductByIdRepository(
+                item.product
+            );
+
+        if (!product) {
+
+            throw new Error(
+                "Product not found"
+            );
+        }
+
+        if (
+            product.countInStock <
+            item.quantity
+        ) {
+
+            throw new Error(
+                `${product.name} is out of stock`
+            );
+        }
+    }
+
+    // CREATE ORDER
     const order =
-        await createOrder(orderData);
+        await createOrderRepository({
+
+            user: user._id,
+
+            orderItems,
+
+            shippingInfo,
+
+            shippingAddress:
+                addressId,
+
+            itemsPrice,
+
+            shippingPrice,
+
+            taxPrice,
+
+            totalPrice,
+
+            paymentMethod:
+                "Cash On Delivery",
+
+            isPaid: false,
+
+            orderStatus:
+                "Processing",
+        });
+
+    // REDUCE STOCK
+    for (const item of orderItems) {
+
+        const product =
+            await getProductByIdRepository(
+                item.product
+            );
+
+        product.countInStock -=
+            item.quantity;
+
+        await product.save();
+    }
+
+    // CLEAR CART
+    cart.items = [];
+
+    cart.totalPrice = 0;
+
+    await cart.save();
+
+    // POPULATE ORDER
+    const populatedOrder =
+        await getOrderByIdRepository(
+            order._id
+        );
+
+    // SEND EMAIL
+    await sendEmail({
+
+        to:
+            populatedOrder.user.email,
+
+        subject:
+            "Order Confirmation",
+
+        html:
+            orderConfirmationTemplate(
+                populatedOrder.user
+                    .name,
+                order._id
+            ),
+    });
+
+    // SEND NOTIFICATION
+    await sendNotification({
+
+        userId: user._id,
+
+        title: "Order Placed",
+
+        message:
+            `Your order ${order._id} has been placed successfully.`,
+    });
 
     return order;
 };
 
+/*
+==============================
+GET MY ORDERS SERVICE
+==============================
+*/
+const getMyOrdersService =
+    async (userId) => {
+
+        return await getUserOrdersRepository(
+            userId
+        );
+    };
+
+/*
+==============================
+GET SINGLE ORDER SERVICE
+==============================
+*/
+const getSingleOrderService =
+    async (orderId) => {
+
+        // VALIDATE ID
+        if (
+            !mongoose.Types.ObjectId.isValid(
+                orderId
+            )
+        ) {
+
+            throw new Error(
+                "Invalid order ID"
+            );
+        }
+
+        const order =
+            await getOrderByIdRepository(
+                orderId
+            );
+
+        if (!order) {
+
+            throw new Error(
+                "Order not found"
+            );
+        }
+
+        return order;
+    };
+
+/*
+==============================
+GET ALL ORDERS SERVICE
+==============================
+*/
+const getAllOrdersService =
+    async () => {
+
+        const orders =
+            await getAllOrdersRepository();
+
+        const totalAmount =
+            orders.reduce(
+
+                (acc, order) =>
+                    acc +
+                    order.totalPrice,
+
+                0
+            );
+
+        return {
+            totalAmount,
+            orders,
+        };
+    };
+
+/*
+==============================
+UPDATE ORDER STATUS SERVICE
+==============================
+*/
+const updateOrderStatusService =
+    async (orderId, status) => {
+
+        const order =
+            await getOrderByIdRepository(
+                orderId
+            );
+
+        if (!order) {
+
+            throw new Error(
+                "Order not found"
+            );
+        }
+
+        order.orderStatus = status;
+
+        if (status === "Delivered") {
+
+            order.deliveredAt = Date.now();
+            if (order.paymentInfo) {
+                order.paymentInfo.paymentStatus = "Paid";
+            }
+
+            // SEND EMAIL
+            await sendEmail({
+
+                to:
+                    order.user.email,
+
+                subject:
+                    "Order Delivered",
+
+                html:
+                    orderDeliveredTemplate(
+                        order.user
+                            .name,
+                        order._id
+                    ),
+            });
+
+            // SEND NOTIFICATION
+            await sendNotification({
+
+                userId: order.user._id,
+
+                title: "Order Delivered",
+
+                message:
+                    `Your order ${order._id} has been delivered successfully.`,
+            });
+        }
+
+        await order.save();
+
+        return order;
+    };
+
 export {
     createOrderService,
+    getMyOrdersService,
+    getSingleOrderService,
+    getAllOrdersService,
+    updateOrderStatusService,
 };

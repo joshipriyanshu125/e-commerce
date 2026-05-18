@@ -5,6 +5,7 @@ import {
     getMyOrdersService,
     getSingleOrderService,
     getAllOrdersService,
+    updateOrderStatusService,
 } from "../services/orderService.js";
 
 /*
@@ -98,9 +99,32 @@ const getAllOrders =
         });
     });
 
+/*
+==============================
+UPDATE ORDER STATUS
+==============================
+*/
+const updateOrderStatus =
+    asyncHandler(async (req, res) => {
+
+        const order =
+            await updateOrderStatusService(
+                req.params.id,
+                req.body.status
+            );
+
+        res.status(200).json({
+
+            success: true,
+
+            order,
+        });
+    });
+
 export {
     createOrder,
     getMyOrders,
     getSingleOrder,
     getAllOrders,
+    updateOrderStatus,
 };
