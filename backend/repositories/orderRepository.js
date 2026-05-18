@@ -1,18 +1,104 @@
-import Order from "../models/orderModel.js";
+import Order from "../models/Order.js";
 
-const createOrder = async (
-    orderData
-) => {
+import Cart from "../models/cartModel.js";
 
-    return await Order.create(orderData);
-};
+import Product from "../models/Product.js";
 
-const getOrderById = async (id) => {
+/*
+==============================
+GET USER CART
+==============================
+*/
+const getUserCartRepository =
+    async (userId) => {
 
-    return await Order.findById(id);
-};
+        return await Cart.findOne({
+            user: userId,
+        });
+    };
+
+/*
+==============================
+GET PRODUCT BY ID
+==============================
+*/
+const getProductByIdRepository =
+    async (productId) => {
+
+        return await Product.findById(
+            productId
+        );
+    };
+
+/*
+==============================
+CREATE ORDER
+==============================
+*/
+const createOrderRepository =
+    async (orderData) => {
+
+        return await Order.create(
+            orderData
+        );
+    };
+
+/*
+==============================
+GET ORDER BY ID
+==============================
+*/
+const getOrderByIdRepository =
+    async (orderId) => {
+
+        return await Order.findById(
+            orderId
+        ).populate(
+            "user",
+            "name email"
+        );
+    };
+
+/*
+==============================
+GET USER ORDERS
+==============================
+*/
+const getUserOrdersRepository =
+    async (userId) => {
+
+        return await Order.find({
+            user: userId,
+        }).sort({
+            createdAt: -1,
+        });
+    };
+
+/*
+==============================
+GET ALL ORDERS
+==============================
+*/
+const getAllOrdersRepository =
+    async () => {
+
+        return await Order.find()
+
+            .populate(
+                "user",
+                "name email"
+            )
+
+            .sort({
+                createdAt: -1,
+            });
+    };
 
 export {
-    createOrder,
-    getOrderById,
+    getUserCartRepository,
+    getProductByIdRepository,
+    createOrderRepository,
+    getOrderByIdRepository,
+    getUserOrdersRepository,
+    getAllOrdersRepository,
 };
