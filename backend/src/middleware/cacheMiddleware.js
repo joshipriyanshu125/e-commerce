@@ -1,12 +1,16 @@
 import { getCache, setCache } from "../utils/cache.js";
 
-const cacheMiddleware = (keyGenerator, expiry = 3600) => {
+const cacheMiddleware = (
+    keyGenerator,
+    expiry = 3600
+) => {
     return async (req, res, next) => {
         try {
             const key = keyGenerator(req);
 
             const cachedData = await getCache(key);
 
+            // CACHE HIT
             if (cachedData) {
                 return res.status(200).json({
                     success: true,
@@ -15,19 +19,38 @@ const cacheMiddleware = (keyGenerator, expiry = 3600) => {
                 });
             }
 
-            const originalJson = res.json;
+            // STORE ORIGINAL RESPONSE METHOD
+            const originalJson = res.json.bind(res);
 
-            res.json = function (body) {
-                if (body.success) {
-                    setCache(key, body, expiry);
+            // OVERRIDE res.json
+            res.json = async (body) => {
+                try {
+                    // CACHE ONLY SUCCESS RESPONSES
+                    if (body?.success) {
+                        await setCache(
+                            key,
+                            body.data || body,
+                            expiry
+                        );
+                    }
+                } catch (cacheError) {
+                    console.error(
+                        "Cache Set Error:",
+                        cacheError.message
+                    );
                 }
 
-                return originalJson.call(this, body);
+                return originalJson(body);
             };
 
             next();
         } catch (error) {
-            next(error);
+            console.error(
+                "Cache Middleware Error:",
+                error.message
+            );
+
+            next();
         }
     };
 };
