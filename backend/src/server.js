@@ -8,7 +8,7 @@ import cors from "cors";
 
 import helmet from "helmet";
 
-import rateLimit from "express-rate-limit";
+import compression from "compression";
 
 import mongoSanitize from "express-mongo-sanitize";
 
@@ -17,6 +17,8 @@ import xss from "xss-clean";
 import hpp from "hpp";
 
 import connectDB from "./config/db.js";
+
+import { initSocket } from "./config/socket.js";
 
 import authRoutes from "./routes/authRoutes.js";
 
@@ -40,27 +42,52 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 
 import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
 
-import { initSocket } from "./config/socket.js";
+import apiLimiter from "./middleware/rateLimitMiddleware.js";
+
+import requestLogger from "./middleware/requestLogger.js";
+
+import logger from "./utils/logger.js";
 
 import {
   notFound,
   errorHandler,
 } from "./middleware/errorMiddleware.js";
 
+/*
+================ DATABASE =================
+*/
 connectDB();
 
+/*
+================ EXPRESS APP =================
+*/
 const app = express();
 
 const server = http.createServer(app);
 
+/*
+================ SOCKET.IO =================
+*/
 initSocket(server);
 
+/*
+================ BODY PARSER =================
+*/
 app.use(express.json());
 
-// ================= SECURITY MIDDLEWARES =================
+app.use(express.urlencoded({
+  extended: true,
+}));
+
+/*
+================ SECURITY MIDDLEWARES =================
+*/
 
 // SECURITY HEADERS
 app.use(helmet());
+
+// ENABLE GZIP COMPRESSION
+app.use(compression());
 
 // PREVENT MONGODB INJECTION
 app.use(mongoSanitize());
@@ -72,19 +99,16 @@ app.use(xss());
 app.use(hpp());
 
 // RATE LIMITING
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+app.use(apiLimiter);
 
-  max: 100,
+/*
+================ REQUEST LOGGER =================
+*/
+app.use(requestLogger);
 
-  message:
-    "Too many requests from this IP, please try again later."
-});
-
-app.use(limiter);
-
-// ================= CORS =================
-
+/*
+================ CORS =================
+*/
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -92,8 +116,20 @@ app.use(
   })
 );
 
-// ================= ROUTES =================
+/*
+================ HEALTH CHECK =================
+*/
+app.get("/", (req, res) => {
 
+  res.status(200).json({
+    success: true,
+    message: "API Running Successfully",
+  });
+});
+
+/*
+================ ROUTES =================
+*/
 app.use("/api/users", authRoutes);
 
 app.use("/api/users", userRoutes);
@@ -114,27 +150,34 @@ app.use("/api/wishlist", wishlistRoutes);
 
 app.use("/api/notifications", notificationRoutes);
 
-// ================= ADMIN ANALYTICS =================
-
+/*
+================ ADMIN ANALYTICS =================
+*/
 app.use(
   "/api/admin/analytics",
   adminAnalyticsRoutes
 );
 
-// ================= ERROR MIDDLEWARE =================
-
+/*
+================ ERROR MIDDLEWARE =================
+*/
 app.use(notFound);
 
 app.use(errorHandler);
 
-// ================= SERVER =================
-
+/*
+================ SERVER =================
+*/
 const PORT =
   Number(process.env.PORT) || 5000;
 
 const startServer = (port) => {
 
   server.listen(port, () => {
+
+    logger.info(
+      `🚀 Server running on port ${port}`
+    );
 
     console.log(
       `🚀 Server running on port ${port}`
@@ -152,30 +195,56 @@ const startServer = (port) => {
 
     } else {
 
+      logger.error(err);
+
       console.error(
         "❌ Server error:",
         err
       );
-
     }
-
   });
-
 };
 
 startServer(PORT);
 
-// ================= UNHANDLED REJECTION =================
-
+/*
+================ UNHANDLED REJECTION =================
+*/
 process.on(
   "unhandledRejection",
   (err) => {
+
+    logger.error({
+      message: err.message,
+      stack: err.stack,
+    });
 
     console.log(
       `❌ Error: ${err.message}`
     );
 
-    process.exit(1);
+    server.close(() => {
+      process.exit(1);
+    });
+  }
+);
 
+/*
+================ UNCAUGHT EXCEPTION =================
+*/
+process.on(
+  "uncaughtException",
+  (err) => {
+
+    logger.error({
+      message: err.message,
+      stack: err.stack,
+    });
+
+    console.log(
+      `❌ Uncaught Exception: ${err.message}`
+    );
+
+    process.exit(1);
   }
 );

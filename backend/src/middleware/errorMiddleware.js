@@ -1,3 +1,5 @@
+import logger from "../utils/logger.js";
+
 const notFound = (req, res, next) => {
 
     const error = new Error(
@@ -23,7 +25,9 @@ const errorHandler = (
 
     let message = err.message;
 
-    // MONGOOSE BAD OBJECT ID
+    /*
+    MONGOOSE INVALID OBJECT ID
+    */
     if (
         err.name === "CastError" &&
         err.kind === "ObjectId"
@@ -34,6 +38,45 @@ const errorHandler = (
         message = "Resource Not Found";
     }
 
+    /*
+    MONGOOSE DUPLICATE KEY ERROR
+    */
+    if (err.code === 11000) {
+
+        statusCode = 400;
+
+        const field =
+            Object.keys(err.keyValue)[0];
+
+        message = `${field} already exists`;
+    }
+
+    /*
+    MONGOOSE VALIDATION ERROR
+    */
+    if (err.name === "ValidationError") {
+
+        statusCode = 400;
+
+        message = Object.values(err.errors)
+            .map((val) => val.message)
+            .join(", ");
+    }
+
+    /*
+    LOG ERROR
+    */
+    logger.error({
+        message: err.message,
+        stack: err.stack,
+        method: req.method,
+        url: req.originalUrl,
+        ip: req.ip,
+    });
+
+    /*
+    RESPONSE
+    */
     res.status(statusCode).json({
 
         success: false,
