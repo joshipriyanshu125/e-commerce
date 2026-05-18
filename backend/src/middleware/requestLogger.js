@@ -6,13 +6,9 @@ const requestLogger = (
     next
 ) => {
 
-    console.log("LOGGER MIDDLEWARE RUNNING");
-
-    logger.info({
-        method: req.method,
-        url: req.originalUrl,
-        ip: req.ip,
-    });
+    logger.info(
+        `${req.method} ${req.originalUrl} ${req.ip}`
+    );
 
     next();
 };

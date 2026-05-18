@@ -1,5 +1,9 @@
 import "./config/env.js";
 
+import fs from "fs";
+
+import path from "path";
+
 import express from "express";
 
 import http from "http";
@@ -54,24 +58,50 @@ import {
 } from "./middleware/errorMiddleware.js";
 
 /*
-================ DATABASE =================
+==============================
+ENSURE LOGS FOLDER EXISTS
+==============================
+*/
+const logsDir = path.join(
+  process.cwd(),
+  "logs"
+);
+
+if (!fs.existsSync(logsDir)) {
+
+  fs.mkdirSync(logsDir, {
+    recursive: true,
+  });
+}
+
+/*
+==============================
+DATABASE
+==============================
 */
 connectDB();
 
 /*
-================ EXPRESS APP =================
+==============================
+EXPRESS APP
+==============================
 */
 const app = express();
 
-const server = http.createServer(app);
+const server =
+  http.createServer(app);
 
 /*
-================ SOCKET.IO =================
+==============================
+SOCKET.IO
+==============================
 */
 initSocket(server);
 
 /*
-================ BODY PARSER =================
+==============================
+BODY PARSER
+==============================
 */
 app.use(express.json());
 
@@ -80,13 +110,15 @@ app.use(express.urlencoded({
 }));
 
 /*
-================ SECURITY MIDDLEWARES =================
+==============================
+SECURITY MIDDLEWARES
+==============================
 */
 
 // SECURITY HEADERS
 app.use(helmet());
 
-// ENABLE GZIP COMPRESSION
+// ENABLE COMPRESSION
 app.use(compression());
 
 // PREVENT MONGODB INJECTION
@@ -98,60 +130,100 @@ app.use(xss());
 // PREVENT HTTP PARAM POLLUTION
 app.use(hpp());
 
-// RATE LIMITING
+// RATE LIMITER
 app.use(apiLimiter);
 
 /*
-================ REQUEST LOGGER =================
+==============================
+REQUEST LOGGER
+==============================
 */
 app.use(requestLogger);
 
 /*
-================ CORS =================
+==============================
+CORS
+==============================
 */
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin:
+      "http://localhost:5173",
+
     credentials: true,
   })
 );
 
 /*
-================ HEALTH CHECK =================
+==============================
+HEALTH CHECK
+==============================
 */
 app.get("/", (req, res) => {
 
+  logger.info(
+    "Health route accessed"
+  );
+
   res.status(200).json({
+
     success: true,
-    message: "API Running Successfully",
+
+    message:
+      "API Running Successfully",
   });
 });
 
 /*
-================ ROUTES =================
+==============================
+ROUTES
+==============================
 */
 app.use("/api/users", authRoutes);
 
 app.use("/api/users", userRoutes);
 
-app.use("/api/products", productRoutes);
+app.use(
+  "/api/products",
+  productRoutes
+);
 
-app.use("/api/orders", orderRoutes);
+app.use(
+  "/api/orders",
+  orderRoutes
+);
 
 app.use("/api/cart", cartRoutes);
 
-app.use("/api/address", addressRoutes);
+app.use(
+  "/api/address",
+  addressRoutes
+);
 
-app.use("/api/coupons", couponRoutes);
+app.use(
+  "/api/coupons",
+  couponRoutes
+);
 
-app.use("/api/invoice", invoiceRoutes);
+app.use(
+  "/api/invoice",
+  invoiceRoutes
+);
 
-app.use("/api/wishlist", wishlistRoutes);
+app.use(
+  "/api/wishlist",
+  wishlistRoutes
+);
 
-app.use("/api/notifications", notificationRoutes);
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
 
 /*
-================ ADMIN ANALYTICS =================
+==============================
+ADMIN ANALYTICS
+==============================
 */
 app.use(
   "/api/admin/analytics",
@@ -159,14 +231,18 @@ app.use(
 );
 
 /*
-================ ERROR MIDDLEWARE =================
+==============================
+ERROR MIDDLEWARE
+==============================
 */
 app.use(notFound);
 
 app.use(errorHandler);
 
 /*
-================ SERVER =================
+==============================
+SERVER
+==============================
 */
 const PORT =
   Number(process.env.PORT) || 5000;
@@ -185,7 +261,15 @@ const startServer = (port) => {
 
   }).on("error", (err) => {
 
-    if (err.code === "EADDRINUSE") {
+    logger.error({
+      message: err.message,
+      stack: err.stack,
+    });
+
+    if (
+      err.code ===
+      "EADDRINUSE"
+    ) {
 
       console.log(
         `⚠️ Port ${port} is in use, trying ${port + 1}...`
@@ -194,8 +278,6 @@ const startServer = (port) => {
       startServer(port + 1);
 
     } else {
-
-      logger.error(err);
 
       console.error(
         "❌ Server error:",
@@ -208,14 +290,18 @@ const startServer = (port) => {
 startServer(PORT);
 
 /*
-================ UNHANDLED REJECTION =================
+==============================
+UNHANDLED REJECTION
+==============================
 */
 process.on(
   "unhandledRejection",
   (err) => {
 
     logger.error({
+
       message: err.message,
+
       stack: err.stack,
     });
 
@@ -224,20 +310,25 @@ process.on(
     );
 
     server.close(() => {
+
       process.exit(1);
     });
   }
 );
 
 /*
-================ UNCAUGHT EXCEPTION =================
+==============================
+UNCAUGHT EXCEPTION
+==============================
 */
 process.on(
   "uncaughtException",
   (err) => {
 
     logger.error({
+
       message: err.message,
+
       stack: err.stack,
     });
 
