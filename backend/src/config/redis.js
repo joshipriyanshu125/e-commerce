@@ -1,15 +1,21 @@
 import Redis from "ioredis";
 
-const redis = new Redis(process.env.REDIS_URL || "redis://127.0.0.1:6379", {
-    maxRetriesPerRequest: null,
-});
+let redis = null;
 
-redis.on("connect", () => {
-    console.log("✅ Redis Connected");
-});
+if (process.env.REDIS_URL) {
+    redis = new Redis(process.env.REDIS_URL, {
+        maxRetriesPerRequest: null,
+    });
 
-redis.on("error", (err) => {
-    console.log("❌ Redis Error:", err);
-});
+    redis.on("connect", () => {
+        console.log("✅ Redis Connected");
+    });
+
+    redis.on("error", (err) => {
+        console.log("❌ Redis Error:", err);
+    });
+} else {
+    console.log("⚠️ Redis URL not found. Skipping Redis connection.");
+}
 
 export default redis;
