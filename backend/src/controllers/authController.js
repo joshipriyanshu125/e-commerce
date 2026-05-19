@@ -1,103 +1,93 @@
-import User from "../models/userModel.js";
-import bcrypt from "bcryptjs";
-import generateToken from "../utils/generateToken.js";
+import asyncHandler from "../middleware/asyncHandler.js";
 
+import {
+    registerUserService,
+    loginUserService,
+} from "../services/authService.js";
 
-// =============================
-// REGISTER USER
-// =============================
-export const registerUser = async (req, res) => {
-    try {
+/*
+==============================
+REGISTER USER
+==============================
+*/
+const registerUser = asyncHandler(
+    async (req, res) => {
 
-        const { name, email, password } = req.body;
-
-        // CHECK IF USER EXISTS
-        const userExists = await User.findOne({ email });
-
-        if (userExists) {
-            return res.status(400).json({
-                message: "User already exists"
-            });
-        }
-
-        // HASH PASSWORD
-        const salt = await bcrypt.genSalt(10);
-
-        const hashedPassword = await bcrypt.hash(
-            password,
-            salt
-        );
-
-        // CREATE USER
-        const user = await User.create({
+        const {
             name,
             email,
-            password: hashedPassword
-        });
+            password,
+        } = req.body;
+
+        const user =
+            await registerUserService({
+                name,
+                email,
+                password,
+            });
 
         // RESPONSE
         res.status(201).json({
+
+            success: true,
+
+            message:
+                "User registered successfully",
+
             _id: user._id,
+
             name: user.name,
+
             email: user.email,
+
             role: user.role,
-            token: generateToken(user._id)
+
+            token: user.token,
         });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
     }
-};
+);
 
+/*
+==============================
+LOGIN USER
+==============================
+*/
+const loginUser = asyncHandler(
+    async (req, res) => {
 
-// =============================
-// LOGIN USER
-// =============================
-export const loginUser = async (req, res) => {
-    try {
-
-        const { email, password } = req.body;
-
-        // FIND USER
-        const user = await User.findOne({ email });
-
-        // CHECK USER
-        if (!user) {
-            return res.status(401).json({
-                message: "Invalid email or password"
-            });
-        }
-
-        // CHECK PASSWORD
-        const isMatch = await bcrypt.compare(
+        const {
+            email,
             password,
-            user.password
-        );
+        } = req.body;
 
-        if (!isMatch) {
-            return res.status(401).json({
-                message: "Invalid email or password"
+        const user =
+            await loginUserService({
+                email,
+                password,
             });
-        }
 
         // RESPONSE
         res.status(200).json({
+
+            success: true,
+
+            message:
+                "Login successful",
+
             _id: user._id,
+
             name: user.name,
+
             email: user.email,
+
             role: user.role,
-            token: generateToken(user._id)
+
+            token: user.token,
         });
-
-    } catch (error) {
-
-        res.status(500).json({
-            message: error.message
-        });
-
     }
+);
+
+export {
+    registerUser,
+    loginUser,
 };
