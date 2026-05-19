@@ -10,7 +10,7 @@ import {
     getProductByIdRepository,
     saveProductRepository,
     deleteProductRepository,
-} from "../repositories/productRepository.js";
+} from "../../repositories/productRepository.js";
 
 /*
 ==============================

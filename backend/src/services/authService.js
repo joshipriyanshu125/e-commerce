@@ -5,7 +5,7 @@ import generateToken from "../utils/generateToken.js";
 import {
     findUserByEmail,
     createUser,
-} from "../repositories/userRepository.js";
+} from "../../repositories/userRepository.js";
 
 /*
 ==============================
