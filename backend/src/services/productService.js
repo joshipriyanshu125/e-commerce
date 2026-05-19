@@ -67,7 +67,11 @@ const createProductService = async ({
 
     const images = [];
 
-    // UPLOAD IMAGES
+    /*
+    ==============================
+    UPLOAD IMAGES
+    ==============================
+    */
     if (files && files.length > 0) {
 
         for (const file of files) {
@@ -78,6 +82,7 @@ const createProductService = async ({
                 );
 
             images.push({
+
                 public_id:
                     result.public_id,
 
@@ -87,19 +92,36 @@ const createProductService = async ({
         }
     }
 
+    /*
+    ==============================
+    CREATE PRODUCT
+    ==============================
+    */
     const product =
         await createProductRepository({
+
             name,
+
             description,
+
             price,
+
             countInStock,
+
             category,
+
             brand,
+
             images,
+
             user: user._id,
         });
 
-    // CLEAR CACHE
+    /*
+    ==============================
+    CLEAR PRODUCT CACHE
+    ==============================
+    */
     await deleteCache(
         "all_products"
     );
@@ -116,11 +138,21 @@ const getProductsService = async (
     queryParams
 ) => {
 
+    /*
+    ==============================
+    PAGINATION
+    ==============================
+    */
     const pageSize = 10;
 
     const page =
         Number(queryParams.page) || 1;
 
+    /*
+    ==============================
+    SEARCH KEYWORD
+    ==============================
+    */
     const keyword =
         queryParams.keyword
 
@@ -128,12 +160,18 @@ const getProductsService = async (
                 name: {
                     $regex:
                         queryParams.keyword,
+
                     $options: "i",
                 },
             }
 
             : {};
 
+    /*
+    ==============================
+    CATEGORY FILTER
+    ==============================
+    */
     const category =
         queryParams.category
 
@@ -144,63 +182,100 @@ const getProductsService = async (
 
             : {};
 
+    /*
+    ==============================
+    SORTING
+    ==============================
+    */
     let sortOption = {};
 
-    if (
-        queryParams.sort ===
-        "lowToHigh"
-    ) {
+    switch (queryParams.sort) {
 
-        sortOption = { price: 1 };
+        case "lowToHigh":
+
+            sortOption = {
+                price: 1,
+            };
+
+            break;
+
+        case "highToLow":
+
+            sortOption = {
+                price: -1,
+            };
+
+            break;
+
+        case "newest":
+
+            sortOption = {
+                createdAt: -1,
+            };
+
+            break;
+
+        default:
+
+            sortOption = {
+                createdAt: -1,
+            };
     }
 
-    if (
-        queryParams.sort ===
-        "highToLow"
-    ) {
-
-        sortOption = { price: -1 };
-    }
-
-    if (
-        queryParams.sort ===
-        "newest"
-    ) {
-
-        sortOption = {
-            createdAt: -1,
-        };
-    }
-
+    /*
+    ==============================
+    FINAL QUERY
+    ==============================
+    */
     const query = {
+
         ...keyword,
+
         ...category,
     };
 
+    /*
+    ==============================
+    FETCH PRODUCTS
+    ==============================
+    */
     const {
         count,
         products,
     } =
         await getProductsRepository({
+
             query,
+
             sortOption,
+
             pageSize,
+
             page,
         });
 
+    /*
+    ==============================
+    RESPONSE
+    ==============================
+    */
     return {
+
         products,
+
         page,
+
         pages: Math.ceil(
             count / pageSize
         ),
+
         totalProducts: count,
     };
 };
 
 /*
 ==============================
-GET PRODUCT BY ID SERVICE
+GET SINGLE PRODUCT SERVICE
 ==============================
 */
 const getSingleProductService =
