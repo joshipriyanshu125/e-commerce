@@ -5,7 +5,6 @@ const apiLimiter = rateLimit({
 
     max: 100,
 
-
     standardHeaders: true,
 
     legacyHeaders: false,
