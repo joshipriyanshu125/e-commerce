@@ -18,4 +18,5 @@ if (process.env.REDIS_URL) {
     console.log("⚠️ Redis URL not found. Skipping Redis connection.");
 }
 
+
 export default redis;
