@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { IMAGES } from '../../utils/images'
 
 const mockProducts = [
   {
@@ -24,8 +25,8 @@ const mockProducts = [
     ],
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
     images: [
-      '/assets/images/product_wool_coat.jpg',
-      '/assets/images/category_fashion.jpg'
+      IMAGES.woolCoat,
+      IMAGES.categoryFashion
     ],
     reviews: [
       { id: 1, name: 'Sophia R.', rating: 5, comment: 'Absolutely stunning. The weight is perfect and it feels incredibly premium. True to size.', date: '2026-06-15' },
@@ -52,9 +53,7 @@ const mockProducts = [
       { name: 'Black', hex: '#1C1C1C' }
     ],
     sizes: ['EU 39', 'EU 40', 'EU 41', 'EU 42', 'EU 43', 'EU 44'],
-    images: [
-      '/assets/images/product_sneakers.jpg'
-    ],
+    images: [IMAGES.sneakers],
     reviews: [
       { id: 1, name: 'Marcus T.', rating: 5, comment: 'Clean look, matches everything. Take about a week to break in, but very comfortable now.', date: '2026-05-20' }
     ]
@@ -79,9 +78,7 @@ const mockProducts = [
       { name: 'Cognac', hex: '#825633' }
     ],
     sizes: ['One Size'],
-    images: [
-      '/assets/images/product_tote.jpg'
-    ],
+    images: [IMAGES.tote],
     reviews: [
       { id: 1, name: 'Elena B.', rating: 5, comment: 'Perfect work bag. Fits my 14 inch laptop, water bottle, and notebooks comfortably without losing its shape.', date: '2026-06-28' }
     ]
@@ -106,9 +103,7 @@ const mockProducts = [
       { name: 'Cognac', hex: '#634E3C' }
     ],
     sizes: ['38mm', '41mm'],
-    images: [
-      '/assets/images/product_watch.jpg'
-    ],
+    images: [IMAGES.watch],
     reviews: [
       { id: 1, name: 'Thomas K.', rating: 5, comment: 'Stunning watch. The sweeping seconds hand is beautiful, and it keeps time wonderfully. Best value for an automatic.', date: '2026-07-10' }
     ]
@@ -134,10 +129,7 @@ const mockProducts = [
       { name: 'Noir', hex: '#1C1C1C' }
     ],
     sizes: ['XS', 'S', 'M', 'L'],
-    images: [
-      '/assets/images/product_silk_blouse.jpg',
-      '/assets/images/manifesto_flatlay.jpg'
-    ],
+    images: [IMAGES.silkBlouse, IMAGES.manifestoFlatlay],
     reviews: [
       { id: 1, name: 'Chloe M.', rating: 4, comment: 'Beautiful texture and very elegant. The cream is slightly sheer but perfect with a nude bralette.', date: '2026-07-18' }
     ]
@@ -163,9 +155,7 @@ const mockProducts = [
       { name: 'Noir', hex: '#1C1C1C' }
     ],
     sizes: ['Standard'],
-    images: [
-      '/assets/images/product_sunglasses.jpg'
-    ],
+    images: [IMAGES.sunglasses],
     reviews: []
   },
   {
@@ -189,9 +179,7 @@ const mockProducts = [
       { name: 'Paper White', hex: '#FAF9F6' }
     ],
     sizes: ['256GB', '512GB'],
-    images: [
-      '/assets/images/product_phone.jpg'
-    ],
+    images: [IMAGES.phone],
     reviews: [
       { id: 1, name: 'Devon P.', rating: 5, comment: 'The design is so clean. It feels like a piece of art in hand. No branding clutter, clean OS, and beautiful photos.', date: '2026-07-21' }
     ]
@@ -216,9 +204,7 @@ const mockProducts = [
       { name: 'Noir', hex: '#1C1C1C' }
     ],
     sizes: ['24', '26', '28', '30', '32'],
-    images: [
-      '/assets/images/product_trousers.jpg'
-    ],
+    images: [IMAGES.trousers],
     reviews: []
   },
   {
@@ -241,10 +227,7 @@ const mockProducts = [
       { name: 'Sand Gold', hex: '#D7C7B7' }
     ],
     sizes: ['Standard'],
-    images: [
-      '/assets/images/category_electronics.jpg',
-      '/assets/images/manifesto_headphones.jpg'
-    ],
+    images: [IMAGES.categoryElectronics, IMAGES.manifestoHeadphones],
     reviews: [
       { id: 1, name: 'Lucas W.', rating: 5, comment: 'Quiet is right. The ANC blocks out construction noise completely. Plus, it looks like a design item instead of cheap plastic.', date: '2026-07-09' }
     ]

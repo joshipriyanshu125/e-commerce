@@ -116,7 +116,7 @@ const ProductDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start pb-20">
         
         {/* Left Column: Image Stack / Carousel */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-28 lg:self-start">
           <div className="aspect-square bg-atelier-cream border border-atelier-lightgray/30 overflow-hidden relative">
             <img 
               src={selectedProduct.images[activeImageIdx] || selectedProduct.images[0]} 

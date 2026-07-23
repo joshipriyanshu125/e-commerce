@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { setType, setCategory, setSortOption } from '../features/products/productSlice'
 import ProductCard from '../components/product/ProductCard'
 import { ArrowRight, SlidersHorizontal } from 'lucide-react'
+import { IMAGES } from '../utils/images'
 
 const Home = () => {
   const [searchParams] = useSearchParams()
@@ -12,7 +13,7 @@ const Home = () => {
   
   const typeParam = searchParams.get('type') // 'fashion' or 'electronics'
   
-  const { filteredProducts, selectedType, selectedCategory, sortOption } = useSelector(state => state.products)
+  const { filteredProducts, products, selectedType, selectedCategory, sortOption } = useSelector(state => state.products)
 
   // Synchronize URL parameters with Redux state
   useEffect(() => {
@@ -27,10 +28,10 @@ const Home = () => {
 
   // Get specific products for mock landing sections
   const covetedIds = ['wool-coat', 'court-sneakers', 'leather-tote', 'automatic-watch']
-  const covetedProducts = filteredProducts.filter(p => covetedIds.includes(p.id))
+  const covetedProducts = products.filter(p => covetedIds.includes(p.id))
 
   const newArrivalIds = ['silk-blouse', 'round-sunglasses', 'pro-phone', 'linen-trousers']
-  const newArrivals = filteredProducts.filter(p => newArrivalIds.includes(p.id))
+  const newArrivals = products.filter(p => newArrivalIds.includes(p.id))
 
   // Determine if catalogue view is active
   const isCatalogueView = typeParam !== null
@@ -133,7 +134,7 @@ const Home = () => {
         {/* Left Side: Image */}
         <div className="relative h-[400px] md:h-full overflow-hidden border-r border-atelier-lightgray/40">
           <img 
-            src="/assets/images/hero_fashion.jpg" 
+            src={IMAGES.heroFashion} 
             alt="Atelier Autumn Edition Model" 
             className="h-full w-full object-cover object-center"
             onError={(e) => {
@@ -194,7 +195,7 @@ const Home = () => {
           className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden border-r border-atelier-lightgray/40 flex flex-col justify-end p-8 sm:p-12"
         >
           <img 
-            src="/assets/images/category_fashion.jpg" 
+            src={IMAGES.categoryFashion} 
             alt="Tailoring, Knitwear, Leather Goods" 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             onError={(e) => {
@@ -220,7 +221,7 @@ const Home = () => {
           className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden flex flex-col justify-end p-8 sm:p-12"
         >
           <img 
-            src="/assets/images/category_electronics.jpg" 
+            src={IMAGES.categoryElectronics} 
             alt="Audio, Phones, Computers" 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             onError={(e) => {
@@ -291,7 +292,7 @@ const Home = () => {
             {/* Flatlay Shirt */}
             <div className="col-span-8 aspect-[4/5] bg-atelier-beige/10 overflow-hidden border border-white/10 relative">
               <img 
-                src="/assets/images/manifesto_flatlay.jpg" 
+                src={IMAGES.manifestoFlatlay} 
                 alt="Minimal Folded Shirt flatlay" 
                 className="h-full w-full object-cover"
                 onError={(e) => {
@@ -302,7 +303,7 @@ const Home = () => {
             {/* Over-ear headphone layout */}
             <div className="col-span-4 aspect-[4/6] bg-atelier-beige/10 overflow-hidden border border-white/10 relative mt-16">
               <img 
-                src="/assets/images/manifesto_headphones.jpg" 
+                src={IMAGES.manifestoHeadphones} 
                 alt="Headphones product layout" 
                 className="h-full w-full object-cover"
                 onError={(e) => {

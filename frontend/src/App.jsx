@@ -1,15 +1,17 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import MainLayout from './components/layout/MainLayout'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ProductDetails from './pages/ProductDetails'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
+import Account from './pages/Account'
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-slate-50">
+      <MainLayout>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -17,8 +19,9 @@ function App() {
           <Route path="/product/:id" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/account" element={<Account />} />
         </Routes>
-      </div>
+      </MainLayout>
     </Router>
   )
 }

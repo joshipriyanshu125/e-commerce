@@ -49,4 +49,26 @@ body {
   .btn-atelier-outline {
     @apply px-6 py-3 border border-atelier-dark text-atelier-dark hover:bg-atelier-dark hover:text-white transition-all duration-300 font-mono text-[10px] tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2;
   }
+  .input-atelier {
+    @apply w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-3 px-1 text-sm text-atelier-dark placeholder-atelier-gray/30 focus:outline-none transition-colors;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+  .animate-slide-in {
+    animation: slideIn 0.35s ease-out forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
