@@ -6,7 +6,21 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        serif: ['Cormorant Garamond', 'serif'],
+        sans: ['Inter', 'sans-serif'],
+        display: ['Cormorant Garamond', 'serif'],
+        mono: ['monospace'],
+      },
       colors: {
+        atelier: {
+          beige: '#F5F2EB',      // Primary page bg
+          cream: '#FAF8F5',      // High contrast card/section bg
+          dark: '#111111',       // Text & main actions
+          gray: '#706E6B',       // Subtitles, secondary text
+          lightgray: '#E5E2DA',  // Borders, dividers
+          accent: '#A89685',     // Accent color (tan/gold tones)
+        },
         primary: {
           50: '#f0f9ff',
           100: '#e0f2fe',

@@ -9,12 +9,44 @@
 }
 
 body {
-  @apply antialiased text-slate-900 bg-slate-50;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  @apply antialiased text-atelier-dark bg-atelier-beige font-sans selection:bg-atelier-accent selection:text-white;
+}
+
+/* Custom Hide Scrollbar Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom premium hover underline animation */
+.hover-underline {
+  position: relative;
+}
+.hover-underline::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  transform: scaleX(0);
+  height: 1px;
+  bottom: -2px;
+  left: 0;
+  background-color: currentColor;
+  transform-origin: bottom right;
+  transition: transform 0.3s ease-out;
+}
+.hover-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
 }
 
 @layer components {
-  .btn-primary {
-    @apply px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium;
+  .btn-atelier-dark {
+    @apply px-6 py-3 bg-atelier-dark text-white hover:bg-opacity-90 transition-all duration-300 font-mono text-[10px] tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2;
+  }
+  .btn-atelier-outline {
+    @apply px-6 py-3 border border-atelier-dark text-atelier-dark hover:bg-atelier-dark hover:text-white transition-all duration-300 font-mono text-[10px] tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2;
   }
 }
