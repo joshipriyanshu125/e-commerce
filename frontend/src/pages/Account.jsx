@@ -83,7 +83,7 @@ const Account = () => {
       {/* Upper greetings & logout */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between border-b border-atelier-lightgray/50 pb-6 mb-8 gap-4">
         <div>
-          <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block mb-1">
+          <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block mb-1">
             Your Account
           </span>
           <h1 className="font-serif text-4xl text-atelier-dark font-semibold">
@@ -108,7 +108,7 @@ const Account = () => {
           
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-[10px] tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
+            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-sm tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
               activeTab === 'profile'
                 ? 'text-atelier-dark border-b-2 md:border-b-0 md:border-l-2 border-atelier-dark font-semibold'
                 : 'text-atelier-gray hover:text-atelier-dark'
@@ -120,7 +120,7 @@ const Account = () => {
 
           <button
             onClick={() => setActiveTab('orders')}
-            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-[10px] tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
+            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-sm tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
               activeTab === 'orders'
                 ? 'text-atelier-dark border-b-2 md:border-b-0 md:border-l-2 border-atelier-dark font-semibold'
                 : 'text-atelier-gray hover:text-atelier-dark'
@@ -132,7 +132,7 @@ const Account = () => {
 
           <button
             onClick={() => setActiveTab('addresses')}
-            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-[10px] tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
+            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-sm tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
               activeTab === 'addresses'
                 ? 'text-atelier-dark border-b-2 md:border-b-0 md:border-l-2 border-atelier-dark font-semibold'
                 : 'text-atelier-gray hover:text-atelier-dark'
@@ -167,7 +167,7 @@ const Account = () => {
               {/* Readonly profile details */}
               <div className="space-y-6 pt-4 border-t border-atelier-lightgray/40">
                 <div className="space-y-1">
-                  <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">
+                  <label className="block font-mono text-xs sm:text-sm tracking-widest uppercase text-atelier-gray">
                     Full Name
                   </label>
                   <input
@@ -179,7 +179,7 @@ const Account = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">
+                  <label className="block font-mono text-xs sm:text-sm tracking-widest uppercase text-atelier-gray">
                     Phone
                   </label>
                   <input
@@ -193,7 +193,7 @@ const Account = () => {
 
                 {user.avatar && (
                   <div className="space-y-1">
-                    <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">
+                    <label className="block font-mono text-xs sm:text-sm tracking-widest uppercase text-atelier-gray">
                       Avatar URL
                     </label>
                     <input
@@ -211,7 +211,7 @@ const Account = () => {
           {/* 2. Orders History tab */}
           {activeTab === 'orders' && (
             <div className="space-y-6 animate-fade-in">
-              <h3 className="font-mono text-[10px] tracking-widest uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-3 mb-4">
+              <h3 className="font-mono text-sm tracking-widest uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-3 mb-4">
                 Order History ({mockOrders.length})
               </h3>
               
@@ -220,7 +220,7 @@ const Account = () => {
                   {mockOrders.map((order) => (
                     <div key={order.id} className="border border-atelier-lightgray p-6 bg-atelier-cream/30 space-y-4">
                       {/* Order info header */}
-                      <div className="flex flex-col sm:flex-row justify-between border-b border-atelier-lightgray/40 pb-3 font-mono text-[10px] tracking-wider uppercase text-atelier-gray gap-2">
+                      <div className="flex flex-col sm:flex-row justify-between border-b border-atelier-lightgray/40 pb-3 font-mono text-sm tracking-wider uppercase text-atelier-gray gap-2">
                         <div className="flex space-x-4">
                           <span>Order: <strong className="text-atelier-dark">{order.id}</strong></span>
                           <span>Placed: <strong className="text-atelier-dark">{order.date}</strong></span>
@@ -241,7 +241,7 @@ const Account = () => {
                           <div key={i} className="flex justify-between items-start">
                             <div>
                               <h4 className="font-serif text-sm text-atelier-dark font-medium">{item.name}</h4>
-                              <p className="font-mono text-[9px] text-atelier-gray uppercase mt-0.5">
+                              <p className="font-mono text-xs text-atelier-gray uppercase mt-0.5">
                                 Qty: {item.quantity} / Color: {item.color} {item.size && `/ Size: ${item.size}`}
                               </p>
                             </div>
@@ -268,13 +268,13 @@ const Account = () => {
           {activeTab === 'addresses' && (
             <div className="space-y-6 animate-fade-in">
               <div className="flex items-center justify-between border-b border-atelier-lightgray/40 pb-3 mb-4">
-                <h3 className="font-mono text-[10px] tracking-widest uppercase text-atelier-gray">
+                <h3 className="font-mono text-sm tracking-widest uppercase text-atelier-gray">
                   Shipping Addresses
                 </h3>
                 {!showAddAddress && (
                   <button
                     onClick={() => setShowAddAddress(true)}
-                    className="font-mono text-[9px] tracking-widest uppercase text-atelier-dark underline hover:opacity-75"
+                    className="font-mono text-xs tracking-widest uppercase text-atelier-dark underline hover:opacity-75"
                   >
                     Add new address
                   </button>
@@ -284,12 +284,12 @@ const Account = () => {
               {/* Add address form */}
               {showAddAddress && (
                 <form onSubmit={handleAddAddress} className="border border-atelier-lightgray p-6 bg-atelier-cream/30 space-y-4 max-w-md">
-                  <h4 className="font-mono text-[10px] tracking-widest uppercase text-atelier-dark font-semibold border-b border-atelier-lightgray pb-2">
+                  <h4 className="font-mono text-sm tracking-widest uppercase text-atelier-dark font-semibold border-b border-atelier-lightgray pb-2">
                     New Address
                   </h4>
                   
                   <div className="space-y-1">
-                    <label className="block text-[8px] font-mono tracking-wider text-atelier-gray uppercase">Name</label>
+                    <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">Name</label>
                     <input
                       type="text"
                       required
@@ -300,7 +300,7 @@ const Account = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-[8px] font-mono tracking-wider text-atelier-gray uppercase">Street Address</label>
+                    <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">Street Address</label>
                     <input
                       type="text"
                       required
@@ -312,7 +312,7 @@ const Account = () => {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="block text-[8px] font-mono tracking-wider text-atelier-gray uppercase">City</label>
+                      <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">City</label>
                       <input
                         type="text"
                         required
@@ -322,7 +322,7 @@ const Account = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-[8px] font-mono tracking-wider text-atelier-gray uppercase">State</label>
+                      <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">State</label>
                       <input
                         type="text"
                         required
@@ -335,7 +335,7 @@ const Account = () => {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="block text-[8px] font-mono tracking-wider text-atelier-gray uppercase">ZIP Code</label>
+                      <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">ZIP Code</label>
                       <input
                         type="text"
                         required
@@ -345,7 +345,7 @@ const Account = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-[8px] font-mono tracking-wider text-atelier-gray uppercase">Country</label>
+                      <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">Country</label>
                       <input
                         type="text"
                         required
@@ -357,7 +357,7 @@ const Account = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-[8px] font-mono tracking-wider text-atelier-gray uppercase">Phone Number</label>
+                    <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">Phone Number</label>
                     <input
                       type="text"
                       required
@@ -370,14 +370,14 @@ const Account = () => {
                   <div className="flex space-x-2 pt-2">
                     <button
                       type="submit"
-                      className="flex-grow py-2 bg-atelier-dark text-white font-mono text-[9px] tracking-widest uppercase hover:opacity-90 transition-opacity"
+                      className="flex-grow py-2 bg-atelier-dark text-white font-mono text-xs tracking-widest uppercase hover:opacity-90 transition-opacity"
                     >
                       Save Address
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowAddAddress(false)}
-                      className="py-2 px-3 border border-atelier-lightgray font-mono text-[9px] tracking-widest uppercase hover:border-atelier-dark transition-colors"
+                      className="py-2 px-3 border border-atelier-lightgray font-mono text-xs tracking-widest uppercase hover:border-atelier-dark transition-colors"
                     >
                       Cancel
                     </button>
@@ -388,7 +388,7 @@ const Account = () => {
               {/* Addresses list */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {addresses.map((address) => (
-                  <div key={address.id} className="border border-atelier-lightgray p-5 bg-atelier-cream/20 space-y-3 relative text-xs">
+                  <div key={address.id} className="border border-atelier-lightgray p-5 bg-atelier-cream/20 space-y-3 relative text-sm">
                     <div className="flex justify-between items-start">
                       <span className="font-serif font-medium text-sm">{address.name}</span>
                       {address.isDefault && (
@@ -398,10 +398,10 @@ const Account = () => {
                       )}
                     </div>
                     <div className="text-atelier-gray space-y-0.5 leading-relaxed font-light font-sans">
-                      <p>{address.street}</p>
-                      <p>{address.city}, {address.state} {address.zip}</p>
-                      <p>{address.country}</p>
-                      <p className="mt-2 font-mono text-[10px] text-atelier-dark">Phone: {address.phone}</p>
+                      <p className="text-sm">{address.street}</p>
+                      <p className="text-sm">{address.city}, {address.state} {address.zip}</p>
+                      <p className="text-sm">{address.country}</p>
+                      <p className="mt-2 font-mono text-sm text-atelier-dark">Phone: {address.phone}</p>
                     </div>
                   </div>
                 ))}
