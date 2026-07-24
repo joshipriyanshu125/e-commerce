@@ -297,7 +297,7 @@ const Home = () => {
               <img 
                 src={IMAGES.manifestoFlatlay} 
                 alt="Minimal Folded Shirt flatlay" 
-                className="h-full w-full object-contain transition-transform duration-700 ease-out hover:scale-105"
+                className="h-full w-full object-cover object-center transition-transform duration-700 ease-out hover:scale-105"
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = IMAGES.fallback
@@ -309,7 +309,7 @@ const Home = () => {
               <img 
                 src={IMAGES.manifestoHeadphones} 
                 alt="Headphones product layout" 
-                className="h-full w-full object-contain transition-transform duration-700 ease-out hover:scale-105"
+                className="h-full w-full object-cover object-center transition-transform duration-700 ease-out hover:scale-105"
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = IMAGES.fallback

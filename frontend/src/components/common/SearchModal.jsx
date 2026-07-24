@@ -41,42 +41,47 @@ const SearchModal = ({ onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-atelier-beige/98 flex flex-col px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto animate-fade-in">
-      {/* Header section with Close */}
-      <div className="max-w-4xl mx-auto w-full flex justify-end mb-12">
-        <button 
-          onClick={() => {
-            handleClearSearch()
-            onClose()
-          }}
-          className="p-2 text-atelier-dark hover:opacity-70 transition-opacity"
-          aria-label="Close search"
-        >
-          <X size={24} strokeWidth={1.5} />
-        </button>
-      </div>
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div className="relative w-full max-w-5xl bg-atelier-beige shadow-2xl rounded-[32px] overflow-hidden">
+        {/* Header section with Close */}
+        <div className="flex justify-end p-4 border-b border-atelier-lightgray/40 bg-atelier-beige">
+          <button 
+            onClick={() => {
+              handleClearSearch()
+              onClose()
+            }}
+            className="p-2 text-atelier-dark hover:opacity-70 transition-opacity"
+            aria-label="Close search"
+          >
+            <X size={24} strokeWidth={1.5} />
+          </button>
+        </div>
 
-      {/* Main Search Area */}
-      <div className="max-w-4xl mx-auto w-full flex-grow flex flex-col">
+        {/* Main Search Area */}
+        <div className="w-full min-h-[70vh] max-h-[90vh] overflow-y-auto px-6 sm:px-8 py-8">
         {/* Input field */}
-        <div className="relative border-b border-atelier-dark pb-4 flex items-center mb-10">
-          <Search size={22} className="text-atelier-gray mr-4" strokeWidth={1.5} />
-          <input
-            ref={inputRef}
-            type="text"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder="Search by product name, category, brand..."
-            className="w-full bg-transparent text-xl sm:text-2xl font-serif text-atelier-dark focus:outline-none placeholder-atelier-gray/40"
-          />
-          {searchQuery && (
-            <button 
-              onClick={handleClearSearch}
-              className="text-xs font-mono tracking-widest text-atelier-gray hover:text-atelier-dark uppercase"
-            >
-              Clear
-            </button>
-          )}
+        <div className="relative border-b border-atelier-dark pb-4 flex flex-col sm:flex-row sm:items-center gap-4 mb-10">
+          <div className="flex items-center gap-4 w-full sm:max-w-2xl">
+            <Search size={22} className="text-atelier-gray" strokeWidth={1.5} />
+            <input
+              ref={inputRef}
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Search by product name, category, brand..."
+              className="w-full bg-transparent text-xl sm:text-2xl font-serif text-atelier-dark focus:outline-none placeholder-atelier-gray/40"
+            />
+          </div>
+          <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+            {searchQuery && (
+              <button 
+                onClick={handleClearSearch}
+                className="text-xs font-mono tracking-widest text-atelier-gray hover:text-atelier-dark uppercase"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Dynamic results layout */}
@@ -159,6 +164,7 @@ const SearchModal = ({ onClose }) => {
         )}
       </div>
     </div>
+  </div>
   )
 }
 
