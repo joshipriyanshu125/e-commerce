@@ -138,7 +138,8 @@ const Home = () => {
             alt="Atelier Autumn Edition Model" 
             className="h-full w-full object-cover object-center"
             onError={(e) => {
-              e.target.style.display = 'none';
+              e.target.onerror = null
+              e.target.src = IMAGES.fallback
             }}
           />
           {/* Fallback pattern in case image doesn't load */}
@@ -192,14 +193,15 @@ const Home = () => {
         {/* Left Column: Fashion */}
         <div 
           onClick={() => navigate('/?type=fashion')}
-          className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden border-r border-atelier-lightgray/40 flex flex-col justify-end p-8 sm:p-12"
+          className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden border-r border-atelier-lightgray/40 flex flex-col justify-end p-8 sm:p-12 transition-shadow duration-300 hover:shadow-2xl"
         >
           <img 
             src={IMAGES.categoryFashion} 
             alt="Tailoring, Knitwear, Leather Goods" 
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
-              e.target.style.display = 'none';
+              e.target.onerror = null
+              e.target.src = IMAGES.fallback
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
@@ -218,14 +220,15 @@ const Home = () => {
         {/* Right Column: Electronics */}
         <div 
           onClick={() => navigate('/?type=electronics')}
-          className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden flex flex-col justify-end p-8 sm:p-12"
+          className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden flex flex-col justify-end p-8 sm:p-12 transition-shadow duration-300 hover:shadow-2xl"
         >
           <img 
             src={IMAGES.categoryElectronics} 
             alt="Audio, Phones, Computers" 
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
-              e.target.style.display = 'none';
+              e.target.onerror = null
+              e.target.src = IMAGES.fallback
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
@@ -294,9 +297,10 @@ const Home = () => {
               <img 
                 src={IMAGES.manifestoFlatlay} 
                 alt="Minimal Folded Shirt flatlay" 
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain transition-transform duration-700 ease-out hover:scale-105"
                 onError={(e) => {
-                  e.target.style.display = 'none';
+                  e.target.onerror = null
+                  e.target.src = IMAGES.fallback
                 }}
               />
             </div>
@@ -305,9 +309,10 @@ const Home = () => {
               <img 
                 src={IMAGES.manifestoHeadphones} 
                 alt="Headphones product layout" 
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain transition-transform duration-700 ease-out hover:scale-105"
                 onError={(e) => {
-                  e.target.style.display = 'none';
+                  e.target.onerror = null
+                  e.target.src = IMAGES.fallback
                 }}
               />
             </div>

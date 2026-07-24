@@ -112,13 +112,14 @@ const CartDrawer = () => {
                 {items.map((item, index) => (
                   <div key={`${item.product.id}-${item.color.name}-${item.size}`} className="py-6 flex items-start space-x-4">
                     {/* Image */}
-                    <div className="h-20 w-20 bg-atelier-lightgray flex-shrink-0 overflow-hidden">
+                    <div className="h-20 w-20 bg-atelier-lightgray flex-shrink-0 overflow-hidden rounded-md">
                       <img 
-                        src={item.product.images[0]} 
+                        src={item.product.images[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'} 
                         alt={item.product.name} 
                         className="h-full w-full object-cover"
                         onError={(e) => {
-                          e.target.style.display = 'none';
+                          e.target.onerror = null
+                          e.target.src = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
                         }}
                       />
                     </div>

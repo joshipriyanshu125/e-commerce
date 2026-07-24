@@ -18,13 +18,13 @@ const ProductCard = ({ product }) => {
 
   return (
     <div 
-      className="group flex flex-col justify-between cursor-pointer text-left"
+      className="group flex flex-col justify-between cursor-pointer text-left transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-xl"
       onClick={handleCardClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {/* Product Image Wrapper */}
-      <div className="relative aspect-square w-full bg-atelier-cream overflow-hidden mb-4 border border-atelier-lightgray/30 transition-all duration-300 group-hover:shadow-sm">
+      <div className="relative aspect-square w-full bg-atelier-cream overflow-hidden mb-4 border border-atelier-lightgray/30 transition-all duration-300 group-hover:shadow-xl">
         {/* Badges (New, Sale) */}
         {product.tag && (
           <span className="absolute top-3 left-3 bg-atelier-beige border border-atelier-dark/40 font-mono text-[10px] tracking-widest uppercase py-1 px-2.5 z-10 select-none">
@@ -34,16 +34,17 @@ const ProductCard = ({ product }) => {
 
         {/* Product image */}
         <img 
-          src={product.images[0]} 
+          src={product.images[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'}
           alt={product.name}
           className={`h-full w-full object-cover transition-transform duration-700 ease-out ${hovered ? 'scale-105' : 'scale-100'}`}
           onError={(e) => {
-            e.target.style.display = 'none';
+            e.target.onerror = null
+            e.target.src = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
           }}
         />
         
         {/* Simple hover overlay if we want to show a subtle line or button */}
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
       {/* Metadata */}

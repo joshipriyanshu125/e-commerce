@@ -120,13 +120,14 @@ const SearchModal = ({ onClose }) => {
                     className="flex items-center space-x-4 p-4 border border-atelier-lightgray/40 hover:border-atelier-dark bg-atelier-cream/40 hover:bg-atelier-cream cursor-pointer transition-all duration-300"
                   >
                     {/* Image */}
-                    <div className="h-16 w-16 bg-atelier-lightgray flex-shrink-0 overflow-hidden">
+                    <div className="h-16 w-16 bg-atelier-lightgray flex-shrink-0 overflow-hidden rounded-md">
                       <img 
-                        src={product.images[0]} 
+                        src={product.images[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'} 
                         alt={product.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         onError={(e) => {
-                          e.target.style.display = 'none';
+                          e.target.onerror = null
+                          e.target.src = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
                         }}
                       />
                     </div>

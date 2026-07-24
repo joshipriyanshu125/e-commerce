@@ -117,13 +117,14 @@ const ProductDetails = () => {
         
         {/* Left Column: Image Stack / Carousel */}
         <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-28 lg:self-start">
-          <div className="aspect-square bg-atelier-cream border border-atelier-lightgray/30 overflow-hidden relative">
+          <div className="aspect-square bg-atelier-cream border border-atelier-lightgray/30 overflow-hidden relative rounded-xl">
             <img 
-              src={selectedProduct.images[activeImageIdx] || selectedProduct.images[0]} 
+              src={selectedProduct.images[activeImageIdx] || selectedProduct.images[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'} 
               alt={selectedProduct.name} 
               className="h-full w-full object-cover"
               onError={(e) => {
-                e.target.style.display = 'none';
+                e.target.onerror = null
+                e.target.src = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
               }}
             />
           </div>
@@ -139,7 +140,15 @@ const ProductDetails = () => {
                     activeImageIdx === idx ? 'border-atelier-dark' : 'border-atelier-lightgray/40 hover:border-atelier-gray'
                   }`}
                 >
-                  <img src={img} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={img || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
+                    }}
+                  />
                 </button>
               ))}
             </div>

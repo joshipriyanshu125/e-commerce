@@ -83,10 +83,13 @@ const Cart = () => {
             <div key={`${item.product.id}-${item.color.name}-${item.size}`} className="py-8 flex items-start space-x-5">
               <Link to={`/product/${item.product.id}`} className="h-28 w-28 bg-atelier-cream border border-atelier-lightgray/30 flex-shrink-0 overflow-hidden">
                 <img
-                  src={item.product.images[0]}
+                  src={item.product.images[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'}
                   alt={item.product.name}
                   className="h-full w-full object-cover"
-                  onError={(e) => { e.target.style.display = 'none' }}
+                  onError={(e) => {
+                    e.target.onerror = null
+                    e.target.src = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
+                  }}
                 />
               </Link>
 
