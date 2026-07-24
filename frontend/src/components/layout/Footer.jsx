@@ -46,7 +46,7 @@ const Footer = () => {
                 />
                 <button
                   type="submit"
-                  className="flex-shrink-0 font-mono text-[10px] tracking-[0.15em] uppercase text-atelier-dark font-medium hover:opacity-75 transition-opacity"
+                  className="flex-shrink-0 font-mono text-sm tracking-[0.15em] uppercase text-atelier-dark font-medium hover:opacity-75 transition-opacity"
                 >
                   Subscribe &rarr;
                 </button>
@@ -59,7 +59,7 @@ const Footer = () => {
         <div className="hidden md:block md:col-span-2"></div>
 
         {/* Links Navigation Columns (4 cols total) */}
-        <div className="md:col-span-4 grid grid-cols-2 gap-8 text-[11px] font-mono tracking-widest uppercase">
+        <div className="md:col-span-4 grid grid-cols-2 gap-8 text-sm font-mono tracking-widest uppercase">
           
           {/* Shop links */}
           <div className="space-y-4">

@@ -72,9 +72,9 @@ const Checkout = () => {
           </div>
           
           <div className="space-y-3">
-            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block">
-              Payment Successful
-            </span>
+            <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block">
+                Payment Successful
+              </span>
             <h1 className="font-serif text-3xl text-atelier-dark font-medium leading-tight">
               Thank you for your order.
             </h1>
@@ -106,7 +106,7 @@ const Checkout = () => {
       {isProcessing && (
         <div className="fixed inset-0 bg-atelier-beige/80 backdrop-blur-xs z-50 flex flex-col items-center justify-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-atelier-dark border-r-2" />
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-atelier-dark font-medium">
+          <p className="font-mono text-sm uppercase tracking-[0.25em] text-atelier-dark font-medium">
             Processing Secure Payment...
           </p>
         </div>
@@ -115,14 +115,14 @@ const Checkout = () => {
       {/* Title block */}
       <div className="border-b border-atelier-lightgray/50 pb-6 mb-10 flex items-center justify-between">
         <div>
-          <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block mb-1">
+          <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block mb-1">
             Secure Gateway
           </span>
           <h1 className="font-serif text-3xl text-atelier-dark font-semibold">
             Checkout
           </h1>
         </div>
-        <Link to="/" className="text-atelier-gray hover:text-atelier-dark flex items-center gap-1 text-[10px] font-mono tracking-widest uppercase">
+        <Link to="/" className="text-atelier-gray hover:text-atelier-dark flex items-center gap-1 text-sm font-mono tracking-widest uppercase">
           <ArrowLeft size={12} />
           <span>Cancel</span>
         </Link>
@@ -140,7 +140,7 @@ const Checkout = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">First Name</label>
+                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">First Name</label>
                 <input
                   type="text"
                   required
@@ -150,7 +150,7 @@ const Checkout = () => {
                 />
               </div>
               <div className="space-y-1">
-                <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">Last Name</label>
+                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Last Name</label>
                 <input
                   type="text"
                   required
@@ -162,7 +162,7 @@ const Checkout = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">Email Address</label>
+              <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Email Address</label>
               <input
                 type="email"
                 required
@@ -174,7 +174,7 @@ const Checkout = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">Street Address</label>
+              <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Street Address</label>
               <input
                 type="text"
                 required
@@ -187,7 +187,7 @@ const Checkout = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">City</label>
+                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">City</label>
                 <input
                   type="text"
                   required
@@ -197,7 +197,7 @@ const Checkout = () => {
                 />
               </div>
               <div className="space-y-1">
-                <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">ZIP / Postal Code</label>
+                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">ZIP / Postal Code</label>
                 <input
                   type="text"
                   required
@@ -209,7 +209,7 @@ const Checkout = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">Phone Number</label>
+              <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Phone Number</label>
               <input
                 type="text"
                 required
@@ -226,7 +226,7 @@ const Checkout = () => {
               <h2 className="font-serif text-xl text-atelier-dark font-medium">
                 2. Payment Details
               </h2>
-              <div className="flex items-center space-x-1.5 text-atelier-gray text-[9px] font-mono tracking-widest uppercase">
+              <div className="flex items-center space-x-1.5 text-atelier-gray text-xs font-mono tracking-widest uppercase">
                 <Lock size={10} />
                 <span>SSL Encrypted</span>
               </div>
@@ -238,15 +238,15 @@ const Checkout = () => {
                   <CreditCard size={14} className="text-atelier-gray" /> Credit Card (Stripe Sandbox)
                 </span>
                 <div className="flex space-x-1">
-                  <span className="h-5 w-8 bg-atelier-beige border border-atelier-lightgray/60 rounded flex items-center justify-center text-[7px] font-bold font-mono tracking-tighter">VISA</span>
-                  <span className="h-5 w-8 bg-atelier-beige border border-atelier-lightgray/60 rounded flex items-center justify-center text-[7px] font-bold font-mono tracking-tighter">MC</span>
-                  <span className="h-5 w-8 bg-atelier-beige border border-atelier-lightgray/60 rounded flex items-center justify-center text-[7px] font-bold font-mono tracking-tighter">AMEX</span>
+                  <span className="h-5 w-8 bg-atelier-beige border border-atelier-lightgray/60 rounded flex items-center justify-center text-xs font-bold font-mono tracking-tighter">VISA</span>
+                  <span className="h-5 w-8 bg-atelier-beige border border-atelier-lightgray/60 rounded flex items-center justify-center text-xs font-bold font-mono tracking-tighter">MC</span>
+                  <span className="h-5 w-8 bg-atelier-beige border border-atelier-lightgray/60 rounded flex items-center justify-center text-xs font-bold font-mono tracking-tighter">AMEX</span>
                 </div>
               </div>
 
               {/* Cardholder name */}
               <div className="space-y-1">
-                <label className="block font-mono text-[8px] tracking-widest uppercase text-atelier-gray">Cardholder Name</label>
+                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Cardholder Name</label>
                 <input
                   type="text"
                   required
@@ -259,7 +259,7 @@ const Checkout = () => {
 
               {/* Card Number */}
               <div className="space-y-1">
-                <label className="block font-mono text-[8px] tracking-widest uppercase text-atelier-gray">Card Number</label>
+                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Card Number</label>
                 <input
                   type="text"
                   required
@@ -274,7 +274,7 @@ const Checkout = () => {
               <div className="grid grid-cols-2 gap-4">
                 {/* Expiry Date */}
                 <div className="space-y-1">
-                  <label className="block font-mono text-[8px] tracking-widest uppercase text-atelier-gray">Expiration Date</label>
+                  <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Expiration Date</label>
                   <input
                     type="text"
                     required
@@ -287,7 +287,7 @@ const Checkout = () => {
                 </div>
                 {/* CVC Code */}
                 <div className="space-y-1">
-                  <label className="block font-mono text-[8px] tracking-widest uppercase text-atelier-gray">CVC Code</label>
+                  <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">CVC Code</label>
                   <input
                     type="password"
                     required
@@ -327,7 +327,7 @@ const Checkout = () => {
                   </div>
                   <div className="flex-grow text-xs leading-tight">
                     <h3 className="font-serif text-atelier-dark font-medium line-clamp-1">{item.product.name}</h3>
-                    <p className="font-mono text-[8px] text-atelier-gray uppercase mt-0.5">
+                    <p className="font-mono text-xs text-atelier-gray uppercase mt-0.5">
                       Qty: {item.quantity} / Color: {item.color.name}
                     </p>
                   </div>
@@ -369,7 +369,7 @@ const Checkout = () => {
                 Place Order (${finalTotal})
               </button>
               
-              <div className="flex items-center justify-center space-x-2 text-[9px] font-mono tracking-widest text-atelier-gray uppercase">
+              <div className="flex items-center justify-center space-x-2 text-xs font-mono tracking-widest text-atelier-gray uppercase">
                 <Shield size={12} />
                 <span>Secure Payments &bull; No actual billing</span>
               </div>

@@ -128,7 +128,7 @@ const CartDrawer = () => {
                     <div className="flex-grow flex flex-col justify-between h-20">
                       <div>
                         <div className="flex items-start justify-between">
-                          <span className="font-mono text-[8px] tracking-widest text-atelier-gray uppercase block mb-0.5">
+                          <span className="font-mono text-xs tracking-widest text-atelier-gray uppercase block mb-0.5">
                             {item.product.category}
                           </span>
                           <span className="text-xs text-atelier-dark font-mono font-medium">
@@ -138,7 +138,7 @@ const CartDrawer = () => {
                         <h3 className="font-serif text-sm text-atelier-dark font-medium leading-tight line-clamp-1">
                           {item.product.name}
                         </h3>
-                        <div className="flex items-center space-x-3 mt-1 font-mono text-[9px] text-atelier-gray uppercase">
+                        <div className="flex items-center space-x-3 mt-1 font-mono text-xs text-atelier-gray uppercase">
                           <div className="flex items-center space-x-1">
                             <span 
                               className="h-2 w-2 rounded-full inline-block" 
@@ -190,29 +190,29 @@ const CartDrawer = () => {
           {items.length > 0 && (
             <div className="px-6 py-6 bg-atelier-cream border-t border-atelier-lightgray flex flex-col space-y-6">
               {/* Promo Code Form */}
-              <form onSubmit={handlePromoSubmit} className="flex space-x-2">
+                  <form onSubmit={handlePromoSubmit} className="flex space-x-2">
                 <div className="relative flex-grow">
                   <input
                     type="text"
                     placeholder="PROMO CODE (e.g. ATELIER15)"
                     value={promoInput}
                     onChange={(e) => setPromoInput(e.target.value)}
-                    className="w-full bg-atelier-beige border border-atelier-lightgray text-[10px] font-mono tracking-wider py-2.5 pl-3 pr-8 focus:outline-none focus:border-atelier-dark uppercase"
+                        className="w-full bg-atelier-beige border border-atelier-lightgray text-sm font-mono tracking-wider py-2.5 pl-3 pr-8 focus:outline-none focus:border-atelier-dark uppercase"
                   />
                   <Tag size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-atelier-gray" />
                 </div>
                 <button
-                  type="submit"
-                  className="px-4 py-2 border border-atelier-dark text-[10px] tracking-wider uppercase font-mono bg-atelier-dark text-white hover:bg-opacity-95"
+                      type="submit"
+                      className="px-4 py-2 border border-atelier-dark text-sm tracking-wider uppercase font-mono bg-atelier-dark text-white hover:bg-opacity-95"
                 >
                   Apply
                 </button>
               </form>
               
-              {promoError && <p className="text-[9px] font-mono uppercase text-red-600 tracking-wider -mt-4">{promoError}</p>}
-              {promoSuccess && <p className="text-[9px] font-mono uppercase text-atelier-accent tracking-wider -mt-4">{promoSuccess}</p>}
+              {promoError && <p className="text-xs font-mono uppercase text-red-600 tracking-wider -mt-4">{promoError}</p>}
+              {promoSuccess && <p className="text-xs font-mono uppercase text-atelier-accent tracking-wider -mt-4">{promoSuccess}</p>}
               {discountPercent > 0 && (
-                <div className="flex items-center justify-between text-[9px] font-mono uppercase text-atelier-accent tracking-wider -mt-2">
+                <div className="flex items-center justify-between text-xs font-mono uppercase text-atelier-accent tracking-wider -mt-2">
                   <span>Discount Active:</span>
                   <span>{discountPercent}% OFF</span>
                 </div>

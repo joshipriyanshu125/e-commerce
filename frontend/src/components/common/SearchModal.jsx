@@ -112,7 +112,7 @@ const SearchModal = ({ onClose }) => {
           </div>
         ) : (
           <div className="space-y-6">
-            <h4 className="font-mono text-[9px] tracking-[0.2em] uppercase text-atelier-gray">
+            <h4 className="font-mono text-sm tracking-[0.2em] uppercase text-atelier-gray">
               Results ({filteredProducts.length})
             </h4>
 
@@ -138,7 +138,7 @@ const SearchModal = ({ onClose }) => {
                     </div>
                     {/* Metadata */}
                     <div className="flex-grow">
-                      <span className="font-mono text-[10px] tracking-widest text-atelier-gray uppercase block mb-0.5">
+                      <span className="font-mono text-xs tracking-widest text-atelier-gray uppercase block mb-0.5">
                         {product.category}
                       </span>
                       <h3 className="font-serif text-sm text-atelier-dark font-medium leading-tight">

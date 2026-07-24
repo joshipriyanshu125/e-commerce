@@ -53,7 +53,7 @@ const Register = () => {
         <div className="space-y-4">
           <h1 className="font-serif text-3xl tracking-wide text-atelier-dark">Atelier</h1>
           <div className="space-y-1">
-            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block">
+            <span className="font-mono text-xs tracking-[0.25em] uppercase text-atelier-gray block">
               Join the Studio
             </span>
             <h2 className="font-serif text-3xl text-atelier-dark font-medium leading-tight">
@@ -65,14 +65,14 @@ const Register = () => {
         {/* Inputs form */}
         <form onSubmit={handleSubmit} className="space-y-6 text-left">
           {error && (
-            <p className="text-[10px] font-mono uppercase text-red-600 tracking-wider text-center">
+            <p className="text-sm font-mono uppercase text-red-600 tracking-wider text-center">
               {error}
             </p>
           )}
 
           {/* Full Name */}
           <div className="space-y-1">
-            <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">
+            <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">
               Full Name
             </label>
             <input
@@ -87,7 +87,7 @@ const Register = () => {
 
           {/* Email */}
           <div className="space-y-1">
-            <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">
+            <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">
               Email
             </label>
             <input
@@ -102,7 +102,7 @@ const Register = () => {
 
           {/* Password */}
           <div className="space-y-1">
-            <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">
+            <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">
               Password
             </label>
             <input
@@ -126,7 +126,7 @@ const Register = () => {
                 className="h-4 w-4 rounded border-atelier-lightgray text-atelier-dark focus:ring-atelier-dark bg-transparent"
               />
             </div>
-            <div className="ml-3 text-[10px] leading-tight font-mono uppercase text-atelier-gray">
+            <div className="ml-3 text-sm leading-tight font-mono uppercase text-atelier-gray">
               <label htmlFor="agree" className="cursor-pointer">
                 I agree to the{' '}
                 <a href="/terms" className="text-atelier-dark underline">
@@ -151,7 +151,7 @@ const Register = () => {
         </form>
 
         {/* Login fallback */}
-        <div className="pt-4 font-mono text-[9px] tracking-widest text-atelier-gray uppercase">
+        <div className="pt-4 font-mono text-xs tracking-widest text-atelier-gray uppercase">
           Already have an account?{' '}
           <Link to="/login" className="text-atelier-dark underline hover:opacity-75">
             sign in here

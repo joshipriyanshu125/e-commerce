@@ -8,6 +8,11 @@
   --background-end-rgb: 255, 255, 255;
 }
 
+/* Slightly increase global root font-size so rem-based utilities read larger */
+html {
+  font-size: 112.5%; /* 16px -> 18px equivalent */
+}
+
 body {
   @apply antialiased text-atelier-dark bg-atelier-beige font-sans selection:bg-atelier-accent selection:text-white;
 }
@@ -44,10 +49,10 @@ body {
 
 @layer components {
   .btn-atelier-dark {
-    @apply px-6 py-3 bg-atelier-dark text-white hover:bg-opacity-90 transition-all duration-300 font-mono text-[10px] tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2;
+    @apply px-6 py-3 bg-atelier-dark text-white hover:bg-opacity-90 transition-all duration-300 font-mono text-sm tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2;
   }
   .btn-atelier-outline {
-    @apply px-6 py-3 border border-atelier-dark text-atelier-dark hover:bg-atelier-dark hover:text-white transition-all duration-300 font-mono text-[10px] tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2;
+    @apply px-6 py-3 border border-atelier-dark text-atelier-dark hover:bg-atelier-dark hover:text-white transition-all duration-300 font-mono text-sm tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2;
   }
   .input-atelier {
     @apply w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-3 px-1 text-sm text-atelier-dark placeholder-atelier-gray/30 focus:outline-none transition-colors;

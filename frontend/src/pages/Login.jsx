@@ -67,7 +67,7 @@ const Login = () => {
         <div className="space-y-4">
           <h1 className="font-serif text-3xl tracking-wide text-atelier-dark">Atelier</h1>
           <div className="space-y-1">
-            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block">
+            <span className="font-mono text-xs tracking-[0.25em] uppercase text-atelier-gray block">
               Welcome Back
             </span>
             <h2 className="font-serif text-3xl text-atelier-dark font-medium leading-tight">
@@ -81,7 +81,7 @@ const Login = () => {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-3.5 border border-atelier-dark bg-transparent text-atelier-dark hover:bg-atelier-dark hover:text-white transition-all duration-300 font-mono text-[10px] tracking-[0.15em] uppercase font-medium flex items-center justify-center gap-3"
+            className="w-full py-3.5 border border-atelier-dark bg-transparent text-atelier-dark hover:bg-atelier-dark hover:text-white transition-all duration-300 font-mono text-sm tracking-[0.15em] uppercase font-medium flex items-center justify-center gap-3"
           >
             {/* Google G logo */}
             <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -108,7 +108,7 @@ const Login = () => {
           {/* Divider */}
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-atelier-lightgray"></div>
-            <span className="flex-shrink mx-4 font-mono text-[9px] tracking-widest text-atelier-gray">OR</span>
+            <span className="flex-shrink mx-4 font-mono text-xs tracking-widest text-atelier-gray">OR</span>
             <div className="flex-grow border-t border-atelier-lightgray"></div>
           </div>
         </div>
@@ -116,14 +116,14 @@ const Login = () => {
         {/* Form Inputs */}
         <form onSubmit={handleSubmit} className="space-y-6 text-left">
           {error && (
-            <p className="text-[10px] font-mono uppercase text-red-600 tracking-wider text-center">
+            <p className="text-sm font-mono uppercase text-red-600 tracking-wider text-center">
               {error}
             </p>
           )}
 
           {/* Email */}
           <div className="space-y-1">
-            <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">
+            <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">
               Email
             </label>
             <input
@@ -139,10 +139,10 @@ const Login = () => {
           {/* Password */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="block font-mono text-[9px] tracking-widest uppercase text-atelier-gray">
+              <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">
                 Password
               </label>
-              <Link to="/forgot-password" className="text-[9px] font-mono tracking-widest uppercase text-atelier-gray hover:text-atelier-dark underline">
+              <Link to="/forgot-password" className="text-xs font-mono tracking-widest uppercase text-atelier-gray hover:text-atelier-dark underline">
                 Forgot?
               </Link>
             </div>
@@ -167,7 +167,7 @@ const Login = () => {
         </form>
 
         {/* Footer options */}
-        <div className="pt-4 font-mono text-[9px] tracking-widest text-atelier-gray uppercase">
+        <div className="pt-4 font-mono text-xs tracking-widest text-atelier-gray uppercase">
           New to Atelier?{' '}
           <Link to="/register" className="text-atelier-dark underline hover:opacity-75">
             create a new account

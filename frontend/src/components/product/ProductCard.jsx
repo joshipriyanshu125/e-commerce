@@ -27,7 +27,7 @@ const ProductCard = ({ product }) => {
       <div className="relative aspect-square w-full bg-atelier-cream overflow-hidden mb-4 border border-atelier-lightgray/30 transition-all duration-300 group-hover:shadow-xl">
         {/* Badges (New, Sale) */}
         {product.tag && (
-          <span className="absolute top-3 left-3 bg-atelier-beige border border-atelier-dark/40 font-mono text-[10px] tracking-widest uppercase py-1 px-2.5 z-10 select-none">
+          <span className="absolute top-3 left-3 bg-atelier-beige border border-atelier-dark/40 font-mono text-sm tracking-widest uppercase py-1 px-2.5 z-10 select-none">
             {product.tag}
           </span>
         )}

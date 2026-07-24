@@ -57,7 +57,7 @@ const Home = () => {
         {/* Breadcrumb / Title */}
         <div className="border-b border-atelier-lightgray/60 pb-6 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
-            <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-atelier-gray block mb-1">
+            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-atelier-gray block mb-1">
               Collection
             </span>
             <h1 className="font-serif text-4xl capitalize text-atelier-dark font-semibold">
@@ -66,7 +66,7 @@ const Home = () => {
           </div>
 
           {/* Sorting / Controls */}
-          <div className="flex items-center space-x-4 font-mono text-[10px] uppercase tracking-wider">
+          <div className="flex items-center space-x-4 font-mono text-sm uppercase tracking-wider">
             <span className="flex items-center text-atelier-gray">
               <SlidersHorizontal size={12} className="mr-1.5" /> Filter & Sort
             </span>
@@ -86,7 +86,7 @@ const Home = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Sidebar categories filter */}
           <div className="lg:col-span-3">
-            <h3 className="font-mono text-[9px] tracking-[0.2em] uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-3 mb-4">
+            <h3 className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-3 mb-4">
               Categories
             </h3>
             <ul className="space-y-3 font-serif text-base text-atelier-dark">
@@ -273,7 +273,7 @@ const Home = () => {
           
           {/* Left copy column */}
           <div className="lg:col-span-5 space-y-8">
-            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-white/60 block">
+            <span className="font-mono text-xs tracking-[0.25em] uppercase text-white/60 block">
               Manifesto &mdash; No. 04
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl leading-tight font-medium">
@@ -284,7 +284,7 @@ const Home = () => {
             </p>
             <button 
               onClick={() => navigate('/journal')}
-              className="px-6 py-3 border border-white text-white hover:bg-white hover:text-atelier-dark transition-all duration-300 font-mono text-[10px] tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2"
+              className="px-6 py-3 border border-white text-white hover:bg-white hover:text-atelier-dark transition-all duration-300 font-mono text-sm tracking-[0.2em] uppercase font-medium flex items-center justify-center gap-2"
             >
               <span>Read the journal &rarr;</span>
             </button>

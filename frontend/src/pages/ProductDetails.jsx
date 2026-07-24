@@ -104,7 +104,7 @@ const ProductDetails = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in font-sans">
       
       {/* Breadcrumbs */}
-      <nav className="text-[10px] font-mono tracking-widest uppercase text-atelier-gray mb-10 flex flex-wrap items-center gap-1.5">
+      <nav className="text-sm font-mono tracking-widest uppercase text-atelier-gray mb-10 flex flex-wrap items-center gap-1.5">
         <Link to="/" className="hover:text-atelier-dark">Home</Link>
         <span>/</span>
         <Link to={`/?type=${selectedProduct.type}`} className="hover:text-atelier-dark capitalize">{selectedProduct.type}</Link>
@@ -160,7 +160,7 @@ const ProductDetails = () => {
           
           {/* Header metadata */}
           <div className="space-y-3">
-            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block">
+            <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block">
               {selectedProduct.category}
             </span>
             <h1 className="font-serif text-3xl sm:text-4xl text-atelier-dark font-medium leading-tight">
@@ -203,7 +203,7 @@ const ProductDetails = () => {
           {/* Color Selector */}
           {selectedColor && (
             <div className="space-y-3">
-              <h3 className="font-mono text-[10px] tracking-widest uppercase text-atelier-gray">
+              <h3 className="font-mono text-sm tracking-widest uppercase text-atelier-gray">
                 Color: <span className="text-atelier-dark font-medium">{selectedColor.name}</span>
               </h3>
               <div className="flex items-center space-x-2">
@@ -228,10 +228,10 @@ const ProductDetails = () => {
           {selectedProduct.sizes && selectedProduct.sizes[0] !== 'One Size' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-[10px] tracking-widest uppercase text-atelier-gray">
+                <h3 className="font-mono text-sm tracking-widest uppercase text-atelier-gray">
                   Select Size
                 </h3>
-                <button className="text-[10px] font-mono tracking-widest uppercase text-atelier-gray hover:text-atelier-dark underline">
+                <button className="text-sm font-mono tracking-widest uppercase text-atelier-gray hover:text-atelier-dark underline">
                   Size Guide
                 </button>
               </div>
@@ -240,7 +240,7 @@ const ProductDetails = () => {
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`px-4 py-2 border font-mono text-[10px] tracking-wider uppercase transition-all duration-200 ${
+                    className={`px-4 py-2 border font-mono text-sm tracking-wider uppercase transition-all duration-200 ${
                       selectedSize === size 
                         ? 'border-atelier-dark bg-atelier-dark text-white font-semibold' 
                         : 'border-atelier-lightgray bg-transparent text-atelier-dark hover:border-atelier-dark'
@@ -283,7 +283,7 @@ const ProductDetails = () => {
           </div>
 
           {/* Quality highlights */}
-          <div className="grid grid-cols-3 gap-4 border-y border-atelier-lightgray/40 py-6 text-center text-atelier-gray text-[10px] font-mono tracking-widest uppercase">
+          <div className="grid grid-cols-3 gap-4 border-y border-atelier-lightgray/40 py-6 text-center text-atelier-gray text-sm font-mono tracking-widest uppercase">
             <div className="flex flex-col items-center space-y-1">
               <ShieldCheck size={16} strokeWidth={1.5} className="text-atelier-dark" />
               <span>Genuine Goods</span>
@@ -372,12 +372,12 @@ const ProductDetails = () => {
               </button>
             ) : (
               <form onSubmit={handleReviewSubmit} className="space-y-4 border border-atelier-lightgray p-6 bg-atelier-cream/40">
-                <h4 className="font-mono text-[10px] tracking-widest uppercase text-atelier-dark font-semibold border-b border-atelier-lightgray pb-2">
+                <h4 className="font-mono text-sm tracking-widest uppercase text-atelier-dark font-semibold border-b border-atelier-lightgray pb-2">
                   New Review
                 </h4>
                 
                 <div className="space-y-1">
-                  <label className="block text-[9px] font-mono tracking-wider text-atelier-gray uppercase">
+                  <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">
                     Your Name
                   </label>
                   <input
@@ -390,7 +390,7 @@ const ProductDetails = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-[9px] font-mono tracking-wider text-atelier-gray uppercase">
+                  <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">
                     Rating
                   </label>
                   <select
@@ -407,7 +407,7 @@ const ProductDetails = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-[9px] font-mono tracking-wider text-atelier-gray uppercase">
+                  <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">
                     Comments
                   </label>
                   <textarea
@@ -422,14 +422,14 @@ const ProductDetails = () => {
                 <div className="flex space-x-2 pt-2">
                   <button
                     type="submit"
-                    className="flex-grow py-2.5 bg-atelier-dark text-white font-mono text-[9px] tracking-widest uppercase hover:opacity-90 transition-opacity"
+                    className="flex-grow py-2.5 bg-atelier-dark text-white font-mono text-xs tracking-widest uppercase hover:opacity-90 transition-opacity"
                   >
                     Post Review
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsAddingReview(false)}
-                    className="py-2.5 px-4 border border-atelier-lightgray font-mono text-[9px] tracking-widest uppercase hover:border-atelier-dark transition-colors"
+                    className="py-2.5 px-4 border border-atelier-lightgray font-mono text-xs tracking-widest uppercase hover:border-atelier-dark transition-colors"
                   >
                     Cancel
                   </button>
@@ -447,7 +447,7 @@ const ProductDetails = () => {
                     <span className="font-mono text-xs text-atelier-dark font-semibold">
                       {review.name}
                     </span>
-                    <span className="font-mono text-[10px] text-atelier-gray">
+                    <span className="font-mono text-sm text-atelier-gray">
                       {review.date}
                     </span>
                   </div>

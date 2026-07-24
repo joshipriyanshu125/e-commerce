@@ -53,7 +53,7 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center animate-fade-in font-sans">
-        <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block mb-2">
+        <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block mb-2">
           Your Bag
         </span>
         <h1 className="font-serif text-3xl text-atelier-dark font-semibold mb-4">Nothing here yet</h1>
@@ -68,7 +68,7 @@ const Cart = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in font-sans">
       <div className="border-b border-atelier-lightgray/50 pb-6 mb-10">
-        <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block mb-1">
+        <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block mb-1">
           Shopping Bag
         </span>
         <h1 className="font-serif text-3xl text-atelier-dark font-semibold">
@@ -96,13 +96,13 @@ const Cart = () => {
               <div className="flex-grow space-y-4">
                 <div className="flex justify-between items-start gap-4">
                   <div>
-                    <span className="font-mono text-[8px] tracking-widest text-atelier-gray uppercase block mb-1">
+                    <span className="font-mono text-xs tracking-widest text-atelier-gray uppercase block mb-1">
                       {item.product.category}
                     </span>
                     <Link to={`/product/${item.product.id}`} className="font-serif text-lg text-atelier-dark font-medium hover:text-atelier-accent transition-colors">
                       {item.product.name}
                     </Link>
-                    <div className="flex items-center space-x-3 mt-2 font-mono text-[9px] text-atelier-gray uppercase">
+                    <div className="flex items-center space-x-3 mt-2 font-mono text-xs text-atelier-gray uppercase">
                       <div className="flex items-center space-x-1">
                         <span className="h-2.5 w-2.5 rounded-full inline-block" style={{ backgroundColor: item.color.hex }} />
                         <span>{item.color.name}</span>
@@ -135,7 +135,7 @@ const Cart = () => {
                   </div>
                   <button
                     onClick={() => handleRemove(item.product.id, item.color.name, item.size)}
-                    className="text-atelier-gray hover:text-red-700 transition-colors flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider"
+                    className="text-atelier-gray hover:text-red-700 transition-colors flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider"
                   >
                     <Trash2 size={14} strokeWidth={1.5} />
                     Remove
@@ -160,17 +160,16 @@ const Cart = () => {
                   placeholder="PROMO CODE"
                   value={promoInput}
                   onChange={(e) => setPromoInput(e.target.value)}
-                  className="w-full bg-atelier-beige border border-atelier-lightgray text-[10px] font-mono tracking-wider py-2.5 pl-3 pr-8 focus:outline-none focus:border-atelier-dark uppercase"
+                  className="w-full bg-atelier-beige border border-atelier-lightgray text-sm font-mono tracking-wider py-2.5 pl-3 pr-8 focus:outline-none focus:border-atelier-dark uppercase"
                 />
                 <Tag size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-atelier-gray" />
               </div>
-              <button type="submit" className="px-4 py-2 border border-atelier-dark text-[10px] tracking-wider uppercase font-mono bg-atelier-dark text-white">
+              <button type="submit" className="px-4 py-2 border border-atelier-dark text-sm tracking-wider uppercase font-mono bg-atelier-dark text-white">
                 Apply
               </button>
             </form>
-
-            {promoError && <p className="text-[9px] font-mono uppercase text-red-600 tracking-wider">{promoError}</p>}
-            {promoSuccess && <p className="text-[9px] font-mono uppercase text-atelier-accent tracking-wider">{promoSuccess}</p>}
+            {promoError && <p className="text-xs font-mono uppercase text-red-600 tracking-wider">{promoError}</p>}
+            {promoSuccess && <p className="text-xs font-mono uppercase text-atelier-accent tracking-wider">{promoSuccess}</p>}
 
             <div className="space-y-2 text-xs font-mono tracking-wider text-atelier-gray uppercase">
               <div className="flex justify-between">
@@ -198,7 +197,7 @@ const Cart = () => {
               <ArrowRight size={12} />
             </button>
 
-            <Link to="/" className="block text-center font-mono text-[9px] tracking-widest uppercase text-atelier-gray hover:text-atelier-dark transition-colors">
+            <Link to="/" className="block text-center font-mono text-xs tracking-widest uppercase text-atelier-gray hover:text-atelier-dark transition-colors">
               Continue Shopping
             </Link>
           </div>

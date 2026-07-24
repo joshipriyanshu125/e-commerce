@@ -392,7 +392,7 @@ const Account = () => {
                     <div className="flex justify-between items-start">
                       <span className="font-serif font-medium text-sm">{address.name}</span>
                       {address.isDefault && (
-                        <span className="font-mono text-[7px] tracking-widest uppercase px-1.5 py-0.5 border border-atelier-accent text-atelier-accent font-semibold">
+                        <span className="font-mono text-xs tracking-widest uppercase px-1.5 py-0.5 border border-atelier-accent text-atelier-accent font-semibold">
                           Default
                         </span>
                       )}
