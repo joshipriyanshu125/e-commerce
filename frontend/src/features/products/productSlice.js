@@ -87,10 +87,10 @@ const mockProducts = [
     id: 'automatic-watch',
     name: 'Noir Automatic Watch',
     category: 'Accessories',
-    type: 'electronics',
+    type: 'fashion',
     price: 395,
     rating: 4.9,
-    description: 'An elegant timekeeper combining mechanical precision with minimalist aesthetics. Driven by an automatic self-winding movement with 40-hour power reserve, visible through the exhibition case back.',
+    description: 'An elegant timekeeper combining refined styling with minimalist aesthetics. Designed to complement modern wardrobes with a luxurious automatic movement.',
     details: [
       '38mm Case in sandblasted matte black stainless steel',
       'Japanese automatic caliber movement (21 jewels)',
@@ -159,27 +159,27 @@ const mockProducts = [
     reviews: []
   },
   {
-    id: 'pro-phone',
-    name: 'Slate Pro Phone',
-    category: 'Phones',
-    type: 'electronics',
-    price: 899,
+    id: 'leather-phone-sleeve',
+    name: 'Leather Phone Sleeve',
+    category: 'Accessories',
+    type: 'fashion',
+    price: 129,
     rating: 4.9,
     tag: 'NEW',
-    description: 'A beautiful culmination of industrial design and state-of-the-art tech. Featuring a matte-textured glass back, a responsive LTPO display, and our most advanced dual-lens camera system.',
+    description: 'A luxurious leather sleeve crafted to protect your essentials with a refined finish. Designed to fit modern devices while keeping the look clean and polished.',
     details: [
-      '6.2-inch LTPO OLED screen (1-120Hz dynamic refresh)',
-      'Dual 50MP camera (Wide + Ultra-wide) with hybrid OIS',
-      'Chassis in aerospace-grade matte black aluminum',
-      '256GB / 512GB High-speed internal storage',
-      'All-day battery with 30W wireless charging'
+      'Full-grain leather exterior',
+      'Soft microfiber interior lining',
+      'Slim fit for modern devices',
+      'Magnetic closure with polished hardware',
+      'Hand-stitched in Italy'
     ],
     colors: [
-      { name: 'Matte Slate', hex: '#2A2B2D' },
-      { name: 'Paper White', hex: '#FAF9F6' }
+      { name: 'Noir', hex: '#1C1C1C' },
+      { name: 'Cognac', hex: '#825633' }
     ],
-    sizes: ['256GB', '512GB'],
-    images: [IMAGES.phone],
+    sizes: ['One Size'],
+    images: [IMAGES.phoneCase],
     reviews: [
       { id: 1, name: 'Devon P.', rating: 5, comment: 'The design is so clean. It feels like a piece of art in hand. No branding clutter, clean OS, and beautiful photos.', date: '2026-07-21' }
     ]
@@ -208,26 +208,26 @@ const mockProducts = [
     reviews: []
   },
   {
-    id: 'headphones',
-    name: 'Acoustic Over-Ear Headphones',
-    category: 'Audio',
-    type: 'electronics',
-    price: 350,
+    id: 'wool-scarf',
+    name: 'Wool Knit Scarf',
+    category: 'Accessories',
+    type: 'fashion',
+    price: 120,
     rating: 4.8,
-    description: 'Immersive sound, quietly designed. Active noise-canceling headphones crafted with memory foam earcups covered in premium lambskin leather and brushed aluminum sliders. Up to 35 hours of pure audio.',
+    description: 'A soft wool scarf with timeless texture and volume. Crafted to keep you warm while elevating any autumn or winter outfit.',
     details: [
-      '40mm custom electro-dynamic drivers',
-      'Advanced hybrid Active Noise Cancellation (ANC)',
-      'Bluetooth 5.2 with aptX Adaptive codecs',
-      'Lambskin leather and memory foam cushions',
-      '35-hour playback with ANC active'
+      '100% premium wool knit',
+      'Large oblong shape for versatile styling',
+      'Soft brushed finish',
+      'Hand-finished edges',
+      'Designed for everyday warmth'
     ],
     colors: [
-      { name: 'Charcoal Black', hex: '#1F1F1F' },
-      { name: 'Sand Gold', hex: '#D7C7B7' }
+      { name: 'Charcoal', hex: '#2F2F2F' },
+      { name: 'Sand', hex: '#D7C7B7' }
     ],
-    sizes: ['Standard'],
-    images: [IMAGES.categoryElectronics, IMAGES.manifestoHeadphones],
+    sizes: ['One Size'],
+    images: [IMAGES.scarf, IMAGES.manifestoHeadphones],
     reviews: [
       { id: 1, name: 'Lucas W.', rating: 5, comment: 'Quiet is right. The ANC blocks out construction noise completely. Plus, it looks like a design item instead of cheap plastic.', date: '2026-07-09' }
     ]

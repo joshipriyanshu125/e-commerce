@@ -11,7 +11,7 @@ const Home = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   
-  const typeParam = searchParams.get('type') // 'fashion' or 'electronics'
+  const typeParam = searchParams.get('type') // 'fashion'
   
   const { filteredProducts, products, selectedType, selectedCategory, sortOption } = useSelector(state => state.products)
 
@@ -47,8 +47,8 @@ const Home = () => {
   // Categories list based on active type
   const categories = isCatalogueView
     ? typeParam === 'fashion'
-      ? ['all', 'Outerwear', 'Footwear', 'Bags', 'Tops', 'Bottoms']
-      : ['all', 'Accessories', 'Phones', 'Audio']
+      ? ['all', 'Outerwear', 'Footwear', 'Bags', 'Tops', 'Bottoms', 'Accessories']
+      : []
     : []
 
   if (isCatalogueView) {
@@ -156,7 +156,7 @@ const Home = () => {
               Objects worth keeping.
             </h1>
             <p className="text-atelier-gray text-sm sm:text-base leading-relaxed font-light font-sans pt-2">
-              A slow collection of fashion and electronics — sourced, considered, and quietly built for the years ahead of you.
+              A slow collection of fashion and accessories — sourced, considered, and quietly built for the years ahead of you.
             </p>
           </div>
 
@@ -217,14 +217,14 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Right Column: Electronics */}
+        {/* Right Column: Accessories */}
         <div 
-          onClick={() => navigate('/?type=electronics')}
+          onClick={() => navigate('/?type=fashion')}
           className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden flex flex-col justify-end p-8 sm:p-12 transition-shadow duration-300 hover:shadow-2xl"
         >
           <img 
-            src={IMAGES.categoryElectronics} 
-            alt="Audio, Phones, Computers" 
+            src={IMAGES.categoryAccessories} 
+            alt="Accessories, Bags, Jewelry" 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null
@@ -235,10 +235,10 @@ const Home = () => {
 
           <div className="relative z-10 space-y-2">
             <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/80 block">
-              Audio, Phones, Computers
+              Accessories, Bags, Jewelry
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2">
-              <span>Electronics</span>
+              <span>Accessories</span>
               <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" strokeWidth={1.5} />
             </h2>
           </div>

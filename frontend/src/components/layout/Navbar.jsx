@@ -56,9 +56,6 @@ const Navbar = () => {
             <Link to="/?type=fashion" className={activeLinkClass('/?type=fashion')}>
               Fashion
             </Link>
-            <Link to="/?type=electronics" className={activeLinkClass('/?type=electronics')}>
-              Electronics
-            </Link>
             <Link to="/journal" className={activeLinkClass('/journal')}>
               Journal
             </Link>
@@ -150,13 +147,6 @@ const Navbar = () => {
                 className="text-atelier-dark border-b border-atelier-lightgray/40 pb-2"
               >
                 Fashion
-              </Link>
-              <Link 
-                to="/?type=electronics" 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-atelier-dark border-b border-atelier-lightgray/40 pb-2"
-              >
-                Electronics
               </Link>
               <Link 
                 to="/journal" 

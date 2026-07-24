@@ -85,7 +85,7 @@ const SearchModal = ({ onClose }) => {
             <div>
               <h4 className="font-mono text-xs tracking-[0.2em] uppercase text-atelier-gray mb-4">Suggested Categories</h4>
               <div className="flex flex-wrap gap-3">
-                {['Fashion', 'Electronics', 'Outerwear', 'Audio', 'Footwear', 'Phones'].map((term) => (
+                {['Fashion', 'Outerwear', 'Accessories', 'Footwear', 'Bags', 'Tops'].map((term) => (
                   <button
                     key={term}
                     onClick={() => handleSuggestedClick(term)}
