@@ -30,7 +30,7 @@ const Footer = () => {
           {/* Email Subscription Form */}
           <div className="max-w-md w-full">
             {subscribed ? (
-              <p className="font-mono text-[10px] uppercase text-atelier-accent tracking-wider animate-pulse">
+              <p className="font-mono text-xs sm:text-sm uppercase text-atelier-accent tracking-wider animate-pulse">
                 Thank you for subscribing.
               </p>
             ) : (
@@ -63,7 +63,7 @@ const Footer = () => {
           
           {/* Shop links */}
           <div className="space-y-4">
-            <h4 className="text-atelier-gray/70 text-[9px] tracking-[0.2em] mb-6">Shop</h4>
+            <h4 className="text-atelier-gray/70 text-xs tracking-[0.2em] mb-6">Shop</h4>
             <ul className="space-y-3">
               <li>
                 <Link to="/?type=fashion" className="text-atelier-dark hover:opacity-70 transition-opacity">
@@ -85,7 +85,7 @@ const Footer = () => {
 
           {/* House links */}
           <div className="space-y-4">
-            <h4 className="text-atelier-gray/70 text-[9px] tracking-[0.2em] mb-6">House</h4>
+            <h4 className="text-atelier-gray/70 text-xs tracking-[0.2em] mb-6">House</h4>
             <ul className="space-y-3">
               <li>
                 <Link to="/journal" className="text-atelier-dark hover:opacity-70 transition-opacity">
@@ -114,7 +114,7 @@ const Footer = () => {
       </div>
 
       {/* Copyright Footer */}
-      <div className="max-w-7xl mx-auto border-t border-atelier-lightgray/40 pt-8 flex flex-col sm:flex-row items-center justify-between text-[10px] text-atelier-gray font-mono tracking-widest uppercase gap-4">
+      <div className="max-w-7xl mx-auto border-t border-atelier-lightgray/40 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-atelier-gray font-mono tracking-widest uppercase gap-4">
         <div>
           &copy; 2026 Atelier Studio. All rights reserved.
         </div>

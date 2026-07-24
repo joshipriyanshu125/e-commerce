@@ -49,7 +49,7 @@ const Navbar = () => {
           </button>
 
           {/* Left Navigation (Desktop) */}
-          <nav className="hidden md:flex items-center space-x-8 font-mono text-[10px] tracking-[0.2em] uppercase">
+          <nav className="hidden md:flex items-center space-x-8 font-mono text-base tracking-[0.2em] uppercase">
             <Link to="/" className={activeLinkClass('/')}>
               Shop All
             </Link>
@@ -84,7 +84,7 @@ const Navbar = () => {
 
             {/* Auth section */}
             {isAuthenticated ? (
-              <div className="hidden sm:flex items-center space-x-3 font-mono text-[10px] tracking-wider text-atelier-dark">
+              <div className="hidden sm:flex items-center space-x-3 font-mono text-sm tracking-wider text-atelier-dark">
                 <Link to="/account" className="flex items-center space-x-1 hover:opacity-75">
                   <User size={18} strokeWidth={1.5} />
                   <span>{user?.name || user?.email?.split('@')[0] || 'Account'}</span>
@@ -100,7 +100,7 @@ const Navbar = () => {
             ) : (
               <Link 
                 to="/login" 
-                className="hidden sm:inline-block px-4 py-1.5 border border-atelier-dark text-[10px] tracking-widest uppercase font-mono bg-transparent hover:bg-atelier-dark hover:text-white transition-colors duration-200"
+                className="hidden sm:inline-block px-4 py-1.5 border border-atelier-dark text-sm tracking-widest uppercase font-mono bg-transparent hover:bg-atelier-dark hover:text-white transition-colors duration-200"
               >
                 Sign in
               </Link>
@@ -125,7 +125,7 @@ const Navbar = () => {
             >
               <ShoppingBag size={20} strokeWidth={1.5} />
               {cartCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-atelier-dark text-atelier-beige text-[8px] font-mono h-4 w-4 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute top-0.5 right-0.5 bg-atelier-dark text-atelier-beige text-xs font-mono h-4 w-4 rounded-full flex items-center justify-center font-bold">
                   {cartCount}
                 </span>
               )}
@@ -136,7 +136,7 @@ const Navbar = () => {
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
           <div className="md:hidden bg-atelier-beige border-b border-atelier-lightgray px-6 py-8 animate-fade-in">
-            <nav className="flex flex-col space-y-6 font-mono text-xs tracking-[0.2em] uppercase">
+            <nav className="flex flex-col space-y-6 font-mono text-sm tracking-[0.2em] uppercase">
               <Link 
                 to="/" 
                 onClick={() => setIsMobileMenuOpen(false)}

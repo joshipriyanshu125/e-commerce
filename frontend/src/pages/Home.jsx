@@ -148,7 +148,7 @@ const Home = () => {
         {/* Right Side: Copy & CTA */}
         <div className="flex flex-col justify-between p-8 sm:p-12 lg:p-20 py-16">
           <div className="space-y-6 max-w-md">
-            <span className="font-mono text-[9px] sm:text-[10px] tracking-[0.3em] uppercase text-atelier-gray block">
+            <span className="font-mono text-xs sm:text-sm tracking-[0.3em] uppercase text-atelier-gray block">
               Autumn Edition 026
             </span>
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl text-atelier-dark tracking-tight leading-[1.1] font-semibold">
@@ -178,7 +178,7 @@ const Home = () => {
             </div>
 
             {/* Bottom mini announcement */}
-            <div className="flex items-center space-x-6 font-mono text-[9px] tracking-widest text-atelier-gray uppercase border-t border-atelier-lightgray/40 pt-6">
+            <div className="flex items-center space-x-6 font-mono text-xs sm:text-sm tracking-widest text-atelier-gray uppercase border-t border-atelier-lightgray/40 pt-6">
               <span>Free shipping over $150</span>
               <span>&bull;</span>
               <span>30-day returns</span>
@@ -205,7 +205,7 @@ const Home = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
           
           <div className="relative z-10 space-y-2">
-            <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/80 block">
+            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/80 block">
               Tailoring, Knitwear, Leather Goods
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2">
@@ -231,7 +231,7 @@ const Home = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
 
           <div className="relative z-10 space-y-2">
-            <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/80 block">
+            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/80 block">
               Audio, Phones, Computers
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2">
@@ -250,7 +250,7 @@ const Home = () => {
           </h2>
           <button 
             onClick={() => navigate('/?type=fashion')}
-            className="font-mono text-[10px] tracking-[0.2em] uppercase text-atelier-dark hover:opacity-70 transition-opacity flex items-center gap-1.5 pb-1 border-b border-atelier-dark"
+            className="font-mono text-sm tracking-[0.2em] uppercase text-atelier-dark hover:opacity-70 transition-opacity flex items-center gap-1.5 pb-1 border-b border-atelier-dark"
           >
             <span>View all</span>
             <ArrowRight size={12} />
@@ -318,7 +318,7 @@ const Home = () => {
       {/* 5. New arrivals */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="mb-12">
-          <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-atelier-gray block mb-1">
+          <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block mb-1">
             Just landed
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl text-atelier-dark font-semibold">

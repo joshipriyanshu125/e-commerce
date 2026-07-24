@@ -27,7 +27,7 @@ const ProductCard = ({ product }) => {
       <div className="relative aspect-square w-full bg-atelier-cream overflow-hidden mb-4 border border-atelier-lightgray/30 transition-all duration-300 group-hover:shadow-sm">
         {/* Badges (New, Sale) */}
         {product.tag && (
-          <span className="absolute top-3 left-3 bg-atelier-beige border border-atelier-dark/40 font-mono text-[8px] tracking-widest uppercase py-1 px-2.5 z-10 select-none">
+          <span className="absolute top-3 left-3 bg-atelier-beige border border-atelier-dark/40 font-mono text-[10px] tracking-widest uppercase py-1 px-2.5 z-10 select-none">
             {product.tag}
           </span>
         )}
@@ -48,7 +48,7 @@ const ProductCard = ({ product }) => {
 
       {/* Metadata */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-[9px] font-mono tracking-widest uppercase text-atelier-gray">
+        <div className="flex items-center justify-between text-xs font-mono tracking-widest uppercase text-atelier-gray">
           <span>{product.category}</span>
           <span className="text-atelier-dark font-medium">${product.price}</span>
         </div>

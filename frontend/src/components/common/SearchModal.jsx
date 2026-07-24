@@ -83,7 +83,7 @@ const SearchModal = ({ onClose }) => {
         {searchQuery.trim() === '' ? (
           <div className="space-y-8 animate-fade-in">
             <div>
-              <h4 className="font-mono text-[9px] tracking-[0.2em] uppercase text-atelier-gray mb-4">Suggested Categories</h4>
+              <h4 className="font-mono text-xs tracking-[0.2em] uppercase text-atelier-gray mb-4">Suggested Categories</h4>
               <div className="flex flex-wrap gap-3">
                 {['Fashion', 'Electronics', 'Outerwear', 'Audio', 'Footwear', 'Phones'].map((term) => (
                   <button
@@ -97,7 +97,7 @@ const SearchModal = ({ onClose }) => {
               </div>
             </div>
             <div>
-              <h4 className="font-mono text-[9px] tracking-[0.2em] uppercase text-atelier-gray mb-4">Recent Searches</h4>
+              <h4 className="font-mono text-xs tracking-[0.2em] uppercase text-atelier-gray mb-4">Recent Searches</h4>
               <div className="flex flex-col space-y-2 font-serif text-lg text-atelier-dark">
                 <button onClick={() => handleSuggestedClick('Wool Coat')} className="text-left hover:text-atelier-accent transition-colors">Atelier Wool Coat</button>
                 <button onClick={() => handleSuggestedClick('Watch')} className="text-left hover:text-atelier-accent transition-colors">Noir Automatic Watch</button>
@@ -132,7 +132,7 @@ const SearchModal = ({ onClose }) => {
                     </div>
                     {/* Metadata */}
                     <div className="flex-grow">
-                      <span className="font-mono text-[8px] tracking-widest text-atelier-gray uppercase block mb-0.5">
+                      <span className="font-mono text-[10px] tracking-widest text-atelier-gray uppercase block mb-0.5">
                         {product.category}
                       </span>
                       <h3 className="font-serif text-sm text-atelier-dark font-medium leading-tight">
