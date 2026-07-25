@@ -3,6 +3,8 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../features/auth/authSlice'
 import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight } from 'lucide-react'
+import OrderDetailsDrawer from '../components/account/OrderDetailsDrawer'
+import axios from '../services/axiosInstance'
 
 const Account = () => {
   const dispatch = useDispatch()
@@ -10,6 +12,8 @@ const Account = () => {
   
   const { user, isAuthenticated } = useSelector(state => state.auth)
   const [activeTab, setActiveTab] = useState('profile') // 'profile', 'orders', 'addresses'
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   
   // Address states
   const [addresses, setAddresses] = useState([
@@ -28,30 +32,8 @@ const Account = () => {
   const [showAddAddress, setShowAddAddress] = useState(false)
   const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', state: '', zip: '', country: '', phone: '' })
 
-  // Mock orders list
-  const mockOrders = [
-    {
-      id: 'AT-90382',
-      date: '2026-07-15',
-      items: [
-        { name: 'Atelier Wool Coat', quantity: 1, price: 289, color: 'Camel', size: 'M' }
-      ],
-      total: 289,
-      status: 'Delivered',
-      deliveryDate: '2026-07-19'
-    },
-    {
-      id: 'AT-83294',
-      date: '2026-06-22',
-      items: [
-        { name: 'Leather Court Sneakers', quantity: 1, price: 178, color: 'Off-white', size: 'EU 42' },
-        { name: 'Silk Blouse — Cream', quantity: 1, price: 145, color: 'Cream', size: 'S' }
-      ],
-      total: 323,
-      status: 'Delivered',
-      deliveryDate: '2026-06-25'
-    }
-  ]
+  const [orders, setOrders] = useState([])
+  const [loadingOrders, setLoadingOrders] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -59,6 +41,24 @@ const Account = () => {
       navigate('/login')
     }
   }, [isAuthenticated, navigate])
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoadingOrders(true)
+        const res = await axios.get('/orders/my-orders')
+        if (res && res.data && res.data.orders) {
+          setOrders(res.data.orders)
+        }
+      } catch (err) {
+        console.error('Error fetching orders', err)
+      } finally {
+        setLoadingOrders(false)
+      }
+    }
+
+    if (isAuthenticated) fetchOrders()
+  }, [isAuthenticated])
 
   if (!user) return null
 
@@ -83,6 +83,8 @@ const Account = () => {
       {/* Upper greetings & logout */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between border-b border-atelier-lightgray/50 pb-6 mb-8 gap-4">
         <div>
+
+      <OrderDetailsDrawer order={selectedOrder} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
           <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block mb-1">
             Your Account
           </span>
@@ -215,34 +217,36 @@ const Account = () => {
                 Order History ({mockOrders.length})
               </h3>
               
-              {mockOrders.length > 0 ? (
+              {loadingOrders ? (
+                <p className="text-sm text-atelier-gray">Loading orders…</p>
+              ) : orders && orders.length > 0 ? (
                 <div className="space-y-4">
-                  {mockOrders.map((order) => (
-                    <div key={order.id} className="border border-atelier-lightgray p-6 bg-atelier-cream/30 space-y-4">
+                  {orders.map((order) => (
+                    <div key={order._id} className="border border-atelier-lightgray p-6 bg-atelier-cream/30 space-y-4">
                       {/* Order info header */}
                       <div className="flex flex-col sm:flex-row justify-between border-b border-atelier-lightgray/40 pb-3 font-mono text-sm tracking-wider uppercase text-atelier-gray gap-2">
                         <div className="flex space-x-4">
-                          <span>Order: <strong className="text-atelier-dark">{order.id}</strong></span>
-                          <span>Placed: <strong className="text-atelier-dark">{order.date}</strong></span>
+                          <span>Order: <strong className="text-atelier-dark">{order._id}</strong></span>
+                          <span>Placed: <strong className="text-atelier-dark">{new Date(order.createdAt).toLocaleDateString()}</strong></span>
                         </div>
                         <div className="flex space-x-4 items-center">
                           <span className="flex items-center text-green-700">
-                            <CheckCircle2 size={12} className="mr-1" /> {order.status}
+                            <CheckCircle2 size={12} className="mr-1" /> {order.orderStatus}
                           </span>
-                          {order.deliveryDate && (
-                            <span>Delivered on: <strong className="text-atelier-dark">{order.deliveryDate}</strong></span>
+                          {order.deliveredAt && (
+                            <span>Delivered on: <strong className="text-atelier-dark">{new Date(order.deliveredAt).toLocaleDateString()}</strong></span>
                           )}
                         </div>
                       </div>
 
                       {/* Order items */}
                       <div className="space-y-3">
-                        {order.items.map((item, i) => (
+                        {order.orderItems.map((item, i) => (
                           <div key={i} className="flex justify-between items-start">
                             <div>
                               <h4 className="font-serif text-sm text-atelier-dark font-medium">{item.name}</h4>
                               <p className="font-mono text-xs text-atelier-gray uppercase mt-0.5">
-                                Qty: {item.quantity} / Color: {item.color} {item.size && `/ Size: ${item.size}`}
+                                Qty: {item.quantity}
                               </p>
                             </div>
                             <span className="font-mono text-xs text-atelier-dark font-medium">${item.price * item.quantity}</span>
@@ -255,6 +259,10 @@ const Account = () => {
                         <span>Total Paid</span>
                         <strong className="text-atelier-dark">${order.total}</strong>
                       </div>
+
+                        <div className="flex justify-end pt-3">
+                          <button onClick={() => { setSelectedOrder(order); setDrawerOpen(true) }} className="px-4 py-2 border border-atelier-dark text-sm font-mono uppercase">View details</button>
+                        </div>
                     </div>
                   ))}
                 </div>

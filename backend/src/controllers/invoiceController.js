@@ -60,3 +60,28 @@ export const createInvoice = async (req, res) => {
         });
     }
 };
+
+export const downloadInvoice = async (req, res) => {
+    try {
+        const { id } = req.query;
+
+        if (!id) return res.status(400).json({ success: false, message: 'Missing invoice id' });
+
+        const invoice = await Invoice.findById(id).populate('user');
+        if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+
+        // Authorization: owner or admin
+        if (req.user._id.toString() !== invoice.user._id.toString() && !req.user.isAdmin) {
+            return res.status(403).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const invoicesDir = path.join(process.cwd(), "src", "invoices");
+        const invoicePath = path.join(invoicesDir, `${invoice.invoiceNumber}.pdf`);
+
+        if (!fs.existsSync(invoicePath)) return res.status(404).json({ success: false, message: 'File not found' });
+
+        res.download(invoicePath, `${invoice.invoiceNumber}.pdf`);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+}

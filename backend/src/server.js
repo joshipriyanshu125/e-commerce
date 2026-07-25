@@ -43,8 +43,12 @@ import invoiceRoutes from "./routes/invoiceRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 
 import notificationRoutes from "./routes/notificationRoutes.js";
+import returnsRoutes from "./routes/returnsRoutes.js";
+import pushRoutes from "./routes/pushRoutes.js";
 
 import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
+
+import debugRoutes from "./routes/debugRoutes.js";
 
 import apiLimiter from "./middleware/rateLimitMiddleware.js";
 
@@ -220,6 +224,12 @@ app.use(
   notificationRoutes
 );
 
+// RETURNS
+app.use("/api/returns", returnsRoutes);
+
+// PUSH SUBSCRIPTIONS
+app.use("/api/push", pushRoutes);
+
 /*
 ==============================
 ADMIN ANALYTICS
@@ -229,6 +239,9 @@ app.use(
   "/api/admin/analytics",
   adminAnalyticsRoutes
 );
+
+// debug/test endpoints (protected)
+app.use('/api/debug', debugRoutes);
 
 /*
 ==============================

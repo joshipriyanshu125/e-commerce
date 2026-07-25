@@ -7,6 +7,7 @@ import {
     getAllOrders,
     updateOrderStatus
 } from "../controllers/orderController.js";
+import { cancelOrder } from "../controllers/orderController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -21,6 +22,9 @@ router.post("/", protect, createOrder);
 router.get("/my-orders", protect, getMyOrders);
 
 router.get("/:id", protect, getSingleOrder);
+
+// CANCEL ORDER (USER)
+router.put("/:id/cancel", protect, cancelOrder);
 
 
 // ADMIN ROUTES

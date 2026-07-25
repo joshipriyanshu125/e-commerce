@@ -19,6 +19,8 @@ import {
     getUserOrdersRepository,
     getAllOrdersRepository,
 } from "../../repositories/orderRepository.js";
+import PushSubscription from "../models/pushSubscriptionModel.js";
+import { sendWebPush } from "../utils/webPush.js";
 
 /*
 ==============================
@@ -305,6 +307,20 @@ const updateOrderStatusService =
 
         await order.save();
 
+        // send web-push to subscribed devices for this user (best-effort)
+        try {
+            const sub = await PushSubscription.findOne({ user: order.user._id });
+            if (sub) {
+                await sendWebPush(sub.subscription, {
+                    title: `Order ${status}`,
+                    body: `Your order ${order._id} status is now ${status}`,
+                    orderId: order._id,
+                });
+            }
+        } catch (err) {
+            console.error("push send error", err.message);
+        }
+
         return order;
     };
 
@@ -314,4 +330,34 @@ export {
     getSingleOrderService,
     getAllOrdersService,
     updateOrderStatusService,
+    cancelOrderService,
+};
+
+/*
+==============================
+CANCEL ORDER SERVICE
+==============================
+*/
+const cancelOrderService = async (orderId, user) => {
+    const order = await getOrderByIdRepository(orderId);
+
+    if (!order) {
+        throw new Error("Order not found");
+    }
+
+    // Only owner or admin (admin check happens at controller route) can cancel
+    if (order.user.toString() !== user._id.toString()) {
+        throw new Error("Not authorized to cancel this order");
+    }
+
+    if (order.orderStatus && (order.orderStatus === "Shipped" || order.orderStatus === "Delivered")) {
+        throw new Error("Cannot cancel an order that has already shipped or delivered");
+    }
+
+    order.orderStatus = "Cancelled";
+    order.cancelledAt = Date.now();
+
+    await order.save();
+
+    return order;
 };

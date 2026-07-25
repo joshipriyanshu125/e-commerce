@@ -21,4 +21,6 @@ router.put(
     markNotificationRead
 );
 
+// Web push subscribe/unsubscribe are now separate under /api/push
+
 export default router;

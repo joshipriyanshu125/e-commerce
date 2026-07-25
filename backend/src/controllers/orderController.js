@@ -6,6 +6,7 @@ import {
     getSingleOrderService,
     getAllOrdersService,
     updateOrderStatusService,
+    cancelOrderService,
 } from "../services/orderService.js";
 
 /*
@@ -121,10 +122,22 @@ const updateOrderStatus =
         });
     });
 
+    /*
+    ==============================
+    CANCEL ORDER (USER)
+    ==============================
+    */
+    const cancelOrder = asyncHandler(async (req, res) => {
+        const order = await cancelOrderService(req.params.id, req.user);
+
+        res.status(200).json({ success: true, order });
+    });
+
 export {
     createOrder,
     getMyOrders,
     getSingleOrder,
     getAllOrders,
     updateOrderStatus,
+    cancelOrder,
 };
