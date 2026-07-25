@@ -1,98 +1,84 @@
 import Order from "../src/models/Order.js";
-
 import Cart from "../src/models/cartModel.js";
-
 import Product from "../src/models/Product.js";
 
 /*
-==============================
+==================================================
 GET USER CART
-==============================
+==================================================
 */
-const getUserCartRepository =
-    async (userId) => {
-
-        return await Cart.findOne({
-            user: userId,
-        });
-    };
+const getUserCartRepository = async (userId) => {
+    return await Cart.findOne({
+        user: userId,
+    });
+};
 
 /*
-==============================
+==================================================
 GET PRODUCT BY ID
-==============================
+==================================================
 */
-const getProductByIdRepository =
-    async (productId) => {
-
-        return await Product.findById(
-            productId
-        );
-    };
+const getProductByIdRepository = async (productId) => {
+    return await Product.findById(productId);
+};
 
 /*
-==============================
+==================================================
 CREATE ORDER
-==============================
+==================================================
 */
-const createOrderRepository =
-    async (orderData) => {
-
-        return await Order.create(
-            orderData
-        );
-    };
+const createOrderRepository = async (orderData) => {
+    return await Order.create(orderData);
+};
 
 /*
-==============================
+==================================================
 GET ORDER BY ID
-==============================
+==================================================
 */
-const getOrderByIdRepository =
-    async (orderId) => {
-
-        return await Order.findById(
-            orderId
-        ).populate(
-            "user",
-            "name email"
-        );
-    };
+const getOrderByIdRepository = async (orderId) => {
+    return await Order.findById(orderId)
+        .populate("user", "name email")
+        .populate("orderItems.product");
+};
 
 /*
-==============================
+==================================================
 GET USER ORDERS
-==============================
+==================================================
 */
-const getUserOrdersRepository =
-    async (userId) => {
-
-        return await Order.find({
-            user: userId,
-        }).sort({
+const getUserOrdersRepository = async (userId) => {
+    return await Order.find({
+        user: userId,
+    })
+        .populate("orderItems.product")
+        .sort({
             createdAt: -1,
         });
-    };
+};
 
 /*
-==============================
+==================================================
 GET ALL ORDERS
-==============================
+==================================================
 */
-const getAllOrdersRepository =
-    async () => {
+const getAllOrdersRepository = async () => {
+    return await Order.find()
+        .populate("user", "name email")
+        .populate("orderItems.product")
+        .sort({
+            createdAt: -1,
+        });
+};
 
-        return await Order.find()
-
-            .populate(
-                "user",
-                "name email"
-            )
-
-            .sort({
-                createdAt: -1,
-            });
-    };
+/*
+==================================================
+UPDATE ORDER
+==================================================
+*/
+const updateOrderRepository = async (order) => {
+    return await order.save();
+};
 
 export {
     getUserCartRepository,
@@ -101,4 +87,5 @@ export {
     getOrderByIdRepository,
     getUserOrdersRepository,
     getAllOrdersRepository,
+    updateOrderRepository,
 };

@@ -1,6 +1,4 @@
-import bcrypt from "bcryptjs";
-
-import generateToken from "../utils/generateToken.js";
+import jwt from "jsonwebtoken";
 
 import {
     findUserByEmail,
@@ -8,9 +6,24 @@ import {
 } from "../../repositories/userRepository.js";
 
 /*
-==============================
-REGISTER USER SERVICE
-==============================
+==================================================
+GENERATE JWT
+==================================================
+*/
+const generateToken = (id) => {
+    return jwt.sign(
+        { id },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "7d",
+        }
+    );
+};
+
+/*
+==================================================
+REGISTER USER
+==================================================
 */
 const registerUserService = async ({
     name,
@@ -18,101 +31,55 @@ const registerUserService = async ({
     password,
 }) => {
 
-    // CHECK IF USER EXISTS
-    const userExists =
+    const existingUser =
         await findUserByEmail(email);
 
-    if (userExists) {
-
-        throw new Error(
-            "User already exists"
-        );
+    if (existingUser) {
+        throw new Error("User already exists");
     }
 
-    // HASH PASSWORD
-    const salt =
-        await bcrypt.genSalt(10);
-
-    const hashedPassword =
-        await bcrypt.hash(
+    const user =
+        await createUser({
+            name,
+            email,
             password,
-            salt
-        );
+        });
 
-    // CREATE USER
-    const user = await createUser({
-        name,
-        email,
-        password: hashedPassword,
-    });
-
-    // RETURN USER DATA
     return {
-
-        _id: user._id,
-
-        name: user.name,
-
-        email: user.email,
-
-        role: user.role,
-
-        token: generateToken(
-            user._id
-        ),
+        success: true,
+        token: generateToken(user._id),
+        user,
     };
 };
 
 /*
-==============================
-LOGIN USER SERVICE
-==============================
+==================================================
+LOGIN USER
+==================================================
 */
 const loginUserService = async ({
     email,
     password,
 }) => {
 
-    // FIND USER
     const user =
         await findUserByEmail(email);
 
-    // CHECK USER
     if (!user) {
-
-        throw new Error(
-            "Invalid email or password"
-        );
+        throw new Error("Invalid email or password");
     }
 
-    // CHECK PASSWORD
     const isMatch =
-        await bcrypt.compare(
-            password,
-            user.password
-        );
+        await user.matchPassword(password);
 
     if (!isMatch) {
-
-        throw new Error(
-            "Invalid email or password"
-        );
+        throw new Error("Invalid email or password");
     }
 
-    // RETURN USER DATA
     return {
-
-        _id: user._id,
-
-        name: user.name,
-
-        email: user.email,
-
-        role: user.role,
-
-        token: generateToken(
-            user._id
-        ),
+        success: true,
+        token: generateToken(user._id),
+        user,
     };
 };
 

@@ -1,56 +1,74 @@
 import nodemailer from "nodemailer";
 
-const sendEmail = async (options) => {
-    const port = Number(process.env.SMTP_PORT) || 587;
-    const secure = port === 465;
+/*
+==================================================
+CREATE TRANSPORTER
+==================================================
+*/
+const transporter = nodemailer.createTransport({
+    service: process.env.SMTP_SERVICE || undefined,
 
-    const transporter = nodemailer.createTransport({
-        service: process.env.SMTP_SERVICE || undefined,
-        host: process.env.SMTP_HOST,
-        port,
-        secure,
-        auth: {
-            user: process.env.SMTP_MAIL,
-            pass: process.env.SMTP_PASSWORD,
-        },
-        tls: {
-            // allow self-signed certs if present in some environments
-            rejectUnauthorized: process.env.NODE_ENV === 'production' ? true : false,
-        },
-    });
+    host: process.env.SMTP_HOST,
 
-    const fromAddress = process.env.SMTP_FROM_NAME
-        ? `${process.env.SMTP_FROM_NAME} <${process.env.SMTP_MAIL}>`
-        : process.env.SMTP_MAIL;
+    port: Number(process.env.SMTP_PORT) || 587,
 
-    const mailOptions = {
-        from: fromAddress,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-    };
+    secure: Number(process.env.SMTP_PORT) === 465,
 
+    auth: {
+        user: process.env.SMTP_MAIL,
+        pass: process.env.SMTP_PASSWORD,
+    },
+
+    tls: {
+        rejectUnauthorized:
+            process.env.NODE_ENV === "production",
+    },
+});
+
+/*
+==================================================
+SEND EMAIL
+==================================================
+*/
+const sendEmail = async ({
+    to,
+    subject,
+    html,
+}) => {
     try {
-        // verify connection configuration
+
+        // Verify SMTP Connection
         await transporter.verify();
-    } catch (err) {
-        console.error('SMTP connection verification failed:', err.message || err);
-        // still attempt to send and return error
-    }
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.info('Email sent:', {
-            to: options.to,
-            messageId: info && info.messageId,
-            accepted: info && info.accepted,
-            rejected: info && info.rejected,
-            response: info && info.response,
+        const info = await transporter.sendMail({
+
+            from: process.env.SMTP_FROM_NAME
+                ? `${process.env.SMTP_FROM_NAME} <${process.env.SMTP_MAIL}>`
+                : process.env.SMTP_MAIL,
+
+            to,
+
+            subject,
+
+            html,
         });
+
+        console.log("==================================");
+        console.log("EMAIL SENT SUCCESSFULLY");
+        console.log("To:", to);
+        console.log("Message ID:", info.messageId);
+        console.log("==================================");
+
         return info;
-    } catch (err) {
-        console.error('Error sending email:', err);
-        throw err;
+
+    } catch (error) {
+
+        console.error("==================================");
+        console.error("EMAIL SENDING FAILED");
+        console.error(error.message);
+        console.error("==================================");
+
+        throw new Error("Unable to send email.");
     }
 };
 

@@ -12,13 +12,13 @@ export async function registerServiceWorkerAndSubscribe(vapidPublicKey) {
     applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
   });
 
-  await api.post("/push/subscribe", subscription);
+  await api.post("push/subscribe", subscription);
 
   return subscription;
 }
 
 export async function unsubscribeFromPush() {
-  await api.post("/push/unsubscribe");
+  await api.post("push/unsubscribe");
 }
 
 function urlBase64ToUint8Array(base64String) {

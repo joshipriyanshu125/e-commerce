@@ -1,32 +1,69 @@
+import asyncHandler from "../middleware/asyncHandler.js";
 import User from "../models/userModel.js";
 
-export const getUserProfile = async (req, res) => {
-    try {
-        const user = await User.findById(req.user._id);
+/*
+====================================
+GET USER PROFILE
+====================================
+*/
+export const getUserProfile = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).select("-password");
 
-        if (user) {
-            res.json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone,
-            });
-        } else {
-            res.status(404).json({
-                message: "User not found"
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
     }
-};
 
-
-export const adminRoute = async (req, res) => {
-    res.json({
-        message: "Welcome Admin"
+    res.status(200).json({
+        success: true,
+        user,
     });
-};
+});
+
+/*
+====================================
+UPDATE USER PROFILE
+====================================
+*/
+export const updateUserProfile = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+    user.phone = req.body.phone || user.phone;
+
+    if (req.body.password) {
+        user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+        success: true,
+        message: "Profile updated successfully",
+        user: {
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            role: updatedUser.role,
+        },
+    });
+});
+
+/*
+====================================
+ADMIN TEST ROUTE
+====================================
+*/
+export const adminRoute = asyncHandler(async (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Welcome Admin",
+    });
+});

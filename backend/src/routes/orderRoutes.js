@@ -5,31 +5,45 @@ import {
     getMyOrders,
     getSingleOrder,
     getAllOrders,
-    updateOrderStatus
+    updateOrderStatus,
+    cancelOrder,
 } from "../controllers/orderController.js";
-import { cancelOrder } from "../controllers/orderController.js";
 
-import { protect } from "../middleware/authMiddleware.js";
-
-import { isAdmin } from "../middleware/adminMiddleware.js";
+import {
+    protect,
+    admin,
+} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+/*
+=====================================
+USER ROUTES
+=====================================
+*/
 
-// USER ROUTES
+// Create Order
 router.post("/", protect, createOrder);
 
-router.get("/my-orders", protect, getMyOrders);
+// Get Logged-in User Orders
+router.get("/myorders", protect, getMyOrders);
 
+// Get Single Order
 router.get("/:id", protect, getSingleOrder);
 
-// CANCEL ORDER (USER)
+// Cancel Order
 router.put("/:id/cancel", protect, cancelOrder);
 
+/*
+=====================================
+ADMIN ROUTES
+=====================================
+*/
 
-// ADMIN ROUTES
-router.get("/", protect, isAdmin, getAllOrders);
+// Get All Orders
+router.get("/", protect, admin, getAllOrders);
 
-router.put("/:id", protect, isAdmin, updateOrderStatus);
+// Update Order Status
+router.put("/:id/status", protect, admin, updateOrderStatus);
 
 export default router;

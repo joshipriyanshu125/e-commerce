@@ -324,14 +324,6 @@ const updateOrderStatusService =
         return order;
     };
 
-export {
-    createOrderService,
-    getMyOrdersService,
-    getSingleOrderService,
-    getAllOrdersService,
-    updateOrderStatusService,
-    cancelOrderService,
-};
 
 /*
 ==============================
@@ -360,4 +352,13 @@ const cancelOrderService = async (orderId, user) => {
     await order.save();
 
     return order;
+};
+
+export {
+    createOrderService,
+    getMyOrdersService,
+    getSingleOrderService,
+    getAllOrdersService,
+    updateOrderStatusService,
+    cancelOrderService,
 };

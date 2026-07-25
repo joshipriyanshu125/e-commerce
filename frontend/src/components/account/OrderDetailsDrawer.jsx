@@ -11,7 +11,7 @@ const OrderDetailsDrawer = ({ order, open, onClose }) => {
     try {
       const orderId = order._id || order.id;
 
-      const res = await api.post("/invoice", {
+      const res = await api.post("invoice", {
         orderId,
       });
 
@@ -72,7 +72,7 @@ const OrderDetailsDrawer = ({ order, open, onClose }) => {
     try {
       setUploading(true);
 
-      await api.post("/returns", form, {
+      await api.post("returns", form, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

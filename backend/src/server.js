@@ -1,354 +1,287 @@
 import "./config/env.js";
 
 import fs from "fs";
-
 import path from "path";
-
 import express from "express";
-
 import http from "http";
 
 import cors from "cors";
-
 import helmet from "helmet";
-
 import compression from "compression";
-
 import mongoSanitize from "express-mongo-sanitize";
-
 import xss from "xss-clean";
-
 import hpp from "hpp";
+import cookieParser from "cookie-parser";
 
 import connectDB from "./config/db.js";
-
 import { initSocket } from "./config/socket.js";
 
 import authRoutes from "./routes/authRoutes.js";
-
 import userRoutes from "./routes/userRoutes.js";
-
 import productRoutes from "./routes/productRoutes.js";
-
 import orderRoutes from "./routes/orderRoutes.js";
-
 import cartRoutes from "./routes/cartRoutes.js";
-
 import addressRoutes from "./routes/addressRoutes.js";
-
 import couponRoutes from "./routes/couponRoutes.js";
-
 import invoiceRoutes from "./routes/invoiceRoutes.js";
-
 import wishlistRoutes from "./routes/wishlistRoutes.js";
-
 import notificationRoutes from "./routes/notificationRoutes.js";
 import returnsRoutes from "./routes/returnsRoutes.js";
 import pushRoutes from "./routes/pushRoutes.js";
-
 import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
-
 import debugRoutes from "./routes/debugRoutes.js";
 
 import apiLimiter from "./middleware/rateLimitMiddleware.js";
-
 import requestLogger from "./middleware/requestLogger.js";
 
 import logger from "./utils/logger.js";
 
 import {
-  notFound,
-  errorHandler,
+    notFound,
+    errorHandler,
 } from "./middleware/errorMiddleware.js";
 
 /*
-==============================
-ENSURE LOGS FOLDER EXISTS
-==============================
+=========================================
+ENSURE LOG DIRECTORY EXISTS
+=========================================
 */
-const logsDir = path.join(
-  process.cwd(),
-  "logs"
-);
+const logsDir = path.join(process.cwd(), "logs");
 
 if (!fs.existsSync(logsDir)) {
-
-  fs.mkdirSync(logsDir, {
-    recursive: true,
-  });
+    fs.mkdirSync(logsDir, {
+        recursive: true,
+    });
 }
 
 /*
-==============================
+=========================================
 DATABASE
-==============================
+=========================================
 */
 connectDB();
 
 /*
-==============================
-EXPRESS APP
-==============================
+=========================================
+EXPRESS
+=========================================
 */
 const app = express();
 
-const server =
-  http.createServer(app);
+const server = http.createServer(app);
 
 /*
-==============================
+=========================================
 SOCKET.IO
-==============================
+=========================================
 */
 initSocket(server);
 
 /*
-==============================
+=========================================
 BODY PARSER
-==============================
+=========================================
 */
 app.use(express.json());
 
-app.use(express.urlencoded({
-  extended: true,
-}));
+app.use(
+    express.urlencoded({
+        extended: true,
+    })
+);
+
+app.use(cookieParser());
 
 /*
-==============================
-SECURITY MIDDLEWARES
-==============================
+=========================================
+SECURITY
+=========================================
 */
-
-// SECURITY HEADERS
 app.use(helmet());
 
-// ENABLE COMPRESSION
 app.use(compression());
 
-// PREVENT MONGODB INJECTION
 app.use(mongoSanitize());
 
-// PREVENT XSS ATTACKS
 app.use(xss());
 
-// PREVENT HTTP PARAM POLLUTION
 app.use(hpp());
 
-// RATE LIMITER
+/*
+=========================================
+RATE LIMITER
+=========================================
+*/
 app.use(apiLimiter);
 
 /*
-==============================
+=========================================
 REQUEST LOGGER
-==============================
+=========================================
 */
 app.use(requestLogger);
 
 /*
-==============================
+=========================================
 CORS
-==============================
+=========================================
 */
 app.use(
-  cors({
-    origin:
-      "http://localhost:5173",
-
-    credentials: true,
-  })
+    cors({
+        origin: "http://localhost:5173",
+        credentials: true,
+    })
 );
 
 /*
-==============================
+=========================================
 HEALTH CHECK
-==============================
+=========================================
 */
 app.get("/", (req, res) => {
+    logger.info("Health route accessed");
 
-  logger.info(
-    "Health route accessed"
-  );
-
-  res.status(200).json({
-
-    success: true,
-
-    message:
-      "API Running Successfully",
-  });
+    res.status(200).json({
+        success: true,
+        message: "API Running Successfully",
+    });
 });
 
 /*
-==============================
-ROUTES
-==============================
+=========================================
+API ROUTES
+=========================================
 */
-app.use("/api/users", authRoutes);
-
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 
-app.use(
-  "/api/products",
-  productRoutes
-);
+app.use("/api/products", productRoutes);
 
-app.use(
-  "/api/orders",
-  orderRoutes
-);
+app.use("/api/orders", orderRoutes);
 
 app.use("/api/cart", cartRoutes);
 
-app.use(
-  "/api/address",
-  addressRoutes
-);
+app.use("/api/address", addressRoutes);
 
-app.use(
-  "/api/coupons",
-  couponRoutes
-);
+app.use("/api/coupons", couponRoutes);
 
-app.use(
-  "/api/invoice",
-  invoiceRoutes
-);
+app.use("/api/invoice", invoiceRoutes);
 
-app.use(
-  "/api/wishlist",
-  wishlistRoutes
-);
+app.use("/api/wishlist", wishlistRoutes);
 
-app.use(
-  "/api/notifications",
-  notificationRoutes
-);
+app.use("/api/notifications", notificationRoutes);
 
-// RETURNS
 app.use("/api/returns", returnsRoutes);
 
-// PUSH SUBSCRIPTIONS
 app.use("/api/push", pushRoutes);
 
-/*
-==============================
-ADMIN ANALYTICS
-==============================
-*/
 app.use(
-  "/api/admin/analytics",
-  adminAnalyticsRoutes
+    "/api/admin/analytics",
+    adminAnalyticsRoutes
 );
 
-// debug/test endpoints (protected)
-app.use('/api/debug', debugRoutes);
+/*
+=========================================
+DEBUG ROUTES
+=========================================
+*/
+if (process.env.NODE_ENV !== "production") {
+    app.use("/api/debug", debugRoutes);
+}
 
 /*
-==============================
-ERROR MIDDLEWARE
-==============================
+=========================================
+ERROR HANDLER
+=========================================
 */
 app.use(notFound);
 
 app.use(errorHandler);
 
 /*
-==============================
+=========================================
 SERVER
-==============================
+=========================================
 */
 const PORT =
-  Number(process.env.PORT) || 5000;
+    Number(process.env.PORT) || 5000;
 
 const startServer = (port) => {
+    server
+        .listen(port, () => {
+            logger.info(
+                `🚀 Server running on port ${port}`
+            );
 
-  server.listen(port, () => {
+            console.log(
+                `🚀 Server running on port ${port}`
+            );
+        })
+        .on("error", (err) => {
+            logger.error({
+                message: err.message,
+                stack: err.stack,
+            });
 
-    logger.info(
-      `🚀 Server running on port ${port}`
-    );
+            if (err.code === "EADDRINUSE") {
+                console.log(
+                    `⚠️ Port ${port} is in use. Trying ${port + 1}...`
+                );
 
-    console.log(
-      `🚀 Server running on port ${port}`
-    );
-
-  }).on("error", (err) => {
-
-    logger.error({
-      message: err.message,
-      stack: err.stack,
-    });
-
-    if (
-      err.code ===
-      "EADDRINUSE"
-    ) {
-
-      console.log(
-        `⚠️ Port ${port} is in use, trying ${port + 1}...`
-      );
-
-      startServer(port + 1);
-
-    } else {
-
-      console.error(
-        "❌ Server error:",
-        err
-      );
-    }
-  });
+                startServer(port + 1);
+            } else {
+                console.error(
+                    "Server Error:",
+                    err
+                );
+            }
+        });
 };
 
 startServer(PORT);
 
 /*
-==============================
+=========================================
 UNHANDLED REJECTION
-==============================
+=========================================
 */
 process.on(
-  "unhandledRejection",
-  (err) => {
+    "unhandledRejection",
+    (err) => {
+        logger.error({
+            message: err.message,
+            stack: err.stack,
+        });
 
-    logger.error({
+        console.error(
+            "Unhandled Rejection:",
+            err.message
+        );
 
-      message: err.message,
-
-      stack: err.stack,
-    });
-
-    console.log(
-      `❌ Error: ${err.message}`
-    );
-
-    server.close(() => {
-
-      process.exit(1);
-    });
-  }
+        server.close(() => {
+            process.exit(1);
+        });
+    }
 );
 
 /*
-==============================
+=========================================
 UNCAUGHT EXCEPTION
-==============================
+=========================================
 */
 process.on(
-  "uncaughtException",
-  (err) => {
+    "uncaughtException",
+    (err) => {
+        logger.error({
+            message: err.message,
+            stack: err.stack,
+        });
 
-    logger.error({
+        console.error(
+            "Uncaught Exception:",
+            err.message
+        );
 
-      message: err.message,
-
-      stack: err.stack,
-    });
-
-    console.log(
-      `❌ Uncaught Exception: ${err.message}`
-    );
-
-    process.exit(1);
-  }
+        process.exit(1);
+    }
 );

@@ -1,44 +1,32 @@
 import Product from "../src/models/Product.js";
 
 /*
-==============================
+====================================
 CREATE PRODUCT
-==============================
+====================================
 */
-const createProductRepository = async (
-    productData
-) => {
-
-    return await Product.create(
-        productData
-    );
+const createProductRepository = async (productData) => {
+    return await Product.create(productData);
 };
 
 /*
-==============================
+====================================
 GET PRODUCTS
-==============================
+====================================
 */
 const getProductsRepository = async ({
-    query,
-    sortOption,
-    pageSize,
-    page,
+    query = {},
+    sortOption = {},
+    pageSize = 10,
+    page = 1,
 }) => {
 
-    const count =
-        await Product.countDocuments(
-            query
-        );
+    const count = await Product.countDocuments(query);
 
-    const products =
-        await Product.find(query)
-
-            .sort(sortOption)
-
-            .limit(pageSize)
-
-            .skip(pageSize * (page - 1));
+    const products = await Product.find(query)
+        .sort(sortOption)
+        .limit(pageSize)
+        .skip(pageSize * (page - 1));
 
     return {
         count,
@@ -47,37 +35,31 @@ const getProductsRepository = async ({
 };
 
 /*
-==============================
+====================================
 GET PRODUCT BY ID
-==============================
+====================================
 */
-const getProductByIdRepository =
-    async (id) => {
-
-        return await Product.findById(id);
-    };
+const getProductByIdRepository = async (id) => {
+    return await Product.findById(id);
+};
 
 /*
-==============================
+====================================
 UPDATE PRODUCT
-==============================
+====================================
 */
-const saveProductRepository =
-    async (product) => {
-
-        return await product.save();
-    };
+const saveProductRepository = async (product) => {
+    return await product.save();
+};
 
 /*
-==============================
+====================================
 DELETE PRODUCT
-==============================
+====================================
 */
-const deleteProductRepository =
-    async (product) => {
-
-        return await product.deleteOne();
-    };
+const deleteProductRepository = async (product) => {
+    return await product.deleteOne();
+};
 
 export {
     createProductRepository,

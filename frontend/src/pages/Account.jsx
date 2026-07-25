@@ -34,33 +34,44 @@ const Account = () => {
 
   const [orders, setOrders] = useState([])
   const [loadingOrders, setLoadingOrders] = useState(false)
+  const [error, setError] = useState("")
 
-  // Redirect if not authenticated
+  // Debug: Check auth state
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login')
-    }
-  }, [isAuthenticated, navigate])
+    console.log("Account Component Auth State:", { user, isAuthenticated, token: !!localStorage.getItem("token") })
+  }, [user, isAuthenticated])
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoadingOrders(true)
-        const res = await axios.get('/orders/my-orders')
+        const res = await axios.get('orders/my-orders')
         if (res && res.data && res.data.orders) {
           setOrders(res.data.orders)
         }
       } catch (err) {
         console.error('Error fetching orders', err)
+        setError(err.message)
       } finally {
         setLoadingOrders(false)
       }
     }
 
-    if (isAuthenticated) fetchOrders()
-  }, [isAuthenticated])
+    if (isAuthenticated && user) {
+      fetchOrders()
+    }
+  }, [isAuthenticated, user])
 
-  if (!user) return null
+  // Show loading state while user data is being loaded
+  if (!user || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-atelier-beige">
+        <div className="text-center">
+          <p className="text-atelier-gray font-mono mb-4">Loading account...</p>
+          <p className="text-xs text-atelier-gray font-mono">Auth: {isAuthenticated ? 'Yes' : 'No'} | User: {user ? 'Yes' : 'No'}</p>
+        </div>
+      </div>
+    )
 
   const handleLogout = () => {
     dispatch(logout())
@@ -214,7 +225,7 @@ const Account = () => {
           {activeTab === 'orders' && (
             <div className="space-y-6 animate-fade-in">
               <h3 className="font-mono text-sm tracking-widest uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-3 mb-4">
-                Order History ({mockOrders.length})
+                Order History ({orders.length})
               </h3>
               
               {loadingOrders ? (

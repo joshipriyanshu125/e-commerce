@@ -1,71 +1,71 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
-import { loginSuccess } from '../features/auth/authSlice'
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../features/auth/authSlice";
+import api from "../services/axiosInstance";
 
 const Login = () => {
-  const dispatch = useDispatch()
-  const navigate = useNavigate()
-  
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     if (!email || !password) {
-      setError('Please fill in all fields.')
-      return
+      setError("Please fill in all fields.");
+      return;
     }
 
-    setLoading(true)
-    setError('')
+    try {
+      setLoading(true);
+      setError("");
 
-    // Mock network request delay
-    setTimeout(() => {
-      // Simulate successful login
-      const mockUser = {
-        name: 'Piyush',
-        email: email,
-        phone: '+1 555-0199',
-        avatar: 'https://lh3.googleusercontent.com/a/ACg8ocJ6viPaCV9vQrps3zyC0_HZqFsWetyMNvY'
-      }
-      
-      dispatch(loginSuccess({
-        user: mockUser,
-        token: 'mock-jwt-token-12345'
-      }))
-      
-      setLoading(false)
-      navigate('/account')
-    }, 1000)
-  }
+      const { data } = await api.post("auth/login", {
+        email,
+        password,
+      });
+
+      dispatch(
+        loginSuccess({
+          user: data.user,
+          token: data.token,
+        })
+      );
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Small delay to ensure state is updated before navigating
+      setTimeout(() => {
+        navigate("/account");
+      }, 100);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Login failed. Please check your credentials."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = () => {
-    setLoading(true)
-    setTimeout(() => {
-      const mockUser = {
-        name: 'Piyush',
-        email: 'p9464888@gmail.com',
-        phone: '',
-        avatar: 'https://lh3.googleusercontent.com/a/ACg8ocJ6viPaCV9vQrps3zyC0_HZqFsWetyMNvY'
-      }
-      dispatch(loginSuccess({
-        user: mockUser,
-        token: 'mock-google-token-12345'
-      }))
-      setLoading(false)
-      navigate('/account')
-    }, 800)
-  }
+    setError("Google Sign-In is not implemented yet.");
+  };
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-16 animate-fade-in font-sans">
       <div className="w-full max-w-sm space-y-10 text-center">
         {/* Logo and welcome header */}
         <div className="space-y-4">
-          <h1 className="font-serif text-3xl tracking-wide text-atelier-dark">Atelier</h1>
+          <h1 className="font-serif text-3xl tracking-wide text-atelier-dark">
+            Atelier
+          </h1>
           <div className="space-y-1">
             <span className="font-mono text-xs tracking-[0.25em] uppercase text-atelier-gray block">
               Welcome Back
@@ -83,7 +83,6 @@ const Login = () => {
             disabled={loading}
             className="w-full py-3.5 border border-atelier-dark bg-transparent text-atelier-dark hover:bg-atelier-dark hover:text-white transition-all duration-300 font-mono text-sm tracking-[0.15em] uppercase font-medium flex items-center justify-center gap-3"
           >
-            {/* Google G logo */}
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
@@ -105,15 +104,15 @@ const Login = () => {
             <span>Continue with Google</span>
           </button>
 
-          {/* Divider */}
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-atelier-lightgray"></div>
-            <span className="flex-shrink mx-4 font-mono text-xs tracking-widest text-atelier-gray">OR</span>
+            <span className="flex-shrink mx-4 font-mono text-xs tracking-widest text-atelier-gray">
+              OR
+            </span>
             <div className="flex-grow border-t border-atelier-lightgray"></div>
           </div>
         </div>
 
-        {/* Form Inputs */}
         <form onSubmit={handleSubmit} className="space-y-6 text-left">
           {error && (
             <p className="text-sm font-mono uppercase text-red-600 tracking-wider text-center">
@@ -121,7 +120,6 @@ const Login = () => {
             </p>
           )}
 
-          {/* Email */}
           <div className="space-y-1">
             <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">
               Email
@@ -136,16 +134,19 @@ const Login = () => {
             />
           </div>
 
-          {/* Password */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">
                 Password
               </label>
-              <Link to="/forgot-password" className="text-xs font-mono tracking-widest uppercase text-atelier-gray hover:text-atelier-dark underline">
+              <Link
+                to="/forgot-password"
+                className="text-xs font-mono tracking-widest uppercase text-atelier-gray hover:text-atelier-dark underline"
+              >
                 Forgot?
               </Link>
             </div>
+
             <input
               type="password"
               required
@@ -156,26 +157,27 @@ const Login = () => {
             />
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
             className="w-full btn-atelier-dark py-4 mt-4"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
-        {/* Footer options */}
         <div className="pt-4 font-mono text-xs tracking-widest text-atelier-gray uppercase">
-          New to Atelier?{' '}
-          <Link to="/register" className="text-atelier-dark underline hover:opacity-75">
+          New to Atelier?{" "}
+          <Link
+            to="/register"
+            className="text-atelier-dark underline hover:opacity-75"
+          >
             create a new account
           </Link>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
