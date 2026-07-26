@@ -63,17 +63,20 @@ const Account = () => {
   }, [isAuthenticated, user])
 
   // Show loading state while user data is being loaded
-  if (!user || !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-atelier-beige">
-        <div className="text-center">
-          <p className="text-atelier-gray font-mono mb-4">Loading account...</p>
-          <p className="text-xs text-atelier-gray font-mono">Auth: {isAuthenticated ? 'Yes' : 'No'} | User: {user ? 'Yes' : 'No'}</p>
-        </div>
+if (!user || !isAuthenticated) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-atelier-beige">
+      <div className="text-center">
+        <p className="text-atelier-gray font-mono mb-4">Loading account...</p>
+        <p className="text-xs text-atelier-gray font-mono">
+          Auth: {isAuthenticated ? 'Yes' : 'No'} | User: {user ? 'Yes' : 'No'}
+        </p>
       </div>
-    )
+    </div>
+  );
+} // <-- ADD THIS LINE
 
-  const handleLogout = () => {
+const handleLogout = () => {
     dispatch(logout())
     navigate('/')
   }
@@ -86,7 +89,7 @@ const Account = () => {
   }
 
   // Display username or first part of email matching screenshot "Hello, p9464888"
-  const username = user.email.split('@')[0]
+  const username = (user.email || "").split("@")[0] || user.name?.split(" ")[0] || "Member";
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in font-sans">

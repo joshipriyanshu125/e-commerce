@@ -13,7 +13,7 @@ REGISTER USER
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
 
-    const user = await registerUserService({
+    const { user: mongoUser, token } = await registerUserService({
         name,
         email,
         password,
@@ -23,12 +23,12 @@ const registerUser = asyncHandler(async (req, res) => {
         success: true,
         message: "User registered successfully",
         user: {
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
+            _id: mongoUser._id,
+            name: mongoUser.name,
+            email: mongoUser.email,
+            role: mongoUser.role,
         },
-        token: user.token,
+        token,
     });
 });
 
@@ -40,7 +40,7 @@ LOGIN USER
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    const user = await loginUserService({
+    const { user: mongoUser, token } = await loginUserService({
         email,
         password,
     });
@@ -49,12 +49,12 @@ const loginUser = asyncHandler(async (req, res) => {
         success: true,
         message: "Login successful",
         user: {
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
+            _id: mongoUser._id,
+            name: mongoUser.name,
+            email: mongoUser.email,
+            role: mongoUser.role,
         },
-        token: user.token,
+        token,
     });
 });
 
