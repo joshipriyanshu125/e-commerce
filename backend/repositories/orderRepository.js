@@ -38,8 +38,7 @@ GET ORDER BY ID
 */
 const getOrderByIdRepository = async (orderId) => {
     return await Order.findById(orderId)
-        .populate("user", "name email")
-        .populate("orderItems.product");
+        .populate("user", "name email");
 };
 
 /*
@@ -51,7 +50,6 @@ const getUserOrdersRepository = async (userId) => {
     return await Order.find({
         user: userId,
     })
-        .populate("orderItems.product")
         .sort({
             createdAt: -1,
         });
@@ -65,7 +63,6 @@ GET ALL ORDERS
 const getAllOrdersRepository = async () => {
     return await Order.find()
         .populate("user", "name email")
-        .populate("orderItems.product")
         .sort({
             createdAt: -1,
         });

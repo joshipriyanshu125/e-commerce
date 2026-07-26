@@ -62,27 +62,26 @@ const createOrderService = async ({
 
     // CHECK STOCK
     for (const item of orderItems) {
+        if (mongoose.Types.ObjectId.isValid(item.product)) {
+            const product =
+                await getProductByIdRepository(
+                    item.product
+                );
 
-        const product =
-            await getProductByIdRepository(
-                item.product
-            );
+            if (!product) {
+                throw new Error(
+                    "Product not found"
+                );
+            }
 
-        if (!product) {
-
-            throw new Error(
-                "Product not found"
-            );
-        }
-
-        if (
-            product.countInStock <
-            item.quantity
-        ) {
-
-            throw new Error(
-                `${product.name} is out of stock`
-            );
+            if (
+                product.countInStock <
+                item.quantity
+            ) {
+                throw new Error(
+                    `${product.name} is out of stock`
+                );
+            }
         }
     }
 
@@ -118,16 +117,19 @@ const createOrderService = async ({
 
     // REDUCE STOCK
     for (const item of orderItems) {
+        if (mongoose.Types.ObjectId.isValid(item.product)) {
+            const product =
+                await getProductByIdRepository(
+                    item.product
+                );
 
-        const product =
-            await getProductByIdRepository(
-                item.product
-            );
+            if (product) {
+                product.countInStock -=
+                    item.quantity;
 
-        product.countInStock -=
-            item.quantity;
-
-        await product.save();
+                await product.save();
+            }
+        }
     }
 
     // CLEAR CART

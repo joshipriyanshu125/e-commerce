@@ -86,6 +86,23 @@ const Checkout = () => {
     setUseNewAddress(true)
   }
 
+  const handleCardNumberChange = (e) => {
+    let value = e.target.value.replace(/\D/g, '').slice(0, 16);
+    setCardNumber(value.replace(/(\d{4})(?=\d)/g, '$1 '));
+  };
+
+  const handleCardExpiryChange = (e) => {
+    let value = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (value.length >= 3) {
+      value = `${value.slice(0, 2)}/${value.slice(2)}`;
+    }
+    setCardExpiry(value);
+  };
+
+  const handleCardCvcChange = (e) => {
+    setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4));
+  };
+
   if (items.length === 0 && !orderSuccess) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center font-sans">
@@ -479,7 +496,7 @@ const Checkout = () => {
                   type="text"
                   required
                   value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
+                  onChange={handleCardNumberChange}
                   className="w-full bg-transparent border-b border-atelier-lightgray/60 focus:border-atelier-dark py-2 px-1 text-xs text-atelier-dark focus:outline-none transition-colors font-mono"
                   placeholder="•••• •••• •••• ••••"
                   maxLength="19"
@@ -494,7 +511,7 @@ const Checkout = () => {
                     type="text"
                     required
                     value={cardExpiry}
-                    onChange={(e) => setCardExpiry(e.target.value)}
+                    onChange={handleCardExpiryChange}
                     className="w-full bg-transparent border-b border-atelier-lightgray/60 focus:border-atelier-dark py-2 px-1 text-xs text-atelier-dark focus:outline-none transition-colors font-mono"
                     placeholder="MM / YY"
                     maxLength="5"
@@ -507,7 +524,7 @@ const Checkout = () => {
                     type="password"
                     required
                     value={cardCvc}
-                    onChange={(e) => setCardCvc(e.target.value)}
+                    onChange={handleCardCvcChange}
                     className="w-full bg-transparent border-b border-atelier-lightgray/60 focus:border-atelier-dark py-2 px-1 text-xs text-atelier-dark focus:outline-none transition-colors font-mono"
                     placeholder="•••"
                     maxLength="4"
