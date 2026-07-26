@@ -26,7 +26,7 @@ USER ROUTES
 router.post("/", protect, createOrder);
 
 // Get Logged-in User Orders
-router.get("/myorders", protect, getMyOrders);
+router.get("/my-orders", protect, getMyOrders);
 
 // Get Single Order
 router.get("/:id", protect, getSingleOrder);
