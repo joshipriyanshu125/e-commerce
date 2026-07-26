@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { clearCart } from '../features/cart/cartSlice'
-import { CheckCircle, ArrowLeft, CreditCard, Shield, Lock } from 'lucide-react'
+import { CheckCircle, ArrowLeft, CreditCard, Shield, Lock, MapPin, Plus, CheckCircle2 } from 'lucide-react'
+import axios from '../services/axiosInstance'
 
 const Checkout = () => {
   const dispatch = useDispatch()
@@ -10,6 +11,11 @@ const Checkout = () => {
   
   const { items, discountPercent } = useSelector(state => state.cart)
   const { user } = useSelector(state => state.auth)
+
+  // Saved addresses
+  const [savedAddresses, setSavedAddresses] = useState([])
+  const [selectedAddressId, setSelectedAddressId] = useState(null)
+  const [useNewAddress, setUseNewAddress] = useState(false)
 
   // Form inputs states
   const [email, setEmail] = useState(user?.email || '')
@@ -30,6 +36,56 @@ const Checkout = () => {
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [generatedOrderId, setGeneratedOrderId] = useState('')
 
+  // Load saved addresses
+  useEffect(() => {
+    if (user) {
+      axios.get('address').then(res => {
+        if (res.data && res.data.addresses) {
+          const addrs = res.data.addresses
+          setSavedAddresses(addrs)
+          // Auto-select default address
+          const defaultAddr = addrs.find(a => a.isDefault) || addrs[0]
+          if (defaultAddr) {
+            applyAddress(defaultAddr)
+            setSelectedAddressId(defaultAddr._id || defaultAddr.id)
+          } else if (addrs.length === 0) {
+            setUseNewAddress(true)
+          }
+        }
+      }).catch(() => {
+        // No addresses saved yet — show new form
+        setUseNewAddress(true)
+      })
+    }
+  }, [user])
+
+  const applyAddress = (addr) => {
+    const nameParts = (addr.fullName || addr.name || '').split(' ')
+    setFirstName(nameParts[0] || '')
+    setLastName(nameParts.slice(1).join(' ') || '')
+    setAddress(addr.street || '')
+    setCity(addr.city || '')
+    setZip(addr.postalCode || addr.zip || '')
+    setPhone(addr.phone || '')
+    setUseNewAddress(false)
+  }
+
+  const handleSelectSavedAddress = (addr) => {
+    applyAddress(addr)
+    setSelectedAddressId(addr._id || addr.id)
+  }
+
+  const handleUseNewAddress = () => {
+    setSelectedAddressId(null)
+    setAddress('')
+    setCity('')
+    setZip('')
+    setPhone('')
+    setFirstName(user?.name?.split(' ')[0] || '')
+    setLastName(user?.name?.split(' ')[1] || '')
+    setUseNewAddress(true)
+  }
+
   if (items.length === 0 && !orderSuccess) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center font-sans">
@@ -40,28 +96,75 @@ const Checkout = () => {
     )
   }
 
-  const handlePlaceOrder = (e) => {
-    e.preventDefault()
-    
-    setIsProcessing(true)
-
-    // Simulate mock Stripe payment processing
-    setTimeout(() => {
-      const orderId = `AT-${Math.floor(100000 + Math.random() * 900000)}`
-      setGeneratedOrderId(orderId)
-      setIsProcessing(false)
-      setOrderSuccess(true)
-      
-      // Clear shopping cart on successful checkout
-      dispatch(clearCart())
-    }, 1800)
-  }
-
   // Cost calculations
   const subtotal = items.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
   const discountAmount = Math.round(subtotal * (discountPercent / 100))
   const shipping = subtotal >= 150 ? 0 : 15
   const finalTotal = subtotal - discountAmount + shipping
+
+  const handlePlaceOrder = async (e) => {
+    e.preventDefault()
+    
+    setIsProcessing(true)
+
+    try {
+      let savedAddressId = selectedAddressId;
+      
+      // 1. Save new address if applicable
+      if (useNewAddress || savedAddresses.length === 0) {
+        const addrRes = await axios.post('address', {
+          fullName: `${firstName} ${lastName}`.trim(),
+          street: address,
+          city,
+          state: 'N/A',
+          postalCode: zip,
+          country: 'N/A',
+          phone
+        });
+        savedAddressId = addrRes.data._id || addrRes.data.id;
+      }
+
+      // 2. Prepare Order Payload
+      const orderPayload = {
+        orderItems: items.map(item => ({
+          product: item.product._id || item.product.id,
+          name: item.product.name,
+          image: item.product.images?.[0],
+          price: item.product.price,
+          quantity: item.quantity
+        })),
+        shippingInfo: {
+          fullName: `${firstName} ${lastName}`.trim(),
+          address: address,
+          city: city,
+          postalCode: zip,
+          country: 'N/A',
+          phone: phone,
+        },
+        itemsPrice: subtotal,
+        shippingPrice: shipping,
+        taxPrice: 0,
+        totalPrice: finalTotal,
+        addressId: savedAddressId
+      };
+
+      // 3. Create Order
+      const orderRes = await axios.post('orders', orderPayload);
+      
+      // Complete mock payment process visual delay
+      setTimeout(() => {
+        setGeneratedOrderId(orderRes.data.order._id || orderRes.data.order.id);
+        setIsProcessing(false);
+        setOrderSuccess(true);
+        dispatch(clearCart());
+      }, 1800);
+      
+    } catch (err) {
+      console.error("Order creation failed", err);
+      setIsProcessing(false);
+      alert(err?.response?.data?.message || 'Order failed to process. Please try again.');
+    }
+  }
 
   if (orderSuccess) {
     return (
@@ -137,29 +240,187 @@ const Checkout = () => {
             <h2 className="font-serif text-xl text-atelier-dark font-medium border-b border-atelier-lightgray/40 pb-2">
               1. Delivery Address
             </h2>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">First Name</label>
-                <input
-                  type="text"
-                  required
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
-                />
+
+            {/* Saved addresses picker */}
+            {savedAddresses.length > 0 && (
+              <div className="space-y-3">
+                <p className="font-mono text-xs tracking-widest uppercase text-atelier-gray">Saved Addresses</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {savedAddresses.map((addr) => {
+                    const id = addr._id || addr.id;
+                    const name = addr.fullName || addr.name;
+                    const zip = addr.postalCode || addr.zip;
+                    const isSelected = selectedAddressId === id && !useNewAddress;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => handleSelectSavedAddress(addr)}
+                        className={`w-full text-left p-4 border transition-all duration-200 relative ${
+                          isSelected
+                            ? 'border-atelier-dark bg-atelier-cream shadow-sm'
+                            : 'border-atelier-lightgray bg-white hover:border-atelier-dark/50 hover:bg-atelier-cream/40'
+                        }`}
+                      >
+                        {isSelected && (
+                          <CheckCircle2 size={14} className="absolute top-3 right-3 text-atelier-dark" />
+                        )}
+                        {addr.isDefault && (
+                          <span className="absolute top-3 right-3 font-mono text-[9px] tracking-widest uppercase px-1 py-0.5 border border-atelier-dark text-atelier-dark bg-atelier-cream">
+                            {isSelected ? '' : 'Default'}
+                          </span>
+                        )}
+                        <div className="flex items-start gap-2">
+                          <MapPin size={12} className="text-atelier-gray mt-0.5 shrink-0" />
+                          <div>
+                            <p className="font-serif text-sm text-atelier-dark font-medium">{name}</p>
+                            <p className="font-mono text-xs text-atelier-gray mt-0.5">{addr.street}</p>
+                            <p className="font-mono text-xs text-atelier-gray">{addr.city}, {addr.state} {zip}</p>
+                            <p className="font-mono text-xs text-atelier-gray">{addr.country}</p>
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+
+                  {/* "Use a new address" card */}
+                  <button
+                    type="button"
+                    onClick={handleUseNewAddress}
+                    className={`w-full text-left p-4 border transition-all duration-200 flex items-center gap-3 ${
+                      useNewAddress
+                        ? 'border-atelier-dark bg-atelier-cream shadow-sm'
+                        : 'border-dashed border-atelier-lightgray bg-white hover:border-atelier-dark/50'
+                    }`}
+                  >
+                    <Plus size={14} className="text-atelier-gray shrink-0" />
+                    <span className="font-mono text-xs tracking-widest uppercase text-atelier-gray">Use a new address</span>
+                  </button>
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Last Name</label>
-                <input
-                  type="text"
-                  required
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
-                />
+            )}
+
+            {/* Manual form — always shown if no saved, or when "new address" selected */}
+            {(useNewAddress || savedAddresses.length === 0) && (
+              <div className="space-y-4 pt-2">
+                {savedAddresses.length > 0 && (
+                  <p className="font-mono text-xs tracking-widest uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-2">Enter New Address</p>
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">First Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Last Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Street Address</label>
+                  <input
+                    type="text"
+                    required
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
+                    placeholder="Apartment, suite, unit, etc."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">City</label>
+                    <input
+                      type="text"
+                      required
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">ZIP / Postal Code</label>
+                    <input
+                      type="text"
+                      required
+                      value={zip}
+                      onChange={(e) => setZip(e.target.value)}
+                      className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Phone Number</label>
+                  <input
+                    type="text"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* When a saved address is selected, show its fields pre-filled (read-only display) */}
+            {!useNewAddress && selectedAddressId && savedAddresses.length > 0 && (
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">First Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Last Name</label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Street Address</label>
+                  <input type="text" required value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">City</label>
+                    <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">ZIP / Postal Code</label>
+                    <input type="text" required value={zip} onChange={(e) => setZip(e.target.value)} className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Phone Number</label>
+                  <input type="text" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors" />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1">
               <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Email Address</label>
@@ -170,52 +431,6 @@ const Checkout = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
                 placeholder="name@domain.com"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Street Address</label>
-              <input
-                type="text"
-                required
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
-                placeholder="Apartment, suite, unit, etc."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">City</label>
-                <input
-                  type="text"
-                  required
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">ZIP / Postal Code</label>
-                <input
-                  type="text"
-                  required
-                  value={zip}
-                  onChange={(e) => setZip(e.target.value)}
-                  className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="block font-mono text-xs tracking-widest uppercase text-atelier-gray">Phone Number</label>
-              <input
-                type="text"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-transparent border-b border-atelier-lightgray focus:border-atelier-dark py-2 px-1 text-sm text-atelier-dark focus:outline-none transition-colors"
               />
             </div>
           </div>

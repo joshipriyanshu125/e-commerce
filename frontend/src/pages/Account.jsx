@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../features/auth/authSlice'
-import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight, Undo2, BellRing } from 'lucide-react'
+import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight, Undo2, BellRing, Trash2, Star } from 'lucide-react'
 import OrderDetailsDrawer from '../components/account/OrderDetailsDrawer'
 import axios from '../services/axiosInstance'
 import { io } from 'socket.io-client'
@@ -17,19 +17,8 @@ const Account = () => {
   const [drawerOpen, setDrawerOpen] = useState(false)
   
   // Address states
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      isDefault: true,
-      name: 'Piyush Sharma',
-      street: '102 Luxury Block, Quiet Street',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      zip: '400001',
-      country: 'India',
-      phone: '+91 98765 43210'
-    }
-  ])
+  const [addresses, setAddresses] = useState([])
+  const [loadingAddresses, setLoadingAddresses] = useState(false)
   const [showAddAddress, setShowAddAddress] = useState(false)
   const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', state: '', zip: '', country: '', phone: '' })
 
@@ -89,6 +78,25 @@ const Account = () => {
       fetchReturns()
     }
   }, [activeTab, returns.length])
+
+  // Fetch addresses from API
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!isAuthenticated || !user) return;
+      try {
+        setLoadingAddresses(true)
+        const res = await axios.get('address')
+        if (res && res.data && res.data.addresses) {
+          setAddresses(res.data.addresses)
+        }
+      } catch (err) {
+        console.error('Error fetching addresses', err)
+      } finally {
+        setLoadingAddresses(false)
+      }
+    }
+    fetchAddresses()
+  }, [isAuthenticated, user])
 
   const urlBase64ToUint8Array = (base64String) => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -166,11 +174,49 @@ const handleLogout = () => {
     navigate('/')
   }
 
-  const handleAddAddress = (e) => {
+  const handleAddAddress = async (e) => {
     e.preventDefault()
-    setAddresses([...addresses, { id: Date.now(), isDefault: false, ...newAddress }])
-    setNewAddress({ name: '', street: '', city: '', state: '', zip: '', country: '', phone: '' })
-    setShowAddAddress(false)
+    try {
+      const payload = {
+        fullName: newAddress.name,
+        street: newAddress.street,
+        city: newAddress.city,
+        state: newAddress.state,
+        postalCode: newAddress.zip,
+        country: newAddress.country,
+        phone: newAddress.phone
+      }
+      const res = await axios.post('address', payload)
+      setAddresses(prev => [...prev, res.data])
+      setNewAddress({ name: '', street: '', city: '', state: '', zip: '', country: '', phone: '' })
+      setShowAddAddress(false)
+    } catch (err) {
+      console.error('Error adding address', err)
+      alert('Failed to save address')
+    }
+  }
+
+  const handleSetDefault = async (id) => {
+    try {
+      await axios.patch(`address/${id}/default`)
+      setAddresses(prev =>
+        prev.map(a => ({ ...a, isDefault: (a._id || a.id) === id }))
+      )
+    } catch (err) {
+      console.error('Error setting default address', err)
+      alert('Failed to set default')
+    }
+  }
+
+  const handleDeleteAddress = async (id) => {
+    if (!window.confirm('Remove this address?')) return;
+    try {
+      await axios.delete(`address/${id}`)
+      setAddresses(prev => prev.filter(a => (a._id || a.id) !== id))
+    } catch (err) {
+      console.error('Error deleting address', err)
+      alert('Failed to remove address')
+    }
   }
 
   // Display username or first part of email matching screenshot "Hello, p9464888"
@@ -535,24 +581,56 @@ const handleLogout = () => {
 
               {/* Addresses list */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {addresses.map((address) => (
-                  <div key={address.id} className="border border-atelier-lightgray p-5 bg-atelier-cream/20 space-y-3 relative text-sm">
-                    <div className="flex justify-between items-start">
-                      <span className="font-serif font-medium text-sm">{address.name}</span>
-                      {address.isDefault && (
-                        <span className="font-mono text-xs tracking-widest uppercase px-1.5 py-0.5 border border-atelier-accent text-atelier-accent font-semibold">
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-atelier-gray space-y-0.5 leading-relaxed font-light font-sans">
-                      <p className="text-sm">{address.street}</p>
-                      <p className="text-sm">{address.city}, {address.state} {address.zip}</p>
-                      <p className="text-sm">{address.country}</p>
-                      <p className="mt-2 font-mono text-sm text-atelier-dark">Phone: {address.phone}</p>
-                    </div>
+                {loadingAddresses ? (
+                  <p className="text-sm text-atelier-gray col-span-full">Loading addresses…</p>
+                ) : addresses.length === 0 && !showAddAddress ? (
+                  <div className="col-span-full border border-dashed border-atelier-lightgray p-8 text-center">
+                    <MapPin size={20} className="mx-auto text-atelier-gray mb-2" />
+                    <p className="text-sm text-atelier-gray">No saved addresses yet.</p>
                   </div>
-                ))}
+                ) : (
+                  addresses.map((address) => {
+                    const id = address._id || address.id;
+                    const name = address.fullName || address.name;
+                    const zip = address.postalCode || address.zip;
+                    return (
+                      <div key={id} className={`border p-5 bg-atelier-cream/20 space-y-3 relative text-sm transition-all ${
+                        address.isDefault ? 'border-atelier-dark' : 'border-atelier-lightgray'
+                      }`}>
+                        <div className="flex justify-between items-start">
+                          <span className="font-serif font-medium text-sm">{name}</span>
+                          {address.isDefault && (
+                            <span className="font-mono text-xs tracking-widest uppercase px-1.5 py-0.5 border border-atelier-dark text-atelier-dark bg-atelier-cream font-semibold">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-atelier-gray space-y-0.5 leading-relaxed font-light font-sans">
+                          <p className="text-sm">{address.street}</p>
+                          <p className="text-sm">{address.city}, {address.state} {zip}</p>
+                          <p className="text-sm">{address.country}</p>
+                          <p className="mt-2 font-mono text-sm text-atelier-dark">Phone: {address.phone}</p>
+                        </div>
+                        <div className="flex gap-2 pt-2 border-t border-atelier-lightgray/40">
+                          {!address.isDefault && (
+                            <button
+                              onClick={() => handleSetDefault(id)}
+                              className="flex items-center gap-1 text-xs font-mono tracking-widest uppercase text-atelier-dark hover:opacity-70 transition-opacity"
+                            >
+                              <Star size={11} /> Set Default
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteAddress(id)}
+                            className="flex items-center gap-1 text-xs font-mono tracking-widest uppercase text-red-500 hover:opacity-70 transition-opacity ml-auto"
+                          >
+                            <Trash2 size={11} /> Remove
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           )}

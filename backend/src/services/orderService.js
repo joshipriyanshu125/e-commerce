@@ -51,12 +51,12 @@ const createOrderService = async ({
         );
 
     if (
-        !cart ||
-        cart.items.length === 0
+        !orderItems ||
+        orderItems.length === 0
     ) {
 
         throw new Error(
-            "Cart is empty"
+            "Order items are empty"
         );
     }
 
@@ -131,11 +131,13 @@ const createOrderService = async ({
     }
 
     // CLEAR CART
-    cart.items = [];
+    if (cart) {
+        cart.items = [];
 
-    cart.totalPrice = 0;
+        cart.totalPrice = 0;
 
-    await cart.save();
+        await cart.save();
+    }
 
     // POPULATE ORDER
     const populatedOrder =
