@@ -2,16 +2,17 @@ import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../features/auth/authSlice'
-import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight } from 'lucide-react'
+import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight, Undo2, BellRing } from 'lucide-react'
 import OrderDetailsDrawer from '../components/account/OrderDetailsDrawer'
 import axios from '../services/axiosInstance'
+import { io } from 'socket.io-client'
 
 const Account = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   
   const { user, isAuthenticated } = useSelector(state => state.auth)
-  const [activeTab, setActiveTab] = useState('profile') // 'profile', 'orders', 'addresses'
+  const [activeTab, setActiveTab] = useState('profile') // 'profile', 'orders', 'addresses', 'returns'
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   
@@ -35,6 +36,90 @@ const Account = () => {
   const [orders, setOrders] = useState([])
   const [loadingOrders, setLoadingOrders] = useState(false)
   const [error, setError] = useState("")
+
+  const [returns, setReturns] = useState([])
+  const [loadingReturns, setLoadingReturns] = useState(false)
+  const [pushEnabled, setPushEnabled] = useState(false)
+
+  // Realtime updates & Push notifications
+  useEffect(() => {
+    let socket;
+    if (isAuthenticated && user) {
+      socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000')
+      socket.emit("join", user._id || user.id)
+
+      socket.on("orderStatusUpdated", (data) => {
+        setOrders(prevOrders => 
+          prevOrders.map(o => {
+            if ((o._id || o.id) === data.orderId) {
+              return { ...o, orderStatus: data.status, deliveredAt: data.deliveredAt || o.deliveredAt }
+            }
+            return o;
+          })
+        )
+      })
+
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        navigator.serviceWorker.register('/push-sw.js').then(async (reg) => {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) setPushEnabled(true);
+        });
+      }
+    }
+    return () => {
+      if (socket) socket.disconnect()
+    }
+  }, [isAuthenticated, user])
+
+  useEffect(() => {
+    if (activeTab === 'returns' && returns.length === 0) {
+      const fetchReturns = async () => {
+        try {
+          setLoadingReturns(true)
+          const res = await axios.get('returns')
+          if (res && res.data && res.data.returns) {
+            setReturns(res.data.returns)
+          }
+        } catch (err) {
+          console.error(err)
+        } finally {
+          setLoadingReturns(false)
+        }
+      }
+      fetchReturns()
+    }
+  }, [activeTab, returns.length])
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  const enablePushNotifications = async () => {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array('BCxQyetGgdcrl3YtU6PFu3sC5y0x-yWpyJ-Cg2HY5xZMNXbsb7W1brDlKoAmlJmda52Ra76csLc5mo8pZDG-FZk')
+        });
+        await axios.post('push/subscribe', sub);
+        setPushEnabled(true);
+        alert('Push notifications enabled!');
+      } catch (e) {
+        console.error('Could not subscribe', e);
+        alert('Failed to enable notifications.');
+      }
+    } else {
+      alert('Push notifications not supported in your browser.');
+    }
+  }
 
   // Debug: Check auth state
   useEffect(() => {
@@ -158,6 +243,18 @@ const handleLogout = () => {
             <span>Addresses</span>
           </button>
 
+          <button
+            onClick={() => setActiveTab('returns')}
+            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-sm tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
+              activeTab === 'returns'
+                ? 'text-atelier-dark border-b-2 md:border-b-0 md:border-l-2 border-atelier-dark font-semibold'
+                : 'text-atelier-gray hover:text-atelier-dark'
+            }`}
+          >
+            <Undo2 size={14} />
+            <span>Returns</span>
+          </button>
+
         </div>
 
         {/* Tab contents */}
@@ -220,6 +317,17 @@ const handleLogout = () => {
                     />
                   </div>
                 )}
+
+                <div className="pt-4">
+                  {!pushEnabled ? (
+                    <button onClick={enablePushNotifications} className="px-4 py-2 bg-atelier-dark text-white font-mono text-xs tracking-widest uppercase flex items-center gap-2 hover:opacity-90 transition-opacity">
+                      <BellRing size={14} />
+                      Enable Delivery Alerts
+                    </button>
+                  ) : (
+                    <span className="text-sm font-mono text-green-700 flex items-center gap-2"><CheckCircle2 size={14} /> Delivery Alerts Enabled</span>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -236,47 +344,65 @@ const handleLogout = () => {
               ) : orders && orders.length > 0 ? (
                 <div className="space-y-4">
                   {orders.map((order) => (
-                    <div key={order._id} className="border border-atelier-lightgray p-6 bg-atelier-cream/30 space-y-4">
+                    <div key={order._id} className="border border-atelier-lightgray bg-atelier-cream/30 mb-6">
                       {/* Order info header */}
-                      <div className="flex flex-col sm:flex-row justify-between border-b border-atelier-lightgray/40 pb-3 font-mono text-sm tracking-wider uppercase text-atelier-gray gap-2">
-                        <div className="flex space-x-4">
-                          <span>Order: <strong className="text-atelier-dark">{order._id}</strong></span>
-                          <span>Placed: <strong className="text-atelier-dark">{new Date(order.createdAt).toLocaleDateString()}</strong></span>
+                      <div className="flex flex-col sm:flex-row justify-between border-b border-atelier-lightgray/40 p-6 pb-3 font-mono text-sm tracking-wider uppercase text-atelier-gray gap-2">
+                        <div>
+                          <span className="block text-xs">ORDER • {order._id.slice(-8).toUpperCase()}</span>
+                          <span className="font-serif text-2xl text-atelier-dark font-medium capitalize mt-1 block">{new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'})}</span>
+                          <span className="flex items-center text-atelier-dark mt-1 text-xs"><div className="w-1.5 h-1.5 rounded-full bg-atelier-dark mr-1.5"></div> {order.orderStatus}</span>
                         </div>
-                        <div className="flex space-x-4 items-center">
-                          <span className="flex items-center text-green-700">
-                            <CheckCircle2 size={12} className="mr-1" /> {order.orderStatus}
-                          </span>
-                          {order.deliveredAt && (
-                            <span>Delivered on: <strong className="text-atelier-dark">{new Date(order.deliveredAt).toLocaleDateString()}</strong></span>
-                          )}
+                        <div className="text-right">
+                          <span className="block text-xs">TOTAL</span>
+                          <span className="font-serif text-xl text-atelier-dark font-medium">${order.totalPrice || order.total}</span>
                         </div>
                       </div>
 
+                      {/* Order Timeline Progress */}
+                      {order.orderStatus !== 'Cancelled' && (
+                        <div className="px-6 py-4 border-b border-atelier-lightgray/40 relative">
+                          <div className="absolute top-1/2 left-6 right-6 h-[1px] bg-atelier-lightgray -translate-y-1/2 z-0 hidden sm:block"></div>
+                          <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center sm:items-start space-y-4 sm:space-y-0 text-center sm:text-left">
+                            {['Processing', 'Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'].map((step, idx, arr) => {
+                               const statusOrder = ['Processing', 'Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'];
+                               const currentIdx = statusOrder.indexOf(order.orderStatus);
+                               const isCompleted = idx <= currentIdx || currentIdx === -1 && order.orderStatus === 'Delivered';
+                               return (
+                                 <div key={step} className="flex flex-col items-center bg-transparent sm:bg-[#F3F1EC] sm:px-2">
+                                   <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 mb-2 ${isCompleted ? 'bg-atelier-dark border-atelier-dark text-white' : 'bg-transparent border-atelier-lightgray text-atelier-gray'}`}>
+                                      {isCompleted ? <CheckCircle2 size={14} /> : <Package size={14} />}
+                                   </div>
+                                   <span className={`font-mono text-[10px] uppercase tracking-widest ${isCompleted ? 'text-atelier-dark font-bold' : 'text-atelier-gray'}`}>{step}</span>
+                                 </div>
+                               )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Order items */}
-                      <div className="space-y-3">
+                      <div className="p-6">
                         {order.orderItems.map((item, i) => (
-                          <div key={i} className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-serif text-sm text-atelier-dark font-medium">{item.name}</h4>
-                              <p className="font-mono text-xs text-atelier-gray uppercase mt-0.5">
-                                Qty: {item.quantity}
-                              </p>
+                          <div key={i} className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-4">
+                              {item.image && <img src={item.image} alt={item.name} className="w-16 h-16 object-cover bg-atelier-lightgray" />}
+                              <div>
+                                <h4 className="font-serif text-sm text-atelier-dark font-medium">{item.name}</h4>
+                                <p className="font-mono text-xs text-atelier-gray uppercase mt-0.5">
+                                  Qty: {item.quantity}
+                                </p>
+                              </div>
                             </div>
-                            <span className="font-mono text-xs text-atelier-dark font-medium">${item.price * item.quantity}</span>
+                            <span className="font-mono text-sm text-atelier-dark font-medium">${item.price * item.quantity}</span>
                           </div>
                         ))}
                       </div>
 
                       {/* Total */}
-                      <div className="border-t border-atelier-lightgray/30 pt-3 flex justify-between font-mono text-xs uppercase tracking-wider">
-                        <span>Total Paid</span>
-                        <strong className="text-atelier-dark">${order.total}</strong>
+                      <div className="px-6 flex justify-end pt-3">
+                        <button onClick={() => { setSelectedOrder(order); setDrawerOpen(true) }} className="px-4 py-2 border border-atelier-dark text-sm font-mono uppercase bg-white hover:bg-atelier-lightgray transition-colors">View details</button>
                       </div>
-
-                        <div className="flex justify-end pt-3">
-                          <button onClick={() => { setSelectedOrder(order); setDrawerOpen(true) }} className="px-4 py-2 border border-atelier-dark text-sm font-mono uppercase">View details</button>
-                        </div>
+                      <div className="pb-6"></div>
                     </div>
                   ))}
                 </div>
@@ -428,6 +554,41 @@ const handleLogout = () => {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* 4. Returns tab */}
+          {activeTab === 'returns' && (
+            <div className="space-y-6 animate-fade-in">
+              {loadingReturns ? (
+                <p className="text-sm text-atelier-gray">Loading returns…</p>
+              ) : returns && returns.length > 0 ? (
+                <div className="space-y-4">
+                  {returns.map((ret) => (
+                    <div key={ret._id} className="border border-atelier-lightgray p-6 bg-atelier-cream/30 space-y-4">
+                      <div className="flex justify-between border-b border-atelier-lightgray/40 pb-3 font-mono text-sm tracking-wider uppercase text-atelier-gray">
+                        <span>Return for Order: <strong className="text-atelier-dark">{ret.order}</strong></span>
+                        <span className="flex items-center text-orange-700">
+                          {ret.status}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {ret.items.map((item, i) => (
+                          <div key={i} className="flex justify-between items-start">
+                             <span className="font-serif text-sm text-atelier-dark font-medium">{item.product?.name || 'Item'} (Qty: {item.quantity})</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-atelier-lightgray p-12 bg-atelier-cream/30 flex flex-col items-center justify-center text-center space-y-3">
+                  <Undo2 size={24} className="text-atelier-gray" />
+                  <h4 className="font-serif text-lg text-atelier-dark">No returns yet</h4>
+                  <p className="text-sm text-atelier-gray">Start a return from an order's details.</p>
+                </div>
+              )}
             </div>
           )}
 

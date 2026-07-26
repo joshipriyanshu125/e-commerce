@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import api from "../../utils/api";
-import { X, Download, Trash2 } from "lucide-react";
+import api from "../../services/axiosInstance";
+import { X, Download, Trash2, Undo2 } from "lucide-react";
 
 const OrderDetailsDrawer = ({ order, open, onClose }) => {
   const [uploading, setUploading] = useState(false);
@@ -10,17 +10,13 @@ const OrderDetailsDrawer = ({ order, open, onClose }) => {
   const handleDownloadInvoice = async () => {
     try {
       const orderId = order._id || order.id;
-
-      const res = await api.post("invoice", {
-        orderId,
-      });
+      const res = await api.post("invoice", { orderId });
 
       if (res.data && res.data.filePath) {
         const invoiceId = res.data.invoice._id || res.data.invoice.id;
-
         if (invoiceId) {
           const link = document.createElement("a");
-          link.href = `${import.meta.env.VITE_API_URL}/invoice/download?id=${encodeURIComponent(invoiceId)}`;
+          link.href = `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/api/invoice/download?id=${encodeURIComponent(invoiceId)}`;
           link.click();
         } else {
           alert("Invoice generated but could not locate download");
@@ -35,9 +31,7 @@ const OrderDetailsDrawer = ({ order, open, onClose }) => {
   const handleCancel = async () => {
     try {
       const orderId = order._id || order.id;
-
-      await api.put(`/orders/${orderId}/cancel`);
-
+      await api.put(`orders/${orderId}/cancel`);
       alert("Order cancelled");
       onClose();
     } catch (err) {
@@ -48,18 +42,17 @@ const OrderDetailsDrawer = ({ order, open, onClose }) => {
 
   const handleReturn = async (e) => {
     const files = e.target.files;
-
     if (!files || files.length === 0) return;
 
     const form = new FormData();
-
     form.append("orderId", order._id || order.id);
 
+    const itemsArr = order.items || order.orderItems || [];
     form.append(
       "items",
       JSON.stringify(
-        order.items.map((i) => ({
-          product: i.name,
+        itemsArr.map((i) => ({
+          product: i.name || i.product,
           quantity: i.quantity,
         }))
       )
@@ -71,14 +64,10 @@ const OrderDetailsDrawer = ({ order, open, onClose }) => {
 
     try {
       setUploading(true);
-
       await api.post("returns", form, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
-      alert("Return requested");
+      alert("Return requested successfully! Check the Returns tab.");
       onClose();
     } catch (err) {
       console.error(err);
@@ -88,79 +77,107 @@ const OrderDetailsDrawer = ({ order, open, onClose }) => {
     }
   };
 
+  const items = order.items || order.orderItems || [];
+  
+  // Calculate subtotal
+  const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 py-6 sm:items-center sm:px-6">
-      <div className="w-full max-w-2xl overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+    <>
+      <div className="fixed inset-0 z-40 bg-atelier-dark/20 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl transition-transform duration-300 transform translate-x-0 border-l border-atelier-lightgray flex flex-col h-full overflow-hidden">
+        
+        <div className="flex items-center justify-between border-b border-atelier-lightgray px-6 py-5 bg-white shrink-0">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Order Details</h2>
-            <p className="text-sm text-slate-500">Order ID: {order._id || order.id}</p>
+            <h2 className="text-xl font-serif text-atelier-dark">Order Details</h2>
+            <p className="text-xs font-mono tracking-widest text-atelier-gray uppercase mt-1">ID: {order._id || order.id}</p>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-            aria-label="Close"
+            className="p-2 text-atelier-gray transition hover:text-atelier-dark"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        <div className="space-y-5 px-6 py-5">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">Status</p>
-            <p className="mt-1 text-sm text-slate-600">{order.status || "Pending"}</p>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-900">Items</p>
-              <p className="text-sm text-slate-500">{(order.items || []).length} item(s)</p>
-            </div>
-            <div className="mt-3 space-y-3">
-              {(order.items || []).map((item) => (
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-atelier-cream/10">
+          
+          <div className="space-y-4">
+            <h3 className="text-sm font-mono tracking-widest text-atelier-dark uppercase border-b border-atelier-lightgray/50 pb-2">Items summary</h3>
+            <div className="space-y-4">
+              {items.map((item) => (
                 <div
                   key={item._id || item.id || item.product || item.name}
-                  className="flex items-center justify-between rounded-2xl bg-white px-3 py-3 shadow-sm"
+                  className="flex items-start justify-between"
                 >
-                  <span className="text-sm text-slate-700">{item.name || item.product || "Item"}</span>
-                  <span className="text-sm text-slate-500">x{item.quantity}</span>
+                  <div className="flex items-start gap-4">
+                    {item.image && <img src={item.image} alt={item.name} className="w-16 h-16 object-cover bg-atelier-lightgray" />}
+                    <div>
+                      <span className="block text-sm font-serif text-atelier-dark">{item.name || item.product || "Item"}</span>
+                      <span className="block text-xs font-mono text-atelier-gray uppercase mt-1">Qty: {item.quantity}</span>
+                    </div>
+                  </div>
+                  <span className="text-sm font-mono text-atelier-dark">${((item.price || 0) * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-4">
+            <h3 className="text-sm font-mono tracking-widest text-atelier-dark uppercase border-b border-atelier-lightgray/50 pb-2">Receipt</h3>
+            <div className="space-y-2 text-sm font-mono text-atelier-dark">
+              <div className="flex justify-between text-atelier-gray"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between text-atelier-gray"><span>Shipping</span><span>${order.shippingPrice?.toFixed(2) || '0.00'}</span></div>
+              <div className="flex justify-between text-atelier-gray"><span>Tax</span><span>${order.taxPrice?.toFixed(2) || '0.00'}</span></div>
+              <div className="flex justify-between font-bold pt-2 border-t border-atelier-lightgray/50">
+                <span>Total</span><span>${(order.totalPrice || order.total || subtotal)?.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-3 pt-4">
             <button
-              type="button"
               onClick={handleDownloadInvoice}
-              className="inline-flex items-center justify-center gap-2 rounded-3xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+              className="w-full flex items-center justify-center gap-2 bg-atelier-dark px-4 py-3 text-sm font-mono uppercase tracking-widest text-white transition hover:opacity-90"
             >
               <Download size={16} /> Download Invoice
             </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="inline-flex items-center justify-center gap-2 rounded-3xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-            >
-              <Trash2 size={16} /> Cancel Order
-            </button>
+            
+            {order.orderStatus !== 'Shipped' && order.orderStatus !== 'Delivered' && order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Out for Delivery' && (
+              <button
+                onClick={handleCancel}
+                className="w-full flex items-center justify-center gap-2 border border-atelier-dark bg-white px-4 py-3 text-sm font-mono uppercase tracking-widest text-atelier-dark transition hover:bg-atelier-lightgray"
+              >
+                <Trash2 size={16} /> Cancel Order
+              </button>
+            )}
           </div>
 
-          <div className="rounded-3xl border border-slate-200 p-4">
-            <label className="block text-sm font-semibold text-slate-900">Return photos</label>
-            <input
-              type="file"
-              multiple
-              onChange={handleReturn}
-              disabled={uploading}
-              className="mt-3 w-full rounded-3xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-700 focus:border-slate-900 focus:outline-none"
-            />
-            {uploading && <p className="mt-2 text-sm text-slate-500">Uploading files...</p>}
-          </div>
+          {(order.orderStatus === 'Delivered' || order.orderStatus === 'Shipped') && (
+            <div className="pt-6 border-t border-atelier-lightgray">
+              <h3 className="text-sm font-mono tracking-widest text-atelier-dark uppercase mb-2">Request Return</h3>
+              <p className="text-xs text-atelier-gray mb-4">Upload photos of the items to initiate a return request.</p>
+              
+              <div className="relative border-2 border-dashed border-atelier-lightgray bg-white p-6 text-center hover:bg-atelier-cream/50 transition">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleReturn}
+                  disabled={uploading}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <Undo2 size={24} className="mx-auto text-atelier-gray mb-2" />
+                <span className="block text-sm font-serif text-atelier-dark">
+                  {uploading ? "Uploading..." : "Click or drag photos here"}
+                </span>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default OrderDetailsDrawer;
+export default OrderDetailsDrawer;

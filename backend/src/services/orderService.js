@@ -5,6 +5,7 @@ import sendEmail from "../utils/sendEmail.js";
 import {
     orderConfirmationTemplate,
     orderDeliveredTemplate,
+    orderStatusUpdateTemplate,
 } from "../utils/emailTemplates.js";
 
 import {
@@ -21,6 +22,7 @@ import {
 } from "../../repositories/orderRepository.js";
 import PushSubscription from "../models/pushSubscriptionModel.js";
 import { sendWebPush } from "../utils/webPush.js";
+import { getIO } from "../config/socket.js";
 
 /*
 ==============================
@@ -275,50 +277,53 @@ const updateOrderStatusService =
             if (order.paymentInfo) {
                 order.paymentInfo.paymentStatus = "Paid";
             }
-
-            // SEND EMAIL
-            await sendEmail({
-
-                to:
-                    order.user.email,
-
-                subject:
-                    "Order Delivered",
-
-                html:
-                    orderDeliveredTemplate(
-                        order.user
-                            .name,
-                        order._id
-                    ),
-            });
-
-            // SEND NOTIFICATION
-            await sendNotification({
-
-                userId: order.user._id,
-
-                title: "Order Delivered",
-
-                message:
-                    `Your order ${order._id} has been delivered successfully.`,
-            });
         }
 
         await order.save();
 
-        // send web-push to subscribed devices for this user (best-effort)
-        try {
-            const sub = await PushSubscription.findOne({ user: order.user._id });
-            if (sub) {
-                await sendWebPush(sub.subscription, {
-                    title: `Order ${status}`,
-                    body: `Your order ${order._id} status is now ${status}`,
-                    orderId: order._id,
-                });
+        if (["Shipped", "Out for Delivery", "Delivered"].includes(status)) {
+            // SEND EMAIL
+            const subject = status === "Delivered" ? "Order Delivered" : `Order Status: ${status}`;
+            const htmlTemplate = status === "Delivered" 
+                ? orderDeliveredTemplate(order.user.name, order._id)
+                : orderStatusUpdateTemplate(order.user.name, order._id, status);
+
+            await sendEmail({
+                to: order.user.email,
+                subject,
+                html: htmlTemplate,
+            });
+
+            // SEND IN-APP NOTIFICATION
+            await sendNotification({
+                userId: order.user._id,
+                title: subject,
+                message: `Your order ${order._id} status is now ${status}.`,
+            });
+
+            // send web-push to subscribed devices for this user (best-effort)
+            try {
+                const sub = await PushSubscription.findOne({ user: order.user._id });
+                if (sub) {
+                    await sendWebPush(sub.subscription, {
+                        title: subject,
+                        body: `Your order ${order._id} status is now ${status}`,
+                        orderId: order._id,
+                    });
+                }
+            } catch (err) {
+                console.error("push send error", err.message);
             }
-        } catch (err) {
-            console.error("push send error", err.message);
+        }
+
+        // EMIT SOCKET EVENT FOR REAL-TIME UPDATE
+        const io = getIO();
+        if (io) {
+            io.to(order.user._id.toString()).emit("orderStatusUpdated", {
+                orderId: order._id,
+                status: order.orderStatus,
+                deliveredAt: order.deliveredAt
+            });
         }
 
         return order;

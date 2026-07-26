@@ -111,3 +111,33 @@ export const passwordResetTemplate = (resetLink) => {
     </div>
     `;
 };
+
+/*
+==================================================
+ORDER STATUS UPDATE EMAIL
+==================================================
+*/
+export const orderStatusUpdateTemplate = (userName, orderId, status) => {
+    return `
+    <div style="font-family: Arial, Helvetica, sans-serif; max-width:600px; margin:auto; padding:20px; border:1px solid #ddd; border-radius:8px;">
+        <h2 style="color:#17a2b8;">📦 Order Status Update</h2>
+
+        <p>Hello <strong>${userName}</strong>,</p>
+
+        <p>
+            Your order <strong>${orderId}</strong> status has been updated to: <strong style="font-size:18px;">${status}</strong>
+        </p>
+
+        <hr>
+
+        <p>
+            Thank you for shopping with us.
+        </p>
+
+        <p>
+            Regards,<br>
+            <strong>E-Commerce Team</strong>
+        </p>
+    </div>
+    `;
+};
