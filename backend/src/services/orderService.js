@@ -147,33 +147,30 @@ const createOrderService = async ({
             order._id
         );
 
-    // SEND EMAIL
-    await sendEmail({
-
-        to:
-            populatedOrder.user.email,
-
-        subject:
-            "Order Confirmation",
-
-        html:
-            orderConfirmationTemplate(
-                populatedOrder.user
-                    .name,
+    // SEND EMAIL (non-fatal — order is placed even if email fails)
+    try {
+        await sendEmail({
+            to: populatedOrder.user.email,
+            subject: "Order Confirmation",
+            html: orderConfirmationTemplate(
+                populatedOrder.user.name,
                 order._id
             ),
-    });
+        });
+    } catch (emailErr) {
+        console.error("Order confirmation email failed (order still created):", emailErr.message);
+    }
 
-    // SEND NOTIFICATION
-    await sendNotification({
-
-        userId: user._id,
-
-        title: "Order Placed",
-
-        message:
-            `Your order ${order._id} has been placed successfully.`,
-    });
+    // SEND NOTIFICATION (non-fatal)
+    try {
+        await sendNotification({
+            userId: user._id,
+            title: "Order Placed",
+            message: `Your order ${order._id} has been placed successfully.`,
+        });
+    } catch (notifErr) {
+        console.error("Order notification failed (order still created):", notifErr.message);
+    }
 
     return order;
 };
