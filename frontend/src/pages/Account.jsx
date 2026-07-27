@@ -253,7 +253,15 @@ const handleLogout = () => {
       <div className="flex flex-col md:flex-row md:items-start md:justify-between border-b border-atelier-lightgray/50 pb-6 mb-8 gap-4">
         <div>
 
-      <OrderDetailsDrawer order={selectedOrder} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <OrderDetailsDrawer 
+        order={selectedOrder} 
+        open={drawerOpen} 
+        onClose={() => setDrawerOpen(false)} 
+        onOrderUpdated={(updatedOrder) => {
+          setOrders(prev => prev.map(o => ((o._id || o.id) === (updatedOrder._id || updatedOrder.id) ? updatedOrder : o)));
+          setSelectedOrder(updatedOrder);
+        }}
+      />
           <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block mb-1">
             Your Account
           </span>

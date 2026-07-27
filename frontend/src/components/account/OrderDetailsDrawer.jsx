@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import api from "../../services/axiosInstance";
 import { X, Download, Trash2, Undo2 } from "lucide-react";
 
-const OrderDetailsDrawer = ({ order, open, onClose }) => {
+const OrderDetailsDrawer = ({ order, open, onClose, onOrderUpdated }) => {
   const [uploading, setUploading] = useState(false);
 
   if (!open || !order) return null;
@@ -31,8 +31,11 @@ const OrderDetailsDrawer = ({ order, open, onClose }) => {
   const handleCancel = async () => {
     try {
       const orderId = order._id || order.id;
-      await api.put(`orders/${orderId}/cancel`);
+      const res = await api.put(`orders/${orderId}/cancel`);
       alert("Order cancelled");
+      if (onOrderUpdated && res.data && res.data.order) {
+        onOrderUpdated(res.data.order);
+      }
       onClose();
     } catch (err) {
       console.error(err);
