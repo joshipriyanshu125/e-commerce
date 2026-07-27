@@ -26,6 +26,12 @@ import AdminRoute from './components/routes/AdminRoute'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProductsManager from './pages/admin/AdminProductsManager'
 import AdminProductForm from './pages/admin/AdminProductForm'
+import AdminOrdersManager from './pages/admin/AdminOrdersManager'
+import AdminUsersManager from './pages/admin/AdminUsersManager'
+import AdminReviewsModerator from './pages/admin/AdminReviewsModerator'
+import AdminCouponsManager from './pages/admin/AdminCouponsManager'
+import AdminNotificationsPanel from './pages/admin/AdminNotificationsPanel'
+import AdminSettingsPanel from './pages/admin/AdminSettingsPanel'
 
 function App() {
   return (
@@ -73,6 +79,30 @@ function App() {
         <Route
           path="/admin/products/:id"
           element={<AdminRoute><AdminProductForm /></AdminRoute>}
+        />
+        <Route
+          path="/admin/orders"
+          element={<AdminRoute><AdminOrdersManager /></AdminRoute>}
+        />
+        <Route
+          path="/admin/users"
+          element={<AdminRoute><AdminUsersManager /></AdminRoute>}
+        />
+        <Route
+          path="/admin/reviews"
+          element={<AdminRoute><AdminReviewsModerator /></AdminRoute>}
+        />
+        <Route
+          path="/admin/coupons"
+          element={<AdminRoute><AdminCouponsManager /></AdminRoute>}
+        />
+        <Route
+          path="/admin/notifications"
+          element={<AdminRoute><AdminNotificationsPanel /></AdminRoute>}
+        />
+        <Route
+          path="/admin/settings"
+          element={<AdminRoute><AdminSettingsPanel /></AdminRoute>}
         />
 
         {/* =========================

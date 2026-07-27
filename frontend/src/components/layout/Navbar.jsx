@@ -118,7 +118,7 @@ const Navbar = () => {
                     to="/admin"
                     className="hover:opacity-75"
                   >
-                    Admin
+                    Admin Panel
                   </Link>
                 )}
 

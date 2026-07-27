@@ -42,7 +42,11 @@ const Login = () => {
 
       // Small delay to ensure state is updated before navigating
       setTimeout(() => {
-        navigate("/account");
+        if (data.user.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/account");
+        }
       }, 100);
     } catch (err) {
       setError(
