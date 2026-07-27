@@ -110,22 +110,46 @@ const Account = () => {
   }
 
   const enablePushNotifications = async () => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array('BCxQyetGgdcrl3YtU6PFu3sC5y0x-yWpyJ-Cg2HY5xZMNXbsb7W1brDlKoAmlJmda52Ra76csLc5mo8pZDG-FZk')
-        });
-        await axios.post('push/subscribe', sub);
-        setPushEnabled(true);
-        alert('Push notifications enabled!');
-      } catch (e) {
-        console.error('Could not subscribe', e);
-        alert('Failed to enable notifications.');
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Push notifications are not supported in your browser.');
+      return;
+    }
+
+    try {
+      // Step 1: Request notification permission explicitly
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('Notification permission denied. Please allow notifications in your browser settings and try again.');
+        return;
       }
-    } else {
-      alert('Push notifications not supported in your browser.');
+
+      // Step 2: Ensure service worker is registered and ready
+      await navigator.serviceWorker.register('/push-sw.js');
+      const reg = await navigator.serviceWorker.ready;
+
+      // Clear any existing stale subscription to avoid key mismatch errors
+      const existingSub = await reg.pushManager.getSubscription();
+      if (existingSub) {
+        await existingSub.unsubscribe();
+      }
+
+      // Step 3: Subscribe to push
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array('BOOyPRZuO_1zdkUK6dJ61oFuudYTIIvLwNMNPEFQeH6quBUDH06uJT81Bmjdyu3GehbrC47EZJJ3dfP4kqlUgD8')
+      });
+
+      // Step 4: Save subscription to backend
+      await axios.post('push/subscribe', sub);
+      setPushEnabled(true);
+      alert('Delivery alerts enabled! You will now receive push notifications for your orders.');
+    } catch (e) {
+      console.error('Could not subscribe to push notifications:', e);
+      if (e.name === 'NotAllowedError') {
+        alert('Notification permission was denied. Please enable notifications in your browser settings.');
+      } else {
+        alert(`Failed to enable notifications. Please try again later. Error: ${e.message || e.toString()}`);
+      }
     }
   }
 
