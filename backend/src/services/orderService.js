@@ -344,7 +344,8 @@ const cancelOrderService = async (orderId, user) => {
     }
 
     // Only owner or admin (admin check happens at controller route) can cancel
-    if (order.user.toString() !== user._id.toString()) {
+    const orderUserId = (order.user && order.user._id) ? order.user._id.toString() : order.user.toString();
+    if (orderUserId !== user._id.toString()) {
         throw new Error("Not authorized to cancel this order");
     }
 
