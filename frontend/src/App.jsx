@@ -22,66 +22,64 @@ import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/routes/ProtectedRoute'
 import AdminRoute from './components/routes/AdminRoute'
 
-// Future Admin Dashboard
-// import AdminDashboard from './admin/Dashboard'
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminProductsManager from './pages/admin/AdminProductsManager'
+import AdminProductForm from './pages/admin/AdminProductForm'
 
 function App() {
   return (
     <Router>
-      <MainLayout>
-        <Routes>
-          {/* =========================
-              Public Routes
-          ========================= */}
-          <Route path="/" element={<Home />} />
-          <Route path="/journal" element={<Journal />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/cart" element={<Cart />} />
+      <Routes>
+        {/* =========================
+            Public Routes (inside MainLayout)
+        ========================= */}
+        <Route element={<MainLayout><></></MainLayout>} path="__never__" />
 
-          {/* =========================
-              Protected Routes
-          ========================= */}
-          <Route
-            path="/checkout"
-            element={
-              <ProtectedRoute>
-                <Checkout />
-              </ProtectedRoute>
-            }
-          />
+        <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+        <Route path="/journal" element={<MainLayout><Journal /></MainLayout>} />
+        <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
+        <Route path="/register" element={<MainLayout><Register /></MainLayout>} />
+        <Route path="/product/:id" element={<MainLayout><ProductDetails /></MainLayout>} />
+        <Route path="/cart" element={<MainLayout><Cart /></MainLayout>} />
 
-          <Route
-            path="/account"
-            element={
-              <ProtectedRoute>
-                <Account />
-              </ProtectedRoute>
-            }
-          />
+        {/* =========================
+            Protected Routes
+        ========================= */}
+        <Route
+          path="/checkout"
+          element={<MainLayout><ProtectedRoute><Checkout /></ProtectedRoute></MainLayout>}
+        />
+        <Route
+          path="/account"
+          element={<MainLayout><ProtectedRoute><Account /></ProtectedRoute></MainLayout>}
+        />
 
-          {/* =========================
-              Admin Routes (Enable Later)
-          ========================= */}
+        {/* =========================
+            Admin Routes (own AdminLayout — no MainLayout wrapper)
+        ========================= */}
+        <Route
+          path="/admin"
+          element={<AdminRoute><AdminDashboard /></AdminRoute>}
+        />
+        <Route
+          path="/admin/products"
+          element={<AdminRoute><AdminProductsManager /></AdminRoute>}
+        />
+        <Route
+          path="/admin/products/new"
+          element={<AdminRoute><AdminProductForm /></AdminRoute>}
+        />
+        <Route
+          path="/admin/products/:id"
+          element={<AdminRoute><AdminProductForm /></AdminRoute>}
+        />
 
-          {/*
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            }
-          />
-          */}
-
-          {/* =========================
-              404 Page
-          ========================= */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </MainLayout>
+        {/* =========================
+            404
+        ========================= */}
+        <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
+      </Routes>
     </Router>
   )
 }

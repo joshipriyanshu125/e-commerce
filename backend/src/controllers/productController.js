@@ -47,10 +47,17 @@ export const createProduct = asyncHandler(async (req, res) => {
         name,
         description,
         price,
+        discountPrice,
         countInStock,
         category,
         brand,
+        status,
     } = req.body;
+
+    // Parse array fields sent as JSON strings from multipart form
+    const tags = req.body.tags ? (Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags)) : [];
+    const sizes = req.body.sizes ? (Array.isArray(req.body.sizes) ? req.body.sizes : JSON.parse(req.body.sizes)) : [];
+    const colors = req.body.colors ? (Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors)) : [];
 
     const images = [];
 
@@ -73,23 +80,19 @@ export const createProduct = asyncHandler(async (req, res) => {
     }
 
     const product = new Product({
-
         name,
-
         description,
-
         price,
-
+        discountPrice: discountPrice || null,
         countInStock,
-
         category,
-
         brand,
-
+        tags,
+        sizes,
+        colors,
+        status: status || "Active",
         images,
-
         user: req.user._id,
-
     });
 
     const createdProduct = await product.save();
@@ -224,29 +227,27 @@ export const getProductById = asyncHandler(async (req, res) => {
 // UPDATE PRODUCT
 export const updateProduct = asyncHandler(async (req, res) => {
 
-    const product = await Product.findById(
-        req.params.id
-    );
+    const product = await Product.findById(req.params.id);
 
     if (product) {
+        product.name = req.body.name || product.name;
+        product.description = req.body.description || product.description;
+        product.price = req.body.price !== undefined ? Number(req.body.price) : product.price;
+        product.discountPrice = req.body.discountPrice !== undefined ? (req.body.discountPrice === '' ? null : Number(req.body.discountPrice)) : product.discountPrice;
+        product.countInStock = req.body.countInStock !== undefined ? Number(req.body.countInStock) : product.countInStock;
+        product.category = req.body.category || product.category;
+        product.brand = req.body.brand !== undefined ? req.body.brand : product.brand;
+        product.status = req.body.status || product.status;
 
-        product.name =
-            req.body.name || product.name;
-
-        product.description =
-            req.body.description || product.description;
-
-        product.price =
-            req.body.price || product.price;
-
-        product.countInStock =
-            req.body.countInStock || product.countInStock;
-
-        product.category =
-            req.body.category || product.category;
-
-        product.brand =
-            req.body.brand || product.brand;
+        if (req.body.tags !== undefined) {
+            product.tags = Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags);
+        }
+        if (req.body.sizes !== undefined) {
+            product.sizes = Array.isArray(req.body.sizes) ? req.body.sizes : JSON.parse(req.body.sizes);
+        }
+        if (req.body.colors !== undefined) {
+            product.colors = Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors);
+        }
 
 
         // OPTIONAL IMAGE UPDATE
