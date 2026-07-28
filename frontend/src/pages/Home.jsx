@@ -13,7 +13,7 @@ const Home = () => {
   
   const typeParam = searchParams.get('type') // 'fashion'
   
-  const { filteredProducts, selectedType, selectedCategory, sortOption, apiProducts } = useSelector(state => state.products)
+  const { filteredProducts, allProducts = [], apiLoading, selectedType, selectedCategory, sortOption } = useSelector(state => state.products)
 
   // Fetch real products from backend on mount
   useEffect(() => {
@@ -27,17 +27,12 @@ const Home = () => {
     } else {
       dispatch(setType('all'))
     }
-    // Reset category when switching types
     dispatch(setCategory('all'))
   }, [typeParam, dispatch])
 
-  // Get specific products for mock landing sections (from allProducts which includes DB products)
-  const { allProducts = [] } = useSelector(state => state.products)
-  const covetedIds = ['wool-coat', 'court-sneakers', 'leather-tote', 'automatic-watch']
-  const covetedProducts = allProducts.filter(p => covetedIds.includes(p.id))
-
-  const newArrivalIds = ['silk-blouse', 'round-sunglasses', 'pro-phone', 'linen-trousers']
-  const newArrivals = allProducts.filter(p => newArrivalIds.includes(p.id))
+  // Featured sections: use first 4 and next 4 real products
+  const covetedProducts = allProducts.slice(0, 4)
+  const newArrivals = allProducts.slice(4, 8)
 
   // Determine if catalogue view is active
   const isCatalogueView = typeParam !== null
@@ -115,10 +110,14 @@ const Home = () => {
 
           {/* Product list grid */}
           <div className="lg:col-span-9">
-            {filteredProducts.length > 0 ? (
+            {apiLoading ? (
+              <div className="py-20 text-center">
+                <p className="font-serif text-lg text-atelier-gray italic">Loading products...</p>
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-6">
                 {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id || product._id} product={product} />
                 ))}
               </div>
             ) : (

@@ -1,281 +1,72 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { IMAGES } from '../../utils/images'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
-// Normalize a DB product to match the shape ProductCard/ProductDetails expect
-const normalizeDBProduct = (p) => ({
-  id: p._id,
-  _id: p._id,
-  name: p.name,
-  description: p.description,
-  category: p.category,
-  type: 'fashion', // default type so it shows up in catalogue view
-  price: p.price,
-  originalPrice: p.discountPrice ? p.price : undefined,
-  // discountPrice is the sale price
-  ...(p.discountPrice && { price: p.discountPrice, originalPrice: p.price }),
-  rating: p.rating || 0,
-  countInStock: p.countInStock,
-  brand: p.brand,
-  status: p.status,
-  tag: p.status === 'Active' ? undefined : p.status,
-  // Normalize colors: DB stores ['Red', 'Blue'], card expects [{name, hex}]
-  colors: Array.isArray(p.colors) && p.colors.length > 0
-    ? p.colors.map(c => typeof c === 'string' ? { name: c, hex: '#888888' } : c)
-    : [{ name: 'Default', hex: '#888888' }],
-  // Normalize sizes
-  sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : [],
-  // Normalize images: DB stores [{public_id, url}], card expects [url]
-  images: Array.isArray(p.images) && p.images.length > 0
-    ? p.images.map(img => typeof img === 'string' ? img : img.url)
-    : [],
-  tags: p.tags || [],
-  reviews: p.reviews || [],
-  numReviews: p.numReviews || 0,
-})
+// Normalize a DB product to the shape the UI expects
+const normalizeDBProduct = (p) => {
+  const salePrice = p.discountPrice ? Number(p.discountPrice) : null
+  const basePrice = Number(p.price)
 
-const mockProducts = [
-  {
-    id: 'wool-coat',
-    name: 'Atelier Wool Coat',
-    category: 'Outerwear',
-    type: 'fashion',
-    price: 289,
-    originalPrice: 340,
-    rating: 4.9,
-    tag: 'SALE',
-    description: 'A luxurious short wool coat crafted from premium, heavy wool blend. Featuring a double-breasted button front, notch lapels, and side welt pockets. A timeless silhouette built to outlast seasons.',
-    details: [
-      'Outer: 85% Virgin Wool, 15% Cashmere',
-      'Lining: 100% Viscose (fully lined)',
-      'Double-breasted front with horn-effect buttons',
-      'Dry clean only',
-      'Made in Italy'
-    ],
-    colors: [
-      { name: 'Camel', hex: '#C29B70' },
-      { name: 'Noir', hex: '#1C1C1C' }
-    ],
-    sizes: ['XS', 'S', 'M', 'L', 'XL'],
-    images: [
-      IMAGES.woolCoat,
-      IMAGES.categoryFashion
-    ],
-    reviews: [
-      { id: 1, name: 'Sophia R.', rating: 5, comment: 'Absolutely stunning. The weight is perfect and it feels incredibly premium. True to size.', date: '2026-06-15' },
-      { id: 2, name: 'James L.', rating: 4, comment: 'Purchased for my wife. The wool is soft and the tailoring is top-notch.', date: '2026-07-02' }
-    ]
-  },
-  {
-    id: 'court-sneakers',
-    name: 'Leather Court Sneakers',
-    category: 'Shoes',
-    type: 'fashion',
-    price: 178,
-    rating: 4.7,
-    description: 'Minimalist sneakers built for comfort and style. Handcrafted from top-grain Italian leather, featuring a stitched rubber cupsole and calfskin lining. Subtle branding details on the tongue.',
-    details: [
-      '100% Italian top-grain calfskin leather',
-      'Margom rubber soles from Italy',
-      'Reinforced stitching for durability',
-      'Removable cushioned insole',
-      'Handcrafted in Portugal'
-    ],
-    colors: [
-      { name: 'Off-white', hex: '#EAE6DD' },
-      { name: 'Black', hex: '#1C1C1C' }
-    ],
-    sizes: ['EU 39', 'EU 40', 'EU 41', 'EU 42', 'EU 43', 'EU 44'],
-    images: [IMAGES.sneakers],
-    reviews: [
-      { id: 1, name: 'Marcus T.', rating: 5, comment: 'Clean look, matches everything. Take about a week to break in, but very comfortable now.', date: '2026-05-20' }
-    ]
-  },
-  {
-    id: 'leather-tote',
-    name: 'Structured Leather Tote',
-    category: 'Bags',
-    type: 'fashion',
-    price: 245,
-    rating: 4.8,
-    description: 'A spacious, structured tote bag designed to carry all daily essentials. Made from scratch-resistant pebbled leather with raw edges and an interior zipper pocket for valuables.',
-    details: [
-      '100% Pebbled calf leather',
-      'Dual top handles with 10\" drop',
-      'Raw suede-lined interior',
-      'Internal zippered slip pocket',
-      'Dimensions: 14\" W x 11.5\" H x 6\" D'
-    ],
-    colors: [
-      { name: 'Black', hex: '#1C1C1C' },
-      { name: 'Cognac', hex: '#825633' }
-    ],
-    sizes: ['One Size'],
-    images: [IMAGES.tote],
-    reviews: [
-      { id: 1, name: 'Elena B.', rating: 5, comment: 'Perfect work bag. Fits my 14 inch laptop, water bottle, and notebooks comfortably without losing its shape.', date: '2026-06-28' }
-    ]
-  },
-  {
-    id: 'automatic-watch',
-    name: 'Noir Automatic Watch',
-    category: 'Accessories',
-    type: 'fashion',
-    price: 395,
-    rating: 4.9,
-    description: 'An elegant timekeeper combining refined styling with minimalist aesthetics. Designed to complement modern wardrobes with a luxurious automatic movement.',
-    details: [
-      '38mm Case in sandblasted matte black stainless steel',
-      'Japanese automatic caliber movement (21 jewels)',
-      'Sapphire crystal glass dial window',
-      'Genuine Horween leather strap in black',
-      '5 ATM water resistant'
-    ],
-    colors: [
-      { name: 'Noir', hex: '#1C1C1C' },
-      { name: 'Cognac', hex: '#634E3C' }
-    ],
-    sizes: ['38mm', '41mm'],
-    images: [IMAGES.watch],
-    reviews: [
-      { id: 1, name: 'Thomas K.', rating: 5, comment: 'Stunning watch. The sweeping seconds hand is beautiful, and it keeps time wonderfully. Best value for an automatic.', date: '2026-07-10' }
-    ]
-  },
-  {
-    id: 'silk-blouse',
-    name: 'Silk Blouse — Cream',
-    category: 'Tops',
-    type: 'fashion',
-    price: 145,
-    rating: 4.6,
-    tag: 'NEW',
-    description: 'A classic button-front blouse featuring an elegant relaxed fit, pointed collar, and mother-of-pearl buttons. Cut from fluid silk crepe de chine that drape beautifully.',
-    details: [
-      '100% Mulberry Silk Crepe de Chine',
-      'Relaxed, fluid drape',
-      'Mother-of-pearl buttons',
-      'Double-button barrel cuffs',
-      'Dry clean recommended'
-    ],
-    colors: [
-      { name: 'Cream', hex: '#F0ECE3' },
-      { name: 'Noir', hex: '#1C1C1C' }
-    ],
-    sizes: ['XS', 'S', 'M', 'L'],
-    images: [IMAGES.silkBlouse, IMAGES.manifestoFlatlay],
-    reviews: [
-      { id: 1, name: 'Chloe M.', rating: 4, comment: 'Beautiful texture and very elegant. The cream is slightly sheer but perfect with a nude bralette.', date: '2026-07-18' }
-    ]
-  },
-  {
-    id: 'round-sunglasses',
-    name: 'Tortoise Round Sunglasses',
-    category: 'Accessories',
-    type: 'fashion',
-    price: 165,
-    rating: 4.8,
-    tag: 'NEW',
-    description: 'Vintage-inspired round sunglasses handmade from premium acetate with robust 5-barrel hinges. Equipped with 100% UVA/UVB protective dark lenses for active sunlight.',
-    details: [
-      'Premium bio-acetate frame',
-      'CR-39 scratch-resistant lenses',
-      '100% UVA/UVB protection',
-      'Sturdy 5-barrel metal hinges',
-      'Includes premium leather sleeve and cleaning cloth'
-    ],
-    colors: [
-      { name: 'Tortoise', hex: '#87562D' },
-      { name: 'Noir', hex: '#1C1C1C' }
-    ],
-    sizes: ['Standard'],
-    images: [IMAGES.sunglasses],
-    reviews: []
-  },
-  {
-    id: 'leather-phone-sleeve',
-    name: 'Leather Phone Sleeve',
-    category: 'Accessories',
-    type: 'fashion',
-    price: 129,
-    rating: 4.9,
-    tag: 'NEW',
-    description: 'A luxurious leather sleeve crafted to protect your essentials with a refined finish. Designed to fit modern devices while keeping the look clean and polished.',
-    details: [
-      'Full-grain leather exterior',
-      'Soft microfiber interior lining',
-      'Slim fit for modern devices',
-      'Magnetic closure with polished hardware',
-      'Hand-stitched in Italy'
-    ],
-    colors: [
-      { name: 'Noir', hex: '#1C1C1C' },
-      { name: 'Cognac', hex: '#825633' }
-    ],
-    sizes: ['One Size'],
-    images: [IMAGES.phoneCase],
-    reviews: [
-      { id: 1, name: 'Devon P.', rating: 5, comment: 'The design is so clean. It feels like a piece of art in hand. No branding clutter, clean OS, and beautiful photos.', date: '2026-07-21' }
-    ]
-  },
-  {
-    id: 'linen-trousers',
-    name: 'Wide Linen Trousers',
-    category: 'Bottoms',
-    type: 'fashion',
-    price: 135,
-    rating: 4.5,
-    description: 'Tailored trousers cut with a wide, straight leg for relaxed elegant wearing. Made from breathable Belgian flax linen with an elasticated back waistband and discreet side slip pockets.',
-    details: [
-      '100% Belgian flax linen',
-      'Wide-leg, high-rise silhouette',
-      'Button and slide closure with zip fly',
-      'Partial back elastic waistband for comfort',
-      'Cold wash and hang dry'
-    ],
-    colors: [
-      { name: 'Flax', hex: '#D2C3B2' },
-      { name: 'Noir', hex: '#1C1C1C' }
-    ],
-    sizes: ['24', '26', '28', '30', '32'],
-    images: [IMAGES.trousers],
-    reviews: []
-  },
-  {
-    id: 'wool-scarf',
-    name: 'Wool Knit Scarf',
-    category: 'Accessories',
-    type: 'fashion',
-    price: 120,
-    rating: 4.8,
-    description: 'A soft wool scarf with timeless texture and volume. Crafted to keep you warm while elevating any autumn or winter outfit.',
-    details: [
-      '100% premium wool knit',
-      'Large oblong shape for versatile styling',
-      'Soft brushed finish',
-      'Hand-finished edges',
-      'Designed for everyday warmth'
-    ],
-    colors: [
-      { name: 'Charcoal', hex: '#2F2F2F' },
-      { name: 'Sand', hex: '#D7C7B7' }
-    ],
-    sizes: ['One Size'],
-    images: [IMAGES.scarf, IMAGES.manifestoHeadphones],
-    reviews: [
-      { id: 1, name: 'Lucas W.', rating: 5, comment: 'Quiet is right. The ANC blocks out construction noise completely. Plus, it looks like a design item instead of cheap plastic.', date: '2026-07-09' }
-    ]
+  return {
+    id: p._id,
+    _id: p._id,
+    name: p.name,
+    description: p.description || '',
+    category: p.category || '',
+    brand: p.brand || '',
+    type: 'fashion', // default so catalogue view works
+    price: salePrice || basePrice,
+    originalPrice: salePrice ? basePrice : null,
+    rating: p.rating || 0,
+    numReviews: p.numReviews || 0,
+    countInStock: p.countInStock || 0,
+    status: p.status,
+    tags: p.tags || [],
+    // Colors: DB stores plain strings, UI expects [{name, hex}]
+    colors: Array.isArray(p.colors) && p.colors.length > 0
+      ? p.colors.map(c => typeof c === 'string' ? { name: c, hex: colorToHex(c) } : c)
+      : [{ name: 'Default', hex: '#888888' }],
+    // Sizes: plain strings from DB
+    sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : [],
+    // Images: DB stores [{public_id, url}], UI expects [url string]
+    images: Array.isArray(p.images) && p.images.length > 0
+      ? p.images.map(img => (typeof img === 'string' ? img : img.url))
+      : [],
+    // Details: use tags as details bullets if no details field
+    details: p.tags && p.tags.length > 0
+      ? p.tags.map(t => String(t))
+      : [],
+    reviews: Array.isArray(p.reviews) ? p.reviews.map(r => ({
+      id: r._id || r.id,
+      name: r.name,
+      rating: r.rating,
+      comment: r.comment,
+      date: r.createdAt ? r.createdAt.split('T')[0] : '',
+    })) : [],
   }
-]
+}
 
-// Async thunk to fetch real products from the backend API
+// Map common color names to hex codes
+function colorToHex(name) {
+  const map = {
+    black: '#1C1C1C', white: '#FFFFFF', red: '#DC2626', blue: '#2563EB',
+    green: '#16A34A', yellow: '#EAB308', orange: '#EA580C', purple: '#9333EA',
+    pink: '#EC4899', grey: '#6B7280', gray: '#6B7280', brown: '#92400E',
+    navy: '#1E3A5F', beige: '#F5F0E8', cream: '#F0ECE3', camel: '#C29B70',
+    cognac: '#825633', sand: '#D7C7B7', charcoal: '#374151', offwhite: '#EAE6DD',
+    'off-white': '#EAE6DD', tortoise: '#87562D', flax: '#D2C3B2', noir: '#1C1C1C',
+    silver: '#C0C0C0', gold: '#D4AF37',
+  }
+  return map[name.toLowerCase().replace(/\s+/g, '-')] || '#888888'
+}
+
+// Async thunk to load all products from the backend
 export const fetchAPIProducts = createAsyncThunk(
   'products/fetchAPIProducts',
   async (_, { rejectWithValue }) => {
     try {
-      // Fetch all pages (up to 100 products for the storefront)
-      const res = await axios.get(`${API_URL}/products?limit=100`)
+      const res = await axios.get(`${API_URL}/products?limit=100&page=1`)
       return res.data.products || []
     } catch (err) {
       return rejectWithValue(err.message)
@@ -284,16 +75,16 @@ export const fetchAPIProducts = createAsyncThunk(
 )
 
 const initialState = {
-  products: mockProducts,
-  apiProducts: [], // real DB products
-  allProducts: mockProducts, // combined mock + DB
-  filteredProducts: mockProducts,
+  products: [],        // DB products (normalized)
+  allProducts: [],     // same — used by Home.jsx
+  filteredProducts: [],
   selectedProduct: null,
   searchQuery: '',
   selectedCategory: 'all',
   selectedType: 'all',
   sortOption: 'featured',
   apiLoading: false,
+  apiError: null,
 }
 
 const productSlice = createSlice({
@@ -317,78 +108,81 @@ const productSlice = createSlice({
       state.filteredProducts = applyFiltersAndSort(state)
     },
     selectProductById: (state, action) => {
-      state.selectedProduct = state.allProducts.find(p => p.id === action.payload || p._id === action.payload) || null
+      state.selectedProduct =
+        state.products.find(p => p.id === action.payload || p._id === action.payload) || null
     },
     addMockReview: (state, action) => {
       const { productId, review } = action.payload
-      const product = state.products.find(p => p.id === productId)
+      const product = state.products.find(p => p.id === productId || p._id === productId)
       if (product) {
         const newReview = {
-          id: product.reviews.length + 1,
+          id: Date.now(),
           ...review,
-          date: new Date().toISOString().split('T')[0]
+          date: new Date().toISOString().split('T')[0],
         }
         product.reviews.unshift(newReview)
-        const sum = product.reviews.reduce((acc, curr) => acc + curr.rating, 0)
+        const sum = product.reviews.reduce((acc, r) => acc + r.rating, 0)
         product.rating = parseFloat((sum / product.reviews.length).toFixed(1))
-        if (state.selectedProduct && state.selectedProduct.id === productId) {
-          state.selectedProduct = product
+        if (state.selectedProduct && (state.selectedProduct.id === productId || state.selectedProduct._id === productId)) {
+          state.selectedProduct = { ...product }
         }
         state.filteredProducts = applyFiltersAndSort(state)
       }
-    }
+    },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchAPIProducts.pending, (state) => {
         state.apiLoading = true
+        state.apiError = null
       })
       .addCase(fetchAPIProducts.fulfilled, (state, action) => {
         state.apiLoading = false
-        // Normalize DB products and filter only Active ones for the storefront
         const normalized = action.payload
           .filter(p => p.status === 'Active')
           .map(normalizeDBProduct)
-        state.apiProducts = normalized
-        // Merge: DB products first (they have precedence), then mock ones that don't clash
-        const dbIds = new Set(normalized.map(p => p._id))
-        const filteredMock = mockProducts.filter(p => !dbIds.has(p.id))
-        state.allProducts = [...normalized, ...filteredMock]
-        state.filteredProducts = applyFiltersAndSort({ ...state, products: state.allProducts })
+        state.products = normalized
+        state.allProducts = normalized
+        state.filteredProducts = applyFiltersAndSort({ ...state, products: normalized, allProducts: normalized })
       })
-      .addCase(fetchAPIProducts.rejected, (state) => {
+      .addCase(fetchAPIProducts.rejected, (state, action) => {
         state.apiLoading = false
-        // Keep using mock data on error
+        state.apiError = action.payload
       })
-  }
+  },
 })
 
 function applyFiltersAndSort(state) {
-  const source = state.allProducts || state.products
+  const source = state.allProducts && state.allProducts.length > 0
+    ? state.allProducts
+    : state.products
   let result = [...source]
-  if (state.selectedType !== 'all') {
+
+  if (state.selectedType && state.selectedType !== 'all') {
     result = result.filter(p => p.type === state.selectedType)
   }
-  if (state.selectedCategory !== 'all') {
-    result = result.filter(p => p.category.toLowerCase() === state.selectedCategory.toLowerCase())
+  if (state.selectedCategory && state.selectedCategory !== 'all') {
+    result = result.filter(
+      p => p.category.toLowerCase() === state.selectedCategory.toLowerCase()
+    )
   }
   if (state.searchQuery && state.searchQuery.trim() !== '') {
     const q = state.searchQuery.toLowerCase()
-    result = result.filter(p =>
-      p.name.toLowerCase().includes(q) ||
-      (p.description && p.description.toLowerCase().includes(q)) ||
-      p.category.toLowerCase().includes(q)
+    result = result.filter(
+      p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        p.category.toLowerCase().includes(q)
     )
   }
-  if (state.sortOption === 'price-low-high') {
-    result.sort((a, b) => a.price - b.price)
-  } else if (state.sortOption === 'price-high-low') {
-    result.sort((a, b) => b.price - a.price)
-  } else if (state.sortOption === 'rating') {
-    result.sort((a, b) => b.rating - a.rating)
-  }
+  if (state.sortOption === 'price-low-high') result.sort((a, b) => a.price - b.price)
+  else if (state.sortOption === 'price-high-low') result.sort((a, b) => b.price - a.price)
+  else if (state.sortOption === 'rating') result.sort((a, b) => b.rating - a.rating)
+
   return result
 }
 
-export const { setSearchQuery, setCategory, setType, setSortOption, selectProductById, addMockReview } = productSlice.actions
+export const {
+  setSearchQuery, setCategory, setType, setSortOption, selectProductById, addMockReview,
+} = productSlice.actions
 export default productSlice.reducer
