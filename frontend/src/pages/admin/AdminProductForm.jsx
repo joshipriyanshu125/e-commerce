@@ -118,8 +118,18 @@ const AdminProductForm = () => {
     e.preventDefault()
     setError('')
 
+    // Auto-add any pending inputs
+    const pendingTags = [...form.tags]
+    if (tagInput.trim() && !pendingTags.includes(tagInput.trim())) pendingTags.push(tagInput.trim())
+    
+    const pendingSizes = [...form.sizes]
+    if (sizeInput.trim() && !pendingSizes.includes(sizeInput.trim())) pendingSizes.push(sizeInput.trim())
+    
+    const pendingColors = [...form.colors]
+    if (colorInput.trim() && !pendingColors.includes(colorInput.trim())) pendingColors.push(colorInput.trim())
+
     if (!form.name || !form.description || !form.price || form.countInStock === '') {
-      setError('Name, description, price, and stock are required.')
+      setError('Please fill all required fields.')
       return
     }
 
@@ -139,9 +149,9 @@ const AdminProductForm = () => {
       formData.append('category', form.category)
       formData.append('brand', form.brand)
       formData.append('status', form.status)
-      formData.append('tags', JSON.stringify(form.tags))
-      formData.append('sizes', JSON.stringify(form.sizes))
-      formData.append('colors', JSON.stringify(form.colors))
+      formData.append('tags', JSON.stringify(pendingTags))
+      formData.append('sizes', JSON.stringify(pendingSizes))
+      formData.append('colors', JSON.stringify(pendingColors))
       images.forEach(img => formData.append('images', img.file))
 
       if (isEdit) {

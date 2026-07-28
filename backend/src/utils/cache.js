@@ -28,3 +28,14 @@ export const deleteCache = async (key) => {
         console.log("Cache Delete Error:", error);
     }
 };
+
+export const clearCachePattern = async (pattern) => {
+    try {
+        const keys = await redis.keys(pattern);
+        if (keys.length > 0) {
+            await redis.del(...keys);
+        }
+    } catch (error) {
+        console.log("Cache Delete Pattern Error:", error);
+    }
+};

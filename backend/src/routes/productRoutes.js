@@ -23,7 +23,7 @@ import cacheMiddleware from "../middleware/cacheMiddleware.js";
 
 router.get(
     "/",
-    cacheMiddleware(() => "all_products", 3600),
+    cacheMiddleware((req) => `all_products_${req.originalUrl || req.url}`, 3600),
     getProducts
 );
 
