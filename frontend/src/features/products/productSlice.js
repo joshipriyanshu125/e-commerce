@@ -1,5 +1,40 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { IMAGES } from '../../utils/images'
+import axios from 'axios'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
+// Normalize a DB product to match the shape ProductCard/ProductDetails expect
+const normalizeDBProduct = (p) => ({
+  id: p._id,
+  _id: p._id,
+  name: p.name,
+  description: p.description,
+  category: p.category,
+  type: 'fashion', // default type so it shows up in catalogue view
+  price: p.price,
+  originalPrice: p.discountPrice ? p.price : undefined,
+  // discountPrice is the sale price
+  ...(p.discountPrice && { price: p.discountPrice, originalPrice: p.price }),
+  rating: p.rating || 0,
+  countInStock: p.countInStock,
+  brand: p.brand,
+  status: p.status,
+  tag: p.status === 'Active' ? undefined : p.status,
+  // Normalize colors: DB stores ['Red', 'Blue'], card expects [{name, hex}]
+  colors: Array.isArray(p.colors) && p.colors.length > 0
+    ? p.colors.map(c => typeof c === 'string' ? { name: c, hex: '#888888' } : c)
+    : [{ name: 'Default', hex: '#888888' }],
+  // Normalize sizes
+  sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : [],
+  // Normalize images: DB stores [{public_id, url}], card expects [url]
+  images: Array.isArray(p.images) && p.images.length > 0
+    ? p.images.map(img => typeof img === 'string' ? img : img.url)
+    : [],
+  tags: p.tags || [],
+  reviews: p.reviews || [],
+  numReviews: p.numReviews || 0,
+})
 
 const mockProducts = [
   {
@@ -36,7 +71,7 @@ const mockProducts = [
   {
     id: 'court-sneakers',
     name: 'Leather Court Sneakers',
-    category: 'Footwear',
+    category: 'Shoes',
     type: 'fashion',
     price: 178,
     rating: 4.7,
@@ -68,10 +103,10 @@ const mockProducts = [
     description: 'A spacious, structured tote bag designed to carry all daily essentials. Made from scratch-resistant pebbled leather with raw edges and an interior zipper pocket for valuables.',
     details: [
       '100% Pebbled calf leather',
-      'Dual top handles with 10" drop',
+      'Dual top handles with 10\" drop',
       'Raw suede-lined interior',
       'Internal zippered slip pocket',
-      'Dimensions: 14" W x 11.5" H x 6" D'
+      'Dimensions: 14\" W x 11.5\" H x 6\" D'
     ],
     colors: [
       { name: 'Black', hex: '#1C1C1C' },
@@ -234,14 +269,31 @@ const mockProducts = [
   }
 ]
 
+// Async thunk to fetch real products from the backend API
+export const fetchAPIProducts = createAsyncThunk(
+  'products/fetchAPIProducts',
+  async (_, { rejectWithValue }) => {
+    try {
+      // Fetch all pages (up to 100 products for the storefront)
+      const res = await axios.get(`${API_URL}/products?limit=100`)
+      return res.data.products || []
+    } catch (err) {
+      return rejectWithValue(err.message)
+    }
+  }
+)
+
 const initialState = {
   products: mockProducts,
+  apiProducts: [], // real DB products
+  allProducts: mockProducts, // combined mock + DB
   filteredProducts: mockProducts,
   selectedProduct: null,
   searchQuery: '',
   selectedCategory: 'all',
   selectedType: 'all',
-  sortOption: 'featured'
+  sortOption: 'featured',
+  apiLoading: false,
 }
 
 const productSlice = createSlice({
@@ -265,7 +317,7 @@ const productSlice = createSlice({
       state.filteredProducts = applyFiltersAndSort(state)
     },
     selectProductById: (state, action) => {
-      state.selectedProduct = state.products.find(p => p.id === action.payload) || null
+      state.selectedProduct = state.allProducts.find(p => p.id === action.payload || p._id === action.payload) || null
     },
     addMockReview: (state, action) => {
       const { productId, review } = action.payload
@@ -285,22 +337,46 @@ const productSlice = createSlice({
         state.filteredProducts = applyFiltersAndSort(state)
       }
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAPIProducts.pending, (state) => {
+        state.apiLoading = true
+      })
+      .addCase(fetchAPIProducts.fulfilled, (state, action) => {
+        state.apiLoading = false
+        // Normalize DB products and filter only Active ones for the storefront
+        const normalized = action.payload
+          .filter(p => p.status === 'Active')
+          .map(normalizeDBProduct)
+        state.apiProducts = normalized
+        // Merge: DB products first (they have precedence), then mock ones that don't clash
+        const dbIds = new Set(normalized.map(p => p._id))
+        const filteredMock = mockProducts.filter(p => !dbIds.has(p.id))
+        state.allProducts = [...normalized, ...filteredMock]
+        state.filteredProducts = applyFiltersAndSort({ ...state, products: state.allProducts })
+      })
+      .addCase(fetchAPIProducts.rejected, (state) => {
+        state.apiLoading = false
+        // Keep using mock data on error
+      })
   }
 })
 
 function applyFiltersAndSort(state) {
-  let result = [...state.products]
+  const source = state.allProducts || state.products
+  let result = [...source]
   if (state.selectedType !== 'all') {
     result = result.filter(p => p.type === state.selectedType)
   }
   if (state.selectedCategory !== 'all') {
     result = result.filter(p => p.category.toLowerCase() === state.selectedCategory.toLowerCase())
   }
-  if (state.searchQuery.trim() !== '') {
+  if (state.searchQuery && state.searchQuery.trim() !== '') {
     const q = state.searchQuery.toLowerCase()
-    result = result.filter(p => 
-      p.name.toLowerCase().includes(q) || 
-      p.description.toLowerCase().includes(q) || 
+    result = result.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.description && p.description.toLowerCase().includes(q)) ||
       p.category.toLowerCase().includes(q)
     )
   }

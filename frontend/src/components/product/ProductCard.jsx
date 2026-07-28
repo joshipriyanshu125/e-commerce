@@ -3,11 +3,18 @@ import { useNavigate } from 'react-router-dom'
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate()
-  const [selectedColor, setSelectedColor] = useState(product.colors[0])
+
+  // Normalize colors: accept both [{name, hex}] and plain strings
+  const normalizedColors = (product.colors || []).map(c =>
+    typeof c === 'string' ? { name: c, hex: '#888888' } : c
+  )
+
+  const [selectedColor, setSelectedColor] = useState(normalizedColors[0] || { name: 'Default', hex: '#888888' })
   const [hovered, setHovered] = useState(false)
 
   const handleCardClick = () => {
-    navigate(`/product/${product.id}`)
+    const id = product.id || product._id
+    navigate(`/product/${id}`)
   }
 
   // Handle color change and stop propagation so clicking swatches doesn't trigger card navigation
@@ -15,6 +22,14 @@ const ProductCard = ({ product }) => {
     e.stopPropagation()
     setSelectedColor(color)
   }
+
+  // Normalize image src: DB products have {url} objects, mock products have plain strings
+  const rawImage = product.images?.[0]
+  const imageSrc = rawImage
+    ? (typeof rawImage === 'string' ? rawImage : rawImage.url)
+    : 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
+
+  const fallbackSrc = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
 
   return (
     <div 
@@ -34,16 +49,16 @@ const ProductCard = ({ product }) => {
 
         {/* Product image */}
         <img 
-          src={product.images[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'}
+          src={imageSrc}
           alt={product.name}
           className={`h-full w-full object-cover transition-transform duration-700 ease-out ${hovered ? 'scale-105' : 'scale-100'}`}
           onError={(e) => {
             e.target.onerror = null
-            e.target.src = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
+            e.target.src = fallbackSrc
           }}
         />
         
-        {/* Simple hover overlay if we want to show a subtle line or button */}
+        {/* Simple hover overlay */}
         <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
@@ -66,22 +81,24 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Color Swatch Selectors */}
-        <div className="flex items-center space-x-1.5 pt-2">
-          {product.colors.map((color) => (
-            <button
-              key={color.name}
-              onClick={(e) => handleColorSelect(e, color)}
-              className={`h-3 w-3 rounded-full border transition-all duration-200 ${
-                selectedColor.name === color.name 
-                  ? 'border-atelier-dark scale-110 ring-1 ring-atelier-dark/20' 
-                  : 'border-transparent hover:scale-105'
-              }`}
-              style={{ backgroundColor: color.hex }}
-              title={color.name}
-              aria-label={`Select ${color.name}`}
-            />
-          ))}
-        </div>
+        {normalizedColors.length > 0 && (
+          <div className="flex items-center space-x-1.5 pt-2">
+            {normalizedColors.map((color) => (
+              <button
+                key={color.name}
+                onClick={(e) => handleColorSelect(e, color)}
+                className={`h-3 w-3 rounded-full border transition-all duration-200 ${
+                  selectedColor.name === color.name 
+                    ? 'border-atelier-dark scale-110 ring-1 ring-atelier-dark/20' 
+                    : 'border-transparent hover:scale-105'
+                }`}
+                style={{ backgroundColor: color.hex }}
+                title={color.name}
+                aria-label={`Select ${color.name}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

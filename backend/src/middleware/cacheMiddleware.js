@@ -10,28 +10,20 @@ const cacheMiddleware = (
 
             const cachedData = await getCache(key);
 
-            // CACHE HIT
+            // CACHE HIT — return the full original response body
             if (cachedData) {
-                return res.status(200).json({
-                    success: true,
-                    cached: true,
-                    data: cachedData,
-                });
+                return res.status(200).json(cachedData);
             }
 
             // STORE ORIGINAL RESPONSE METHOD
             const originalJson = res.json.bind(res);
 
-            // OVERRIDE res.json
+            // OVERRIDE res.json to capture and cache the response
             res.json = async (body) => {
                 try {
                     // CACHE ONLY SUCCESS RESPONSES
                     if (body?.success) {
-                        await setCache(
-                            key,
-                            body.data || body,
-                            expiry
-                        );
+                        await setCache(key, body, expiry);
                     }
                 } catch (cacheError) {
                     console.error(

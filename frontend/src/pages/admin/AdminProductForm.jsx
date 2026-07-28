@@ -160,7 +160,7 @@ const AdminProductForm = () => {
         await api.post('products', formData)
       }
 
-      navigate('/admin/products')
+      navigate('/admin/products', { replace: true })
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save product. Please try again.')
     } finally {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 import api from '../../services/axiosInstance'
 import { Plus, Pencil, Trash2, Search, ImageOff, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -12,6 +12,7 @@ const STATUS_COLORS = {
 
 const AdminProductsManager = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -37,7 +38,7 @@ const AdminProductsManager = () => {
     }
   }
 
-  useEffect(() => { fetchProducts(search, page) }, [page])
+  useEffect(() => { fetchProducts(search, page) }, [page, location.key])
 
   const handleSearch = (e) => {
     e.preventDefault()

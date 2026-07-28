@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { setType, setCategory, setSortOption } from '../features/products/productSlice'
+import { setType, setCategory, setSortOption, fetchAPIProducts } from '../features/products/productSlice'
 import ProductCard from '../components/product/ProductCard'
 import { ArrowRight, SlidersHorizontal } from 'lucide-react'
 import { IMAGES } from '../utils/images'
@@ -13,7 +13,12 @@ const Home = () => {
   
   const typeParam = searchParams.get('type') // 'fashion'
   
-  const { filteredProducts, products, selectedType, selectedCategory, sortOption } = useSelector(state => state.products)
+  const { filteredProducts, selectedType, selectedCategory, sortOption, apiProducts } = useSelector(state => state.products)
+
+  // Fetch real products from backend on mount
+  useEffect(() => {
+    dispatch(fetchAPIProducts())
+  }, [])
 
   // Synchronize URL parameters with Redux state
   useEffect(() => {
@@ -26,12 +31,13 @@ const Home = () => {
     dispatch(setCategory('all'))
   }, [typeParam, dispatch])
 
-  // Get specific products for mock landing sections
+  // Get specific products for mock landing sections (from allProducts which includes DB products)
+  const { allProducts = [] } = useSelector(state => state.products)
   const covetedIds = ['wool-coat', 'court-sneakers', 'leather-tote', 'automatic-watch']
-  const covetedProducts = products.filter(p => covetedIds.includes(p.id))
+  const covetedProducts = allProducts.filter(p => covetedIds.includes(p.id))
 
   const newArrivalIds = ['silk-blouse', 'round-sunglasses', 'pro-phone', 'linen-trousers']
-  const newArrivals = products.filter(p => newArrivalIds.includes(p.id))
+  const newArrivals = allProducts.filter(p => newArrivalIds.includes(p.id))
 
   // Determine if catalogue view is active
   const isCatalogueView = typeParam !== null
@@ -47,7 +53,7 @@ const Home = () => {
   // Categories list based on active type
   const categories = isCatalogueView
     ? typeParam === 'fashion'
-      ? ['all', 'Outerwear', 'Footwear', 'Bags', 'Tops', 'Bottoms', 'Accessories']
+      ? ['all', 'Outerwear', 'Shoes', 'Bags', 'Tops', 'Bottoms', 'Accessories']
       : []
     : []
 
