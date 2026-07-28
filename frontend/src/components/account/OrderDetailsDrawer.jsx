@@ -67,9 +67,7 @@ const OrderDetailsDrawer = ({ order, open, onClose, onOrderUpdated }) => {
 
     try {
       setUploading(true);
-      await api.post("returns", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await api.post("returns", form);
       alert("Return requested successfully! Check the Returns tab.");
       onClose();
     } catch (err) {

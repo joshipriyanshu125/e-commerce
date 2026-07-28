@@ -145,9 +145,9 @@ const AdminProductForm = () => {
       images.forEach(img => formData.append('images', img.file))
 
       if (isEdit) {
-        await api.put(`products/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+        await api.put(`products/${id}`, formData)
       } else {
-        await api.post('products', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+        await api.post('products', formData)
       }
 
       navigate('/admin/products')
