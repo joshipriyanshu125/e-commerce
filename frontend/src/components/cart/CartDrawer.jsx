@@ -212,10 +212,10 @@ const CartDrawer = () => {
                 </button>
               </form>
               
-              {promoError && <p className="text-xs font-mono uppercase text-red-600 tracking-wider -mt-4">{promoError}</p>}
-              {promoSuccess && <p className="text-xs font-mono uppercase text-atelier-accent tracking-wider -mt-4">{promoSuccess}</p>}
+              {promoError && <p className="text-xs font-mono uppercase text-red-600 tracking-wider pt-2">{promoError}</p>}
+              {promoSuccess && <p className="text-xs font-mono uppercase text-atelier-accent tracking-wider pt-2">{promoSuccess}</p>}
               {discountPercent > 0 && (
-                <div className="flex items-center justify-between text-xs font-mono uppercase text-atelier-accent tracking-wider -mt-2">
+                <div className="flex items-center justify-between text-xs font-mono uppercase text-atelier-accent tracking-wider pt-2">
                   <span>Discount Active:</span>
                   <span>{discountPercent}% OFF</span>
                 </div>

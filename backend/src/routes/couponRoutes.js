@@ -23,7 +23,6 @@ router.post(
 
 router.post(
     "/apply",
-    protect,
     applyCoupon
 );
 
