@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../features/auth/authSlice'
@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users,
   Star, Tag, Bell, Settings, LogOut, Menu, X, ChevronRight
 } from 'lucide-react'
+import api from '../../services/axiosInstance'
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -20,9 +21,29 @@ const navItems = [
 
 const AdminLayout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { user } = useSelector(state => state.auth)
+
+  const fetchUnreadNotifications = async () => {
+    try {
+      const res = await api.get('notifications')
+      if (res.data.success && res.data.notifications) {
+        const unread = res.data.notifications.filter(n => !n.read).length
+        setUnreadCount(unread)
+      }
+    } catch (err) {
+      console.error('Failed to fetch unread notification counts:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchUnreadNotifications()
+    // Poll every 30 seconds for live notifications
+    const interval = setInterval(fetchUnreadNotifications, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleLogout = () => {
     dispatch(logout())
@@ -72,7 +93,7 @@ const AdminLayout = ({ children, title }) => {
               end={end}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group ${
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative ${
                   isActive
                     ? 'bg-amber-500/15 text-amber-400'
                     : 'text-white/50 hover:text-white hover:bg-white/5'
@@ -83,6 +104,11 @@ const AdminLayout = ({ children, title }) => {
                 <>
                   <Icon size={16} className={isActive ? 'text-amber-400' : 'text-white/40 group-hover:text-white/70'} />
                   <span>{label}</span>
+                  {label === 'Notifications' && unreadCount > 0 && (
+                    <span className="absolute right-8 top-1/2 -translate-y-1/2 bg-red-500 text-white font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[15px] text-center shadow-md animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
                   {isActive && <ChevronRight size={14} className="ml-auto text-amber-400/60" />}
                 </>
               )}
@@ -122,7 +148,15 @@ const AdminLayout = ({ children, title }) => {
             <Menu size={20} />
           </button>
           <h1 className="text-sm font-semibold text-white/80 tracking-wide">{title || 'Admin'}</h1>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-3">
+            {unreadCount > 0 && (
+              <div 
+                onClick={() => navigate('/admin/notifications')}
+                className="bg-red-500/15 border border-red-500/20 text-red-400 font-mono text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider font-semibold cursor-pointer animate-pulse hover:bg-red-500/20"
+              >
+                {unreadCount} Unread Message{unreadCount > 1 ? 's' : ''}
+              </div>
+            )}
             <span className="text-[10px] font-mono bg-amber-500/15 text-amber-400 px-2 py-1 rounded-full uppercase tracking-widest">
               Admin Mode
             </span>

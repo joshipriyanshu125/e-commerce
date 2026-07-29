@@ -2,7 +2,9 @@ import express from "express";
 
 import {
     getUserProfile,
-    adminRoute
+    adminRoute,
+    getAllUsers,
+    deleteUser
 } from "../controllers/userController.js";
 
 import {
@@ -26,5 +28,21 @@ router.get(
     admin,
     adminRoute
 );
+
+// Admin user management routes
+router.get(
+    "/",
+    protect,
+    admin,
+    getAllUsers
+);
+
+router.delete(
+    "/:id",
+    protect,
+    admin,
+    deleteUser
+);
+
 
 export default router;

@@ -9,6 +9,7 @@ import {
     updateProduct,
     deleteProduct,
     createProductReview,
+    deleteProductReview,
 } from "../controllers/productController.js";
 
 import {
@@ -67,6 +68,13 @@ router.post(
     "/:id/reviews",
     protect,
     createProductReview
+);
+
+router.delete(
+    "/:id/reviews/:reviewId",
+    protect,
+    admin,
+    deleteProductReview
 );
 
 export default router;

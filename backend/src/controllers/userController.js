@@ -67,3 +67,31 @@ export const adminRoute = asyncHandler(async (req, res) => {
         message: "Welcome Admin",
     });
 });
+
+// GET ALL USERS (ADMIN)
+export const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find({}).select("-password").sort({ createdAt: -1 });
+    res.status(200).json({
+        success: true,
+        users,
+    });
+});
+
+// DELETE USER (ADMIN)
+export const deleteUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+    // Prevent deleting self
+    if (user._id.toString() === req.user._id.toString()) {
+        res.status(400);
+        throw new Error("You cannot delete yourself");
+    }
+    await user.deleteOne();
+    res.status(200).json({
+        success: true,
+        message: "User deleted successfully",
+    });
+});

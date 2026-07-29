@@ -1,8 +1,9 @@
 import express from "express";
-
 import {
     createCoupon,
-    applyCoupon
+    applyCoupon,
+    getCoupons,
+    deleteCoupon
 } from "../controllers/couponController.js";
 
 import {
@@ -25,6 +26,22 @@ router.post(
     protect,
     applyCoupon
 );
+
+// Admin Coupon Management
+router.get(
+    "/",
+    protect,
+    admin,
+    getCoupons
+);
+
+router.delete(
+    "/:id",
+    protect,
+    admin,
+    deleteCoupon
+);
+
 
 
 export default router;

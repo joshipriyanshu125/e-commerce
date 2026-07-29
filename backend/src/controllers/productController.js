@@ -440,3 +440,45 @@ export const createProductReview = asyncHandler(async (req, res) => {
     }
 
 });
+
+// DELETE PRODUCT REVIEW (ADMIN MODERATION)
+export const deleteProductReview = asyncHandler(async (req, res) => {
+    const product = await Product.findById(req.params.id);
+
+    if (product) {
+        const reviewId = req.params.reviewId;
+        const reviewIndex = product.reviews.findIndex(
+            (r) => (r._id || r.id).toString() === reviewId.toString()
+        );
+
+        if (reviewIndex === -1) {
+            res.status(404);
+            throw new Error("Review not found");
+        }
+
+        product.reviews.splice(reviewIndex, 1);
+        product.numReviews = product.reviews.length;
+
+        if (product.reviews.length > 0) {
+            product.rating =
+                product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+                product.reviews.length;
+        } else {
+            product.rating = 0;
+        }
+
+        await product.save();
+
+        // CLEAR REDIS CACHE
+        await clearCachePattern("all_products*");
+        await deleteCache(`product_${req.params.id}`);
+
+        res.status(200).json({
+            success: true,
+            message: "Review deleted successfully",
+        });
+    } else {
+        res.status(404);
+        throw new Error("Product not found");
+    }
+});
