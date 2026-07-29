@@ -74,6 +74,28 @@ export const fetchAPIProducts = createAsyncThunk(
   }
 )
 
+export const createProductReview = createAsyncThunk(
+  'products/createProductReview',
+  async ({ productId, review }, { rejectWithValue, dispatch }) => {
+    try {
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        withCredentials: true
+      }
+      await axios.post(`${API_URL}/products/${productId}/reviews`, review, config)
+      // Refresh products so the new review appears
+      dispatch(fetchAPIProducts())
+      return { productId, review }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message)
+    }
+  }
+)
+
 const initialState = {
   products: [],        // DB products (normalized)
   allProducts: [],     // same — used by Home.jsx
@@ -110,24 +132,6 @@ const productSlice = createSlice({
     selectProductById: (state, action) => {
       state.selectedProduct =
         state.products.find(p => p.id === action.payload || p._id === action.payload) || null
-    },
-    addMockReview: (state, action) => {
-      const { productId, review } = action.payload
-      const product = state.products.find(p => p.id === productId || p._id === productId)
-      if (product) {
-        const newReview = {
-          id: Date.now(),
-          ...review,
-          date: new Date().toISOString().split('T')[0],
-        }
-        product.reviews.unshift(newReview)
-        const sum = product.reviews.reduce((acc, r) => acc + r.rating, 0)
-        product.rating = parseFloat((sum / product.reviews.length).toFixed(1))
-        if (state.selectedProduct && (state.selectedProduct.id === productId || state.selectedProduct._id === productId)) {
-          state.selectedProduct = { ...product }
-        }
-        state.filteredProducts = applyFiltersAndSort(state)
-      }
     },
   },
   extraReducers: (builder) => {
@@ -183,6 +187,6 @@ function applyFiltersAndSort(state) {
 }
 
 export const {
-  setSearchQuery, setCategory, setType, setSortOption, selectProductById, addMockReview,
+  setSearchQuery, setCategory, setType, setSortOption, selectProductById,
 } = productSlice.actions
 export default productSlice.reducer

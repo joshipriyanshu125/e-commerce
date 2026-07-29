@@ -97,7 +97,7 @@ export const applyCoupon = async (req, res) => {
 
         // FIND COUPON
         const coupon = await Coupon.findOne({
-            code: code.toUpperCase(),
+            code: code.trim().toUpperCase(),
             isActive: true
         });
 
@@ -113,7 +113,7 @@ export const applyCoupon = async (req, res) => {
 
 
         // EXPIRED COUPON
-        if (coupon.expiryDate < Date.now()) {
+        if (new Date(coupon.expiryDate).getTime() < Date.now()) {
 
             return res.status(400).json({
                 success: false,

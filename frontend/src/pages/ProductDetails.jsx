@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { selectProductById, addMockReview, fetchAPIProducts } from '../features/products/productSlice'
+import { selectProductById, createProductReview, fetchAPIProducts } from '../features/products/productSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -46,10 +46,11 @@ const ProductDetails = () => {
 
   useEffect(() => {
     if (selectedProduct) {
-      const colors = selectedProduct.colors || []
-      if (colors.length > 0) setSelectedColor(colors[0])
-      const sizes = selectedProduct.sizes || []
-      if (sizes.length > 0) setSelectedSize(sizes[0])
+      // Do not auto-select size or color to force user to choose
+      // const colors = selectedProduct.colors || []
+      // if (colors.length > 0) setSelectedColor(colors[0])
+      // const sizes = selectedProduct.sizes || []
+      // if (sizes.length > 0) setSelectedSize(sizes[0])
     }
   }, [selectedProduct])
 
@@ -152,6 +153,10 @@ const ProductDetails = () => {
       alert('Please select a size.')
       return
     }
+    if (colors.length > 0 && !selectedColor) {
+      alert('Please select a color.')
+      return
+    }
     setIsAddingToBag(true)
     setTimeout(() => {
       dispatch(addToCart({
@@ -164,24 +169,29 @@ const ProductDetails = () => {
     }, 600)
   }
 
-  const handleReviewSubmit = (e) => {
+  const handleReviewSubmit = async (e) => {
     e.preventDefault()
     if (!reviewName.trim() || !reviewComment.trim()) return
 
-    dispatch(addMockReview({
+    const { payload, error } = await dispatch(createProductReview({
       productId: selectedProduct.id || selectedProduct._id,
       review: {
-        name: reviewName,
+        name: reviewName, // Handled automatically by backend if logged in, but passed anyway
         rating: Number(reviewRating),
         comment: reviewComment,
       }
     }))
 
-    setReviewAddedMsg('Review posted successfully!')
-    setReviewName('')
-    setReviewComment('')
-    setReviewRating(5)
-    setIsAddingReview(false)
+    if (error) {
+        setReviewAddedMsg(payload || error.message || 'Failed to post review. You might need to be logged in, or already reviewed it.')
+    } else {
+        setReviewAddedMsg('Review posted successfully!')
+        setReviewName('')
+        setReviewComment('')
+        setReviewRating(5)
+        setIsAddingReview(false)
+    }
+
     setTimeout(() => setReviewAddedMsg(''), 4000)
   }
 
