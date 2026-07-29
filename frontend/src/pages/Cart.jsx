@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { Plus, Minus, Trash2, Tag, ArrowRight } from 'lucide-react'
 import { removeFromCart, updateQuantity, applyCoupon, setCartOpen } from '../features/cart/cartSlice'
+import api from '../services/axiosInstance'
 
 const Cart = () => {
   const dispatch = useDispatch()
@@ -29,19 +30,22 @@ const Cart = () => {
     dispatch(removeFromCart({ id, colorName, size }))
   }
 
-  const handlePromoSubmit = (e) => {
+  const handlePromoSubmit = async (e) => {
     e.preventDefault()
     if (promoInput.trim() === '') return
 
-    dispatch(applyCoupon(promoInput))
-    const code = promoInput.toUpperCase()
-    if (code === 'ATELIER15' || code === 'QUIETLUXURY') {
-      setPromoSuccess('Promo code applied!')
-      setPromoError('')
-      setPromoInput('')
-    } else {
-      setPromoError('Invalid promotional code.')
+    try {
+      const res = await api.post('coupons/apply', { code: promoInput, totalAmount: subtotal })
+      if (res.data.success) {
+        dispatch(applyCoupon({ code: promoInput, discountPercent: res.data.discountPercentage }))
+        setPromoSuccess('Promo code applied!')
+        setPromoError('')
+        setPromoInput('')
+      }
+    } catch (err) {
+      setPromoError(err.response?.data?.message || 'Invalid promotional code.')
       setPromoSuccess('')
+      dispatch(applyCoupon({ code: '', discountPercent: 0 }))
     }
   }
 

@@ -46,11 +46,16 @@ const ProductDetails = () => {
 
   useEffect(() => {
     if (selectedProduct) {
-      // Do not auto-select size or color to force user to choose
-      // const colors = selectedProduct.colors || []
-      // if (colors.length > 0) setSelectedColor(colors[0])
-      // const sizes = selectedProduct.sizes || []
-      // if (sizes.length > 0) setSelectedSize(sizes[0])
+      const colors = selectedProduct.colors || []
+      if (colors.length === 1) setSelectedColor(colors[0])
+      else setSelectedColor(null) // Reset if multiple, force selection
+
+      const sizes = selectedProduct.sizes || []
+      if (sizes.length === 1 && typeof sizes[0] === 'string' && !sizes[0].includes('-')) {
+        setSelectedSize(sizes[0])
+      } else {
+        setSelectedSize(null) // Force selection
+      }
     }
   }, [selectedProduct])
 

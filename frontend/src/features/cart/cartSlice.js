@@ -65,15 +65,8 @@ const cartSlice = createSlice({
       localStorage.setItem('cartItems', JSON.stringify(state.items))
     },
     applyCoupon: (state, action) => {
-      const coupon = action.payload.toUpperCase()
-      state.couponCode = coupon
-      if (coupon === 'ATELIER15') {
-        state.discountPercent = 15
-      } else if (coupon === 'QUIETLUXURY') {
-        state.discountPercent = 20
-      } else {
-        state.discountPercent = 0
-      }
+      state.couponCode = action.payload.code.toUpperCase()
+      state.discountPercent = action.payload.discountPercent
     },
     clearCart: (state) => {
       state.items = []
