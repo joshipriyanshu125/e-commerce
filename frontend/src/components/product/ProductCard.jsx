@@ -1,12 +1,24 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const colorToHex = (name) => {
+  const map = {
+    black: '#1C1C1C', white: '#F5F5F5', red: '#DC2626', blue: '#2563EB',
+    green: '#16A34A', yellow: '#EAB308', orange: '#EA580C', purple: '#9333EA',
+    pink: '#EC4899', grey: '#6B7280', gray: '#6B7280', brown: '#92400E',
+    navy: '#1E3A5F', beige: '#F5F0E8', cream: '#F0ECE3', camel: '#C29B70',
+    cognac: '#825633', sand: '#D7C7B7', charcoal: '#374151', silver: '#C0C0C0',
+    gold: '#D4AF37', 'off-white': '#EAE6DD', offwhite: '#EAE6DD',
+  }
+  return map[name?.toLowerCase()?.trim()] || '#888888'
+}
+
 const ProductCard = ({ product }) => {
   const navigate = useNavigate()
 
   // Normalize colors: accept both [{name, hex}] and plain strings
   const normalizedColors = (product.colors || []).map(c =>
-    typeof c === 'string' ? { name: c, hex: '#888888' } : c
+    typeof c === 'string' ? { name: c, hex: colorToHex(c) } : c
   )
 
   const [selectedColor, setSelectedColor] = useState(normalizedColors[0] || { name: 'Default', hex: '#888888' })
