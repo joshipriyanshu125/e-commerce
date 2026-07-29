@@ -128,10 +128,30 @@ CORS
 */
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: (origin, callback) => {
+            // Allow requests with no origin (mobile apps, curl, Postman)
+            if (!origin) return callback(null, true);
+            const allowedOrigins = [
+                "http://localhost:5173",
+                "http://localhost:3000",
+                // Add your deployed frontend URL below — update if different
+                process.env.FRONTEND_URL,
+            ].filter(Boolean);
+            if (allowedOrigins.some(o => origin.startsWith(o))) {
+                callback(null, true);
+            } else {
+                // In production allow all HTTPS origins (for flexibility)
+                if (process.env.NODE_ENV === "production") {
+                    callback(null, true);
+                } else {
+                    callback(new Error(`CORS: ${origin} not allowed`));
+                }
+            }
+        },
         credentials: true,
     })
 );
+
 
 /*
 =========================================

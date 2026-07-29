@@ -116,7 +116,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 // GET ALL PRODUCTS
 export const getProducts = asyncHandler(async (req, res) => {
 
-    const pageSize = 10;
+    const pageSize = Math.min(Number(req.query.limit) || 10, 100);
 
     const page = Number(req.query.page) || 1;
 
