@@ -63,12 +63,7 @@ export const useCategoryMenu = () => {
 }
 
 export const getCategoryLink = (slug, parentSlug = null) => {
-  if (parentSlug === 'men' || parentSlug === 'women' || slug === 'men' || slug === 'women') {
-    const gender = slug === 'men' || slug === 'women' ? slug : parentSlug
-    if (slug === 'men' || slug === 'women') return `/?gender=${slug}`
-    return `/?gender=${gender}&category=${slug}`
-  }
-  return `/?collection=${slug}`
+  return `/shop/${slug}`
 }
 
 export const flattenTreeForSelect = (tree, depth = 0) => {

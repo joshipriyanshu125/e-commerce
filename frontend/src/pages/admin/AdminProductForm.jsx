@@ -4,7 +4,8 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import api from '../../services/axiosInstance'
 import { ArrowLeft, Upload, X, Plus, Loader2, ImageOff } from 'lucide-react'
 
-const CATEGORIES = ['Shoes', 'Clothing', 'Accessories', 'Bags', 'Hats', 'Jewelry', 'Sports', 'Electronics', 'Other']
+import { fetchCategoriesAdmin, flattenTreeForSelect } from '../../utils/categories'
+
 const STATUS_OPTIONS = [
   { value: 'Active', label: 'Active', desc: 'Visible to customers' },
   { value: 'Draft', label: 'Draft', desc: 'Hidden from store' },
@@ -26,8 +27,9 @@ const AdminProductForm = () => {
   const [images, setImages] = useState([])          // { file, preview } for new uploads
   const [existingImages, setExistingImages] = useState([]) // { public_id, url } from DB
   const [loading, setLoading] = useState(false)
-  const [fetching, setFetching] = useState(isEdit)
+  const [fetching, setFetching] = useState(true) // Always fetch initially for categories
   const [error, setError] = useState('')
+  const [categories, setCategories] = useState([])
 
   // Tag / size / color input helpers
   const [tagInput, setTagInput] = useState('')
@@ -36,30 +38,37 @@ const AdminProductForm = () => {
 
   const fileInputRef = useRef()
 
-  // Fetch existing product for edit
+  // Fetch categories and existing product for edit
   useEffect(() => {
-    if (!isEdit) return
     const load = async () => {
       try {
         setFetching(true)
-        const res = await api.get(`products/${id}`)
-        const p = res.data.product
-        setForm({
-          name: p.name || '',
-          description: p.description || '',
-          price: p.price || '',
-          discountPrice: p.discountPrice || '',
-          countInStock: p.countInStock ?? '',
-          category: p.category || '',
-          brand: p.brand || '',
-          status: p.status || 'Active',
-          tags: p.tags || [],
-          sizes: p.sizes || [],
-          colors: p.colors || [],
-        })
-        setExistingImages(p.images || [])
+        
+        // Load categories
+        const catRes = await fetchCategoriesAdmin()
+        const flatCats = catRes.flat.length ? catRes.flat : flattenTreeForSelect(catRes.tree)
+        setCategories(flatCats)
+
+        if (isEdit) {
+          const res = await api.get(`products/${id}`)
+          const p = res.data.product
+          setForm({
+            name: p.name || '',
+            description: p.description || '',
+            price: p.price || '',
+            discountPrice: p.discountPrice || '',
+            countInStock: p.countInStock ?? '',
+            category: p.category || '',
+            brand: p.brand || '',
+            status: p.status || 'Active',
+            tags: p.tags || [],
+            sizes: p.sizes || [],
+            colors: p.colors || [],
+          })
+          setExistingImages(p.images || [])
+        }
       } catch (err) {
-        setError('Failed to load product.')
+        setError('Failed to load data.')
       } finally {
         setFetching(false)
       }
@@ -433,7 +442,7 @@ const AdminProductForm = () => {
                   className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-amber-500/50"
                 >
                   <option value="">Select category</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {categories.map(c => <option key={c._id} value={c.slug}>{c.label || c.name}</option>)}
                 </select>
               </div>
 

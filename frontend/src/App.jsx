@@ -9,6 +9,7 @@ import MainLayout from './components/layout/MainLayout'
 
 // Pages
 import Home from './pages/Home'
+import Shop from './pages/Shop'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ProductDetails from './pages/ProductDetails'
@@ -44,6 +45,8 @@ function App() {
         <Route element={<MainLayout><></></MainLayout>} path="__never__" />
 
         <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+        <Route path="/shop" element={<MainLayout><Shop /></MainLayout>} />
+        <Route path="/shop/:slug" element={<MainLayout><Shop /></MainLayout>} />
         <Route path="/journal" element={<MainLayout><Journal /></MainLayout>} />
         <Route path="/login" element={<MainLayout><Login /></MainLayout>} />
         <Route path="/register" element={<MainLayout><Register /></MainLayout>} />

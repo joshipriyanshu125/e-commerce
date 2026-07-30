@@ -92,9 +92,9 @@ const Navbar = () => {
             <CategoryMegaMenu menu={menu} onClose={closeMenus} />
           ) : (
             <nav className="hidden md:flex items-center space-x-8 font-mono text-base tracking-[0.2em] uppercase">
-              <Link to="/" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Shop All</Link>
-              <Link to="/?gender=men" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Men</Link>
-              <Link to="/?gender=women" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Women</Link>
+              <Link to="/shop" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Shop All</Link>
+              <Link to="/shop/men" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Men</Link>
+              <Link to="/shop/women" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Women</Link>
               <Link to="/journal" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Journal</Link>
             </nav>
           )}
@@ -170,7 +170,7 @@ const Navbar = () => {
           <div className="md:hidden bg-atelier-beige border-b border-atelier-lightgray px-6 py-8 animate-fade-in max-h-[80vh] overflow-y-auto">
             <nav className="flex flex-col space-y-4 font-mono text-sm tracking-[0.2em] uppercase">
 
-              <Link to="/" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
+              <Link to="/shop" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
                 Shop All
               </Link>
 

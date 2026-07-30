@@ -162,7 +162,7 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
       onMouseLeave={handleLeave}
     >
       <nav className="flex items-center space-x-8 font-mono text-base tracking-[0.2em] uppercase">
-        <Link to="/" className="text-atelier-gray hover:text-atelier-dark pb-0.5 transition-colors">
+        <Link to="/shop" className="text-atelier-gray hover:text-atelier-dark pb-0.5 transition-colors">
           Shop All
         </Link>
 
@@ -170,6 +170,7 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
           <button
             type="button"
             onMouseEnter={() => handleEnter('men')}
+            onClick={() => activePanel === 'men' ? setActivePanel(null) : handleEnter('men')}
             className={`pb-0.5 transition-colors ${
               activePanel === 'men'
                 ? 'text-atelier-dark font-medium border-b border-atelier-dark'
@@ -184,6 +185,7 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
           <button
             type="button"
             onMouseEnter={() => handleEnter('women')}
+            onClick={() => activePanel === 'women' ? setActivePanel(null) : handleEnter('women')}
             className={`pb-0.5 transition-colors ${
               activePanel === 'women'
                 ? 'text-atelier-dark font-medium border-b border-atelier-dark'
@@ -198,6 +200,7 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
           <button
             type="button"
             onMouseEnter={() => handleEnter('featured')}
+            onClick={() => activePanel === 'featured' ? setActivePanel(null) : handleEnter('featured')}
             className={`pb-0.5 transition-colors ${
               activePanel === 'featured'
                 ? 'text-atelier-dark font-medium border-b border-atelier-dark'
