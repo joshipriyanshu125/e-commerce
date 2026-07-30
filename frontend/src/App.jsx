@@ -32,6 +32,7 @@ import AdminReviewsModerator from './pages/admin/AdminReviewsModerator'
 import AdminCouponsManager from './pages/admin/AdminCouponsManager'
 import AdminNotificationsPanel from './pages/admin/AdminNotificationsPanel'
 import AdminSettingsPanel from './pages/admin/AdminSettingsPanel'
+import AdminCategoriesManager from './pages/admin/AdminCategoriesManager'
 
 function App() {
   return (
@@ -103,6 +104,10 @@ function App() {
         <Route
           path="/admin/settings"
           element={<AdminRoute><AdminSettingsPanel /></AdminRoute>}
+        />
+        <Route
+          path="/admin/categories"
+          element={<AdminRoute><AdminCategoriesManager /></AdminRoute>}
         />
 
         {/* =========================

@@ -4,13 +4,14 @@ import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../features/auth/authSlice'
 import {
   LayoutDashboard, Package, ShoppingCart, Users,
-  Star, Tag, Bell, Settings, LogOut, Menu, X, ChevronRight
+  Star, Tag, Bell, Settings, LogOut, Menu, X, ChevronRight, FolderTree
 } from 'lucide-react'
 import api from '../../services/axiosInstance'
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/products', label: 'Products', icon: Package },
+  { to: '/admin/categories', label: 'Categories', icon: FolderTree },
   { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/reviews', label: 'Reviews', icon: Star },

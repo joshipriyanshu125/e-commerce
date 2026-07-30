@@ -29,6 +29,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import returnsRoutes from "./routes/returnsRoutes.js";
 import pushRoutes from "./routes/pushRoutes.js";
 import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
 import debugRoutes from "./routes/debugRoutes.js";
 
 import apiLimiter from "./middleware/rateLimitMiddleware.js";
@@ -199,6 +200,8 @@ app.use(
     "/api/admin/analytics",
     adminAnalyticsRoutes
 );
+
+app.use("/api/categories", categoryRoutes);
 
 /*
 =========================================
