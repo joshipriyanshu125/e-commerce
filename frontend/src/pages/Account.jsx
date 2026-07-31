@@ -243,8 +243,8 @@ const handleLogout = () => {
     }
   }
 
-  // Display username or first part of email matching screenshot "Hello, p9464888"
-  const username = (user.email || "").split("@")[0] || user.name?.split(" ")[0] || "Member";
+  // Display user's name, fallback to email prefix if name is not available
+  const username = user.name || (user.email || "").split("@")[0] || "Member";
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in font-sans">
