@@ -7,6 +7,8 @@ import {
     getAllOrdersService,
     updateOrderStatusService,
     cancelOrderService,
+    adminCancelOrderService,
+    refundOrderService,
 } from "../services/orderService.js";
 
 /*
@@ -107,17 +109,15 @@ UPDATE ORDER STATUS
 */
 const updateOrderStatus =
     asyncHandler(async (req, res) => {
-
-        const order =
-            await updateOrderStatusService(
-                req.params.id,
-                req.body.status
-            );
+        const { status, courierName, trackingNumber } = req.body;
+        const order = await updateOrderStatusService(
+            req.params.id,
+            status,
+            { courierName, trackingNumber }
+        );
 
         res.status(200).json({
-
             success: true,
-
             order,
         });
     });
@@ -129,9 +129,28 @@ const updateOrderStatus =
     */
     const cancelOrder = asyncHandler(async (req, res) => {
         const order = await cancelOrderService(req.params.id, req.user);
-
         res.status(200).json({ success: true, order });
     });
+
+/*
+==============================
+ADMIN CANCEL ORDER
+==============================
+*/
+const adminCancelOrder = asyncHandler(async (req, res) => {
+    const order = await adminCancelOrderService(req.params.id);
+    res.status(200).json({ success: true, order });
+});
+
+/*
+==============================
+REFUND ORDER (ADMIN)
+==============================
+*/
+const refundOrder = asyncHandler(async (req, res) => {
+    const order = await refundOrderService(req.params.id);
+    res.status(200).json({ success: true, order });
+});
 
 export {
     createOrder,
@@ -140,4 +159,6 @@ export {
     getAllOrders,
     updateOrderStatus,
     cancelOrder,
+    adminCancelOrder,
+    refundOrder,
 };

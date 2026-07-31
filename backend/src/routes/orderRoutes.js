@@ -7,6 +7,8 @@ import {
     getAllOrders,
     updateOrderStatus,
     cancelOrder,
+    adminCancelOrder,
+    refundOrder,
 } from "../controllers/orderController.js";
 
 import {
@@ -31,7 +33,7 @@ router.get("/my-orders", protect, getMyOrders);
 // Get Single Order
 router.get("/:id", protect, getSingleOrder);
 
-// Cancel Order
+// Cancel Order (user)
 router.put("/:id/cancel", protect, cancelOrder);
 
 /*
@@ -43,7 +45,13 @@ ADMIN ROUTES
 // Get All Orders
 router.get("/", protect, admin, getAllOrders);
 
-// Update Order Status
+// Update Order Status (with optional courier info in body)
 router.put("/:id/status", protect, admin, updateOrderStatus);
+
+// Admin Cancel Order
+router.put("/:id/admin-cancel", protect, admin, adminCancelOrder);
+
+// Refund Order
+router.put("/:id/refund", protect, admin, refundOrder);
 
 export default router;

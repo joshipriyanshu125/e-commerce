@@ -87,17 +87,37 @@ const orderSchema = new mongoose.Schema(
             required: true
         },
 
-        // ORDER STATUS
+        // ORDER STATUS — full fulfillment pipeline
         orderStatus: {
             type: String,
             enum: [
                 "Processing",
+                "Confirmed",
+                "Packed",
                 "Shipped",
+                "Out for Delivery",
                 "Delivered",
-                "Cancelled"
+                "Cancelled",
+                "Refunded"
             ],
             default: "Processing"
         },
+
+        // Courier details (assigned by admin)
+        courierName: {
+            type: String,
+            default: ""
+        },
+
+        trackingNumber: {
+            type: String,
+            default: ""
+        },
+
+        // Refund info
+        refundedAt: Date,
+
+        cancelledAt: Date,
 
         deliveredAt: Date
     },

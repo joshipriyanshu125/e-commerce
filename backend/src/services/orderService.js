@@ -256,7 +256,7 @@ UPDATE ORDER STATUS SERVICE
 ==============================
 */
 const updateOrderStatusService =
-    async (orderId, status) => {
+    async (orderId, status, extras = {}) => {
 
         const order =
             await getOrderByIdRepository(
@@ -264,51 +264,61 @@ const updateOrderStatusService =
             );
 
         if (!order) {
-
-            throw new Error(
-                "Order not found"
-            );
+            throw new Error("Order not found");
         }
 
         order.orderStatus = status;
 
         if (status === "Delivered") {
-
             order.deliveredAt = Date.now();
             if (order.paymentInfo) {
                 order.paymentInfo.paymentStatus = "Paid";
             }
         }
 
+        if (status === "Refunded") {
+            order.refundedAt = Date.now();
+        }
+
+        // Optionally assign courier details
+        if (extras.courierName !== undefined) order.courierName = extras.courierName;
+        if (extras.trackingNumber !== undefined) order.trackingNumber = extras.trackingNumber;
+
         await order.save();
 
-        if (["Shipped", "Out for Delivery", "Delivered"].includes(status)) {
-            // SEND EMAIL
-            const subject = status === "Delivered" ? "Order Delivered" : `Order Status: ${status}`;
-            const htmlTemplate = status === "Delivered" 
-                ? orderDeliveredTemplate(order.user.name, order._id)
-                : orderStatusUpdateTemplate(order.user.name, order._id, status);
+        const notifyStatuses = ["Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered", "Cancelled", "Refunded"];
+        if (notifyStatuses.includes(status)) {
+            // SEND EMAIL (best-effort)
+            try {
+                const subject = status === "Delivered" ? "Order Delivered" : `Order Status: ${status}`;
+                const htmlTemplate = status === "Delivered"
+                    ? orderDeliveredTemplate(order.user.name, order._id)
+                    : orderStatusUpdateTemplate(order.user.name, order._id, status);
 
-            await sendEmail({
-                to: order.user.email,
-                subject,
-                html: htmlTemplate,
-            });
+                await sendEmail({ to: order.user.email, subject, html: htmlTemplate });
+            } catch (err) {
+                console.error("Status email failed:", err.message);
+            }
 
-            // SEND IN-APP NOTIFICATION
-            await sendNotification({
-                userId: order.user._id,
-                title: subject,
-                message: `Your order ${order._id} status is now ${status}.`,
-            });
+            // SEND IN-APP NOTIFICATION (best-effort)
+            try {
+                const subject = `Order ${status}`;
+                await sendNotification({
+                    userId: order.user._id,
+                    title: subject,
+                    message: `Your order #${order._id.toString().slice(-6).toUpperCase()} status is now ${status}.`,
+                });
+            } catch (err) {
+                console.error("Notification failed:", err.message);
+            }
 
-            // send web-push to subscribed devices for this user (best-effort)
+            // SEND WEB PUSH (best-effort)
             try {
                 const sub = await PushSubscription.findOne({ user: order.user._id });
                 if (sub) {
                     await sendWebPush(sub.subscription, {
-                        title: subject,
-                        body: `Your order ${order._id} status is now ${status}`,
+                        title: `Order ${status}`,
+                        body: `Your order status is now ${status}`,
                         orderId: order._id,
                     });
                 }
@@ -333,7 +343,7 @@ const updateOrderStatusService =
 
 /*
 ==============================
-CANCEL ORDER SERVICE
+CANCEL ORDER SERVICE (USER)
 ==============================
 */
 const cancelOrderService = async (orderId, user) => {
@@ -343,20 +353,81 @@ const cancelOrderService = async (orderId, user) => {
         throw new Error("Order not found");
     }
 
-    // Only owner or admin (admin check happens at controller route) can cancel
+    // Only owner can cancel via this route
     const orderUserId = (order.user && order.user._id) ? order.user._id.toString() : order.user.toString();
     if (orderUserId !== user._id.toString()) {
         throw new Error("Not authorized to cancel this order");
     }
 
-    if (order.orderStatus && (order.orderStatus === "Shipped" || order.orderStatus === "Delivered")) {
+    if (["Shipped", "Out for Delivery", "Delivered"].includes(order.orderStatus)) {
         throw new Error("Cannot cancel an order that has already shipped or delivered");
     }
 
     order.orderStatus = "Cancelled";
     order.cancelledAt = Date.now();
-
     await order.save();
+
+    return order;
+};
+
+/*
+==============================
+ADMIN CANCEL ORDER SERVICE
+==============================
+*/
+const adminCancelOrderService = async (orderId) => {
+    const order = await getOrderByIdRepository(orderId);
+    if (!order) throw new Error("Order not found");
+
+    if (order.orderStatus === "Delivered") {
+        throw new Error("Cannot cancel an already delivered order. Use Refund instead.");
+    }
+
+    order.orderStatus = "Cancelled";
+    order.cancelledAt = Date.now();
+    await order.save();
+
+    // Notify customer
+    try {
+        await sendNotification({
+            userId: order.user._id,
+            title: "Order Cancelled",
+            message: `Your order #${order._id.toString().slice(-6).toUpperCase()} has been cancelled by admin.`,
+        });
+    } catch (err) {
+        console.error("Cancel notification failed:", err.message);
+    }
+
+    return order;
+};
+
+/*
+==============================
+REFUND ORDER SERVICE (ADMIN)
+==============================
+*/
+const refundOrderService = async (orderId) => {
+    const order = await getOrderByIdRepository(orderId);
+    if (!order) throw new Error("Order not found");
+
+    if (!["Delivered", "Cancelled"].includes(order.orderStatus)) {
+        throw new Error("Refund can only be issued for Delivered or Cancelled orders.");
+    }
+
+    order.orderStatus = "Refunded";
+    order.refundedAt = Date.now();
+    await order.save();
+
+    // Notify customer
+    try {
+        await sendNotification({
+            userId: order.user._id,
+            title: "Refund Initiated",
+            message: `A refund for your order #${order._id.toString().slice(-6).toUpperCase()} has been initiated.`,
+        });
+    } catch (err) {
+        console.error("Refund notification failed:", err.message);
+    }
 
     return order;
 };
@@ -368,4 +439,6 @@ export {
     getAllOrdersService,
     updateOrderStatusService,
     cancelOrderService,
+    adminCancelOrderService,
+    refundOrderService,
 };
