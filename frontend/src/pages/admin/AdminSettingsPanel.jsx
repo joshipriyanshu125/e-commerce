@@ -6,7 +6,7 @@ import api from '../../services/axiosInstance'
 const AdminSettingsPanel = () => {
   const [profile, setProfile] = useState({ name: '', email: '', phone: '' })
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
-  
+
   // Store Config Mock Settings
   const [storeConfig, setStoreConfig] = useState({
     storeName: 'Atelier Premium',
@@ -114,7 +114,7 @@ const AdminSettingsPanel = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          
+
           {/* Account Settings */}
           <div className="bg-[#13131a] border border-white/5 rounded-xl p-6 space-y-6">
             <div className="flex items-center gap-2">
@@ -128,10 +128,10 @@ const AdminSettingsPanel = () => {
               <form onSubmit={handleUpdateProfile} className="space-y-4 text-xs font-mono text-white/70">
                 <div className="space-y-1.5">
                   <label className="block uppercase tracking-wider text-white/40">Full Name</label>
-                  <input 
-                    type="text" 
-                    value={profile.name} 
-                    onChange={e => setProfile({...profile, name: e.target.value})}
+                  <input
+                    type="text"
+                    value={profile.name}
+                    onChange={e => setProfile({ ...profile, name: e.target.value })}
                     placeholder="e.g. John Doe"
                     className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white placeholder-white/25"
                   />
@@ -139,10 +139,10 @@ const AdminSettingsPanel = () => {
 
                 <div className="space-y-1.5">
                   <label className="block uppercase tracking-wider text-white/40">Email Address</label>
-                  <input 
-                    type="email" 
-                    value={profile.email} 
-                    onChange={e => setProfile({...profile, email: e.target.value})}
+                  <input
+                    type="email"
+                    value={profile.email}
+                    onChange={e => setProfile({ ...profile, email: e.target.value })}
                     placeholder="e.g. admin@atelier.com"
                     className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white placeholder-white/25"
                   />
@@ -150,10 +150,10 @@ const AdminSettingsPanel = () => {
 
                 <div className="space-y-1.5">
                   <label className="block uppercase tracking-wider text-white/40">Phone Number</label>
-                  <input 
-                    type="text" 
-                    value={profile.phone} 
-                    onChange={e => setProfile({...profile, phone: e.target.value})}
+                  <input
+                    type="text"
+                    value={profile.phone}
+                    onChange={e => setProfile({ ...profile, phone: e.target.value })}
                     placeholder="e.g. +1 555-0199"
                     className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white placeholder-white/25"
                   />
@@ -162,13 +162,13 @@ const AdminSettingsPanel = () => {
                 {/* Change Password Sub-section */}
                 <div className="border-t border-white/5 pt-4 mt-2 space-y-4">
                   <h4 className="text-white/60 font-semibold uppercase tracking-wider text-[10px]">Change Password (Optional)</h4>
-                  
+
                   <div className="space-y-1.5">
                     <label className="block uppercase tracking-wider text-white/40">New Password</label>
-                    <input 
-                      type="password" 
-                      value={passwordForm.newPassword} 
-                      onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                    <input
+                      type="password"
+                      value={passwordForm.newPassword}
+                      onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                       placeholder="Minimum 6 characters"
                       className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white placeholder-white/25"
                     />
@@ -176,10 +176,10 @@ const AdminSettingsPanel = () => {
 
                   <div className="space-y-1.5">
                     <label className="block uppercase tracking-wider text-white/40">Confirm New Password</label>
-                    <input 
-                      type="password" 
-                      value={passwordForm.confirmPassword} 
-                      onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                    <input
+                      type="password"
+                      value={passwordForm.confirmPassword}
+                      onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                       placeholder="Confirm your new password"
                       className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white placeholder-white/25"
                     />
@@ -207,19 +207,19 @@ const AdminSettingsPanel = () => {
             <form onSubmit={handleUpdateConfig} className="space-y-4 text-xs font-mono text-white/70">
               <div className="space-y-1.5">
                 <label className="block uppercase tracking-wider text-white/40">Store Name</label>
-                <input 
-                  type="text" 
-                  value={storeConfig.storeName} 
-                  onChange={e => setStoreConfig({...storeConfig, storeName: e.target.value})}
+                <input
+                  type="text"
+                  value={storeConfig.storeName}
+                  onChange={e => setStoreConfig({ ...storeConfig, storeName: e.target.value })}
                   className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label className="block uppercase tracking-wider text-white/40">Default Currency</label>
-                <select 
-                  value={storeConfig.currency} 
-                  onChange={e => setStoreConfig({...storeConfig, currency: e.target.value})}
+                <select
+                  value={storeConfig.currency}
+                  onChange={e => setStoreConfig({ ...storeConfig, currency: e.target.value })}
                   className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white"
                 >
                   <option value="USD">USD ($)</option>
@@ -231,20 +231,20 @@ const AdminSettingsPanel = () => {
 
               <div className="space-y-1.5">
                 <label className="block uppercase tracking-wider text-white/40">Tax / VAT Rate (%)</label>
-                <input 
-                  type="number" 
-                  value={storeConfig.taxRate} 
-                  onChange={e => setStoreConfig({...storeConfig, taxRate: e.target.value})}
+                <input
+                  type="number"
+                  value={storeConfig.taxRate}
+                  onChange={e => setStoreConfig({ ...storeConfig, taxRate: e.target.value })}
                   className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label className="block uppercase tracking-wider text-white/40">Free Shipping Threshold ($)</label>
-                <input 
-                  type="number" 
-                  value={storeConfig.freeShippingThreshold} 
-                  onChange={e => setStoreConfig({...storeConfig, freeShippingThreshold: e.target.value})}
+                <input
+                  type="number"
+                  value={storeConfig.freeShippingThreshold}
+                  onChange={e => setStoreConfig({ ...storeConfig, freeShippingThreshold: e.target.value })}
                   className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 text-white"
                 />
               </div>

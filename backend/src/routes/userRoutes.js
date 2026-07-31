@@ -2,6 +2,7 @@ import express from "express";
 
 import {
     getUserProfile,
+    updateUserProfile,
     adminRoute,
     getAllUsers,
     deleteUser
@@ -19,6 +20,12 @@ router.get(
     protect,
 
     getUserProfile
+);
+
+router.put(
+    "/profile",
+    protect,
+    updateUserProfile
 );
 
 
