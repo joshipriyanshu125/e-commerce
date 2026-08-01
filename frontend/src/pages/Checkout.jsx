@@ -9,7 +9,7 @@ const Checkout = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   
-  const { items, discountPercent } = useSelector(state => state.cart)
+  const { items, discountAmount, couponCode } = useSelector(state => state.cart)
   const { user } = useSelector(state => state.auth)
 
   // Saved addresses
@@ -115,9 +115,8 @@ const Checkout = () => {
 
   // Cost calculations
   const subtotal = items.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
-  const discountAmount = Math.round(subtotal * (discountPercent / 100))
   const shipping = subtotal >= 150 ? 0 : 15
-  const finalTotal = subtotal - discountAmount + shipping
+  const finalTotal = Math.max(0, subtotal - discountAmount + shipping)
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault()

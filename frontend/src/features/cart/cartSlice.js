@@ -4,7 +4,9 @@ const initialState = {
   items: JSON.parse(localStorage.getItem('cartItems')) || [],
   isCartOpen: false,
   couponCode: '',
-  discountPercent: 0,
+  discountType: '',       // 'percentage' | 'flat'
+  discountValue: 0,       // the raw coupon value (e.g. 20 for 20% or $20)
+  discountAmount: 0,      // computed dollar discount returned by API
 }
 
 const cartSlice = createSlice({
@@ -20,7 +22,6 @@ const cartSlice = createSlice({
     addToCart: (state, action) => {
       const { product, quantity, color, size } = action.payload
       
-      // Look for existing item with identical ID, color, and size
       const existingIndex = state.items.findIndex(
         item => item.product.id === product.id && 
                 item.color.name === color.name && 
@@ -30,17 +31,10 @@ const cartSlice = createSlice({
       if (existingIndex > -1) {
         state.items[existingIndex].quantity += quantity
       } else {
-        state.items.push({
-          product,
-          quantity,
-          color,
-          size
-        })
+        state.items.push({ product, quantity, color, size })
       }
       
-      // Auto open cart drawer when adding item
       state.isCartOpen = true
-      
       localStorage.setItem('cartItems', JSON.stringify(state.items))
     },
     removeFromCart: (state, action) => {
@@ -65,13 +59,18 @@ const cartSlice = createSlice({
       localStorage.setItem('cartItems', JSON.stringify(state.items))
     },
     applyCoupon: (state, action) => {
-      state.couponCode = action.payload.code.toUpperCase()
-      state.discountPercent = action.payload.discountPercent
+      // payload: { code, discountType, discountValue, discountAmount }
+      state.couponCode = (action.payload.code || '').toUpperCase()
+      state.discountType = action.payload.discountType || ''
+      state.discountValue = action.payload.discountValue || 0
+      state.discountAmount = action.payload.discountAmount || 0
     },
     clearCart: (state) => {
       state.items = []
       state.couponCode = ''
-      state.discountPercent = 0
+      state.discountType = ''
+      state.discountValue = 0
+      state.discountAmount = 0
       state.isCartOpen = false
       localStorage.removeItem('cartItems')
     }

@@ -9,7 +9,7 @@ const CartDrawer = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   
-  const { items, isCartOpen, couponCode, discountPercent } = useSelector(state => state.cart)
+  const { items, isCartOpen, couponCode, discountAmount } = useSelector(state => state.cart)
   const [promoInput, setPromoInput] = useState('')
   const [promoError, setPromoError] = useState('')
   const [promoSuccess, setPromoSuccess] = useState('')
@@ -49,15 +49,20 @@ const CartDrawer = () => {
     try {
       const res = await api.post('coupons/apply', { code: promoInput, totalAmount: subtotal })
       if (res.data.success) {
-        dispatch(applyCoupon({ code: promoInput, discountPercent: res.data.discountPercentage }))
-        setPromoSuccess('Promo code applied!')
+        dispatch(applyCoupon({
+          code: res.data.code,
+          discountType: res.data.discountType,
+          discountValue: res.data.discountValue,
+          discountAmount: res.data.discountAmount,
+        }))
+        setPromoSuccess(`Promo applied! You save $${res.data.discountAmount.toFixed(2)}`)
         setPromoError('')
         setPromoInput('')
       }
     } catch (err) {
       setPromoError(err.response?.data?.message || 'Invalid promotional code.')
       setPromoSuccess('')
-      dispatch(applyCoupon({ code: '', discountPercent: 0 }))
+      dispatch(applyCoupon({ code: '', discountType: '', discountValue: 0, discountAmount: 0 }))
     }
   }
 
@@ -68,8 +73,7 @@ const CartDrawer = () => {
 
   // Calculate prices
   const subtotal = items.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
-  const discountAmount = Math.round(subtotal * (discountPercent / 100))
-  const finalTotal = subtotal - discountAmount
+  const finalTotal = Math.max(0, subtotal - discountAmount)
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden font-sans">
@@ -214,10 +218,10 @@ const CartDrawer = () => {
               
               {promoError && <p className="text-xs font-mono uppercase text-red-600 tracking-wider pt-2">{promoError}</p>}
               {promoSuccess && <p className="text-xs font-mono uppercase text-atelier-accent tracking-wider pt-2">{promoSuccess}</p>}
-              {discountPercent > 0 && (
+              {discountAmount > 0 && (
                 <div className="flex items-center justify-between text-xs font-mono uppercase text-atelier-accent tracking-wider pt-2">
                   <span>Discount Active:</span>
-                  <span>{discountPercent}% OFF</span>
+                  <span>-${discountAmount.toFixed(2)} OFF</span>
                 </div>
               )}
 

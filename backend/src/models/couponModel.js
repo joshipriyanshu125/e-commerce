@@ -6,32 +6,62 @@ const couponSchema = new mongoose.Schema(
             type: String,
             required: true,
             unique: true,
-            uppercase: true
+            uppercase: true,
+            trim: true,
         },
 
-        discountPercentage: {
+        discountType: {
+            type: String,
+            enum: ["percentage", "flat"],
+            default: "percentage",
+        },
+
+        // Represents percentage or flat value depending on discountType
+        discountValue: {
             type: Number,
-            required: true
+            required: true,
+            min: 0,
         },
 
         expiryDate: {
             type: Date,
-            required: true
+            required: true,
         },
 
         isActive: {
             type: Boolean,
-            default: true
-        }
+            default: true,
+        },
+
+        minPurchase: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
+        maxDiscount: {
+            type: Number,
+            default: null,
+            min: 0,
+        },
+
+        usageLimit: {
+            type: Number,
+            default: null,
+            min: 1,
+        },
+
+        usedCount: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
     },
     {
-        timestamps: true
+        timestamps: true,
     }
 );
 
-const Coupon = mongoose.model(
-    "Coupon",
-    couponSchema
-);
+const Coupon = mongoose.model("Coupon", couponSchema);
 
 export default Coupon;

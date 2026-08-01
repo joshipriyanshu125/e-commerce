@@ -9,15 +9,14 @@ const Cart = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const { items, discountPercent } = useSelector(state => state.cart)
+  const { items, discountAmount, couponCode } = useSelector(state => state.cart)
   const [promoInput, setPromoInput] = useState('')
   const [promoError, setPromoError] = useState('')
   const [promoSuccess, setPromoSuccess] = useState('')
 
   const subtotal = items.reduce((acc, item) => acc + item.product.price * item.quantity, 0)
-  const discountAmount = Math.round(subtotal * (discountPercent / 100))
   const shipping = subtotal >= 150 ? 0 : 15
-  const finalTotal = subtotal - discountAmount + shipping
+  const finalTotal = Math.max(0, subtotal - discountAmount + shipping)
 
   const handleQuantityChange = (id, colorName, size, currentQty, delta) => {
     const newQty = currentQty + delta
@@ -37,15 +36,20 @@ const Cart = () => {
     try {
       const res = await api.post('coupons/apply', { code: promoInput, totalAmount: subtotal })
       if (res.data.success) {
-        dispatch(applyCoupon({ code: promoInput, discountPercent: res.data.discountPercentage }))
-        setPromoSuccess('Promo code applied!')
+        dispatch(applyCoupon({
+          code: res.data.code,
+          discountType: res.data.discountType,
+          discountValue: res.data.discountValue,
+          discountAmount: res.data.discountAmount,
+        }))
+        setPromoSuccess(`Promo applied! You save $${res.data.discountAmount.toFixed(2)}`)
         setPromoError('')
         setPromoInput('')
       }
     } catch (err) {
       setPromoError(err.response?.data?.message || 'Invalid promotional code.')
       setPromoSuccess('')
-      dispatch(applyCoupon({ code: '', discountPercent: 0 }))
+      dispatch(applyCoupon({ code: '', discountType: '', discountValue: 0, discountAmount: 0 }))
     }
   }
 
@@ -182,8 +186,8 @@ const Cart = () => {
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-atelier-accent">
-                  <span>Discount ({discountPercent}%)</span>
-                  <span>-${discountAmount}</span>
+                  <span>Discount {couponCode ? `(${couponCode})` : ''}</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between">
