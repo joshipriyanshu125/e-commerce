@@ -601,6 +601,12 @@ const ProductDetails = () => {
                   <p className="text-xs sm:text-sm text-atelier-gray font-light leading-relaxed max-w-2xl font-sans">
                     {review.comment}
                   </p>
+                  {review.reply && (
+                    <div className="mt-3 ml-4 p-3 bg-atelier-lightgray/10 border-l-2 border-atelier-dark/20 text-xs text-atelier-gray font-light leading-relaxed font-sans">
+                      <span className="font-mono font-semibold text-[10px] text-atelier-dark uppercase tracking-wider block mb-1">Atelier Response</span>
+                      {review.reply}
+                    </div>
+                  )}
                 </div>
               ))
             ) : (

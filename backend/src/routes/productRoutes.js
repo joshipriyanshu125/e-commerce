@@ -10,6 +10,9 @@ import {
     deleteProduct,
     createProductReview,
     deleteProductReview,
+    getAllReviews,
+    updateReviewStatus,
+    replyToReview,
 } from "../controllers/productController.js";
 
 import {
@@ -28,6 +31,13 @@ router.get(
     getProducts
 );
 
+
+router.get(
+    "/reviews/all",
+    protect,
+    admin,
+    getAllReviews
+);
 
 router.get(
     "/:id",
@@ -75,6 +85,20 @@ router.delete(
     protect,
     admin,
     deleteProductReview
+);
+
+router.put(
+    "/:id/reviews/:reviewId/status",
+    protect,
+    admin,
+    updateReviewStatus
+);
+
+router.put(
+    "/:id/reviews/:reviewId/reply",
+    protect,
+    admin,
+    replyToReview
 );
 
 export default router;
