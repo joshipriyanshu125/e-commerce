@@ -13,6 +13,14 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get("error");
+    if (errorParam) {
+      setError(errorParam);
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 

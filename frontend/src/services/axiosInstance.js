@@ -27,4 +27,21 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 403) {
+      const errMsg = error.response.data?.message || "";
+      if (errMsg.toLowerCase().includes("blocked")) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        if (!window.location.pathname.includes("/login")) {
+          window.location.href = `/login?error=${encodeURIComponent(errMsg)}`;
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default axiosInstance;

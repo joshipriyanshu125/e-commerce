@@ -45,6 +45,11 @@ const loginUser = asyncHandler(async (req, res) => {
         password,
     });
 
+    if (mongoUser.isBlocked) {
+        res.status(403);
+        throw new Error("Your account has been blocked. Please contact support.");
+    }
+
     res.status(200).json({
         success: true,
         message: "Login successful",
