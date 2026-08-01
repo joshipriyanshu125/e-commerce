@@ -5,7 +5,12 @@ import {
     updateUserProfile,
     adminRoute,
     getAllUsers,
-    deleteUser
+    deleteUser,
+    blockUser,
+    unblockUser,
+    getUserOrders,
+    getUserAddresses,
+    adminResetPassword,
 } from "../controllers/userController.js";
 
 import {
@@ -18,7 +23,6 @@ const router = express.Router();
 router.get(
     "/profile",
     protect,
-
     getUserProfile
 );
 
@@ -27,7 +31,6 @@ router.put(
     protect,
     updateUserProfile
 );
-
 
 router.get(
     "/admin",
@@ -50,6 +53,19 @@ router.delete(
     admin,
     deleteUser
 );
+
+// Block / Unblock
+router.put("/:id/block", protect, admin, blockUser);
+router.put("/:id/unblock", protect, admin, unblockUser);
+
+// Get user orders (admin)
+router.get("/:id/orders", protect, admin, getUserOrders);
+
+// Get user addresses (admin)
+router.get("/:id/addresses", protect, admin, getUserAddresses);
+
+// Reset password (admin)
+router.put("/:id/reset-password", protect, admin, adminResetPassword);
 
 
 export default router;
