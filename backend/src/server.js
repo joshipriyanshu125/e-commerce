@@ -184,7 +184,7 @@ app.use("/api/cart", cartRoutes);
 
 app.use("/api/address", addressRoutes);
 
-app.use("/api/promocodes", couponRoutes);
+app.use("/api/coupons", couponRoutes);
 
 app.use("/api/invoice", invoiceRoutes);
 

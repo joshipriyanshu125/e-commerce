@@ -34,7 +34,7 @@ const Cart = () => {
     if (promoInput.trim() === '') return
 
     try {
-      const res = await api.post('promocodes/apply', { code: promoInput, totalAmount: subtotal })
+      const res = await api.post('coupons/apply', { code: promoInput, totalAmount: subtotal })
       if (res.data.success) {
         dispatch(applyCoupon({
           code: res.data.code,
