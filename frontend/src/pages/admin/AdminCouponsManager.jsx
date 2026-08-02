@@ -47,7 +47,7 @@ const AdminCouponsManager = () => {
   const fetchCoupons = async () => {
     try {
       setLoading(true)
-      const res = await api.get('coupons')
+      const res = await api.get('promocodes')
       if (res.data.success) setCoupons(res.data.coupons || [])
     } catch (err) {
       addToast('Failed to load coupons.', 'error')
@@ -87,7 +87,7 @@ const AdminCouponsManager = () => {
       if (maxDiscount) payload.maxDiscount = parseFloat(maxDiscount)
       if (usageLimit) payload.usageLimit = parseInt(usageLimit)
 
-      const res = await api.post('coupons/create', payload)
+      const res = await api.post('promocodes/create', payload)
       if (res.data.success) {
         setCoupons(prev => [res.data.coupon, ...prev])
         // Reset form
@@ -106,7 +106,7 @@ const AdminCouponsManager = () => {
   const handleDeleteCoupon = async (couponId, couponCode) => {
     if (!window.confirm(`Delete coupon "${couponCode}"? This cannot be undone.`)) return
     try {
-      const res = await api.delete(`coupons/${couponId}`)
+      const res = await api.delete(`promocodes/${couponId}`)
       if (res.data.success) {
         setCoupons(prev => prev.filter(c => c._id !== couponId))
         addToast(`Coupon ${couponCode} deleted.`, 'success')
@@ -118,7 +118,7 @@ const AdminCouponsManager = () => {
 
   const handleToggleCoupon = async (couponId, currentActive, couponCode) => {
     try {
-      const res = await api.patch(`coupons/${couponId}/toggle`)
+      const res = await api.patch(`promocodes/${couponId}/toggle`)
       if (res.data.success) {
         setCoupons(prev => prev.map(c => c._id === couponId ? { ...c, isActive: !currentActive } : c))
         addToast(`Coupon ${couponCode} ${!currentActive ? 'enabled' : 'disabled'}.`, 'success')
