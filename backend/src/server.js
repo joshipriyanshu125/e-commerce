@@ -30,6 +30,7 @@ import returnsRoutes from "./routes/returnsRoutes.js";
 import pushRoutes from "./routes/pushRoutes.js";
 import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
+import settingsRoutes from "./routes/settingsRoutes.js";
 import debugRoutes from "./routes/debugRoutes.js";
 
 import { startCouponExpiryJob } from "./jobs/couponExpiryJob.js";
@@ -207,6 +208,7 @@ app.use(
 );
 
 app.use("/api/categories", categoryRoutes);
+app.use("/api/settings", settingsRoutes);
 
 /*
 =========================================
