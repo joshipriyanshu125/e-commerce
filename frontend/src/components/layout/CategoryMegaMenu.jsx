@@ -152,8 +152,24 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
 
   useEffect(() => () => clearTimeout(timeoutRef.current), [])
 
-  const men = menu.main?.find((c) => c.slug === 'men')
-  const women = menu.main?.find((c) => c.slug === 'women')
+  const men = menu.main?.find((c) => c.slug === 'men') || {
+    name: 'Men',
+    slug: 'men',
+    children: [
+      { name: 'Apparel & Clothing', slug: 'men-clothing' },
+      { name: 'Footwear & Shoes', slug: 'men-shoes' },
+      { name: 'Accessories', slug: 'men-accessories' },
+    ]
+  }
+  const women = menu.main?.find((c) => c.slug === 'women') || {
+    name: 'Women',
+    slug: 'women',
+    children: [
+      { name: 'Apparel & Dresses', slug: 'women-clothing' },
+      { name: 'Footwear & Shoes', slug: 'women-shoes' },
+      { name: 'Handbags & Accessories', slug: 'women-accessories' },
+    ]
+  }
   const featured = menu.featured || []
 
   return (
@@ -166,35 +182,31 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
           Shop All
         </Link>
 
-        {men && (
-          <button
-            type="button"
-            onMouseEnter={() => handleEnter('men')}
-            onClick={() => activePanel === 'men' ? setActivePanel(null) : handleEnter('men')}
-            className={`pb-0.5 transition-colors ${
-              activePanel === 'men'
-                ? 'text-atelier-dark font-medium border-b border-atelier-dark'
-                : 'text-atelier-gray hover:text-atelier-dark'
-            }`}
-          >
-            Men
-          </button>
-        )}
+        <button
+          type="button"
+          onMouseEnter={() => handleEnter('men')}
+          onClick={() => activePanel === 'men' ? setActivePanel(null) : handleEnter('men')}
+          className={`pb-0.5 transition-colors ${
+            activePanel === 'men'
+              ? 'text-atelier-dark font-medium border-b border-atelier-dark'
+              : 'text-atelier-gray hover:text-atelier-dark'
+          }`}
+        >
+          Men
+        </button>
 
-        {women && (
-          <button
-            type="button"
-            onMouseEnter={() => handleEnter('women')}
-            onClick={() => activePanel === 'women' ? setActivePanel(null) : handleEnter('women')}
-            className={`pb-0.5 transition-colors ${
-              activePanel === 'women'
-                ? 'text-atelier-dark font-medium border-b border-atelier-dark'
-                : 'text-atelier-gray hover:text-atelier-dark'
-            }`}
-          >
-            Women
-          </button>
-        )}
+        <button
+          type="button"
+          onMouseEnter={() => handleEnter('women')}
+          onClick={() => activePanel === 'women' ? setActivePanel(null) : handleEnter('women')}
+          className={`pb-0.5 transition-colors ${
+            activePanel === 'women'
+              ? 'text-atelier-dark font-medium border-b border-atelier-dark'
+              : 'text-atelier-gray hover:text-atelier-dark'
+          }`}
+        >
+          Women
+        </button>
 
         {featured.length > 0 && (
           <button

@@ -166,6 +166,16 @@ const createOrderService = async ({
             order._id
         );
 
+    // EMIT REAL-TIME SOCKET EVENT FOR ADMIN DASHBOARD & ORDERS
+    try {
+        const io = getIO();
+        if (io) {
+            io.emit("newOrder", populatedOrder);
+        }
+    } catch (socketErr) {
+        console.error("Socket newOrder error:", socketErr.message);
+    }
+
     // SEND EMAIL (non-fatal — order is placed even if email fails)
     try {
         await sendEmail({

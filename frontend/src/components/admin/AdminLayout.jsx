@@ -9,6 +9,7 @@ import {
   RotateCcw, TrendingDown, Info, Package as PackageIcon
 } from 'lucide-react'
 import api from '../../services/axiosInstance'
+import { io } from 'socket.io-client'
 
 /* ── Type config (mirrors NotificationsPanel) ────────── */
 const TYPE_CFG = {
@@ -176,6 +177,22 @@ const AdminLayout = ({ children, title }) => {
     fetchNotifications()
     const interval = setInterval(fetchNotifications, 30000)
 
+    // Socket.IO real-time notification listener
+    const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
+    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] })
+
+    if (user?._id || user?.id) {
+      socket.emit('join', user._id || user.id)
+    }
+
+    const handleNewNotif = () => {
+      fetchNotifications()
+    }
+
+    socket.on('newNotification', handleNewNotif)
+    socket.on('adminNotification', handleNewNotif)
+    socket.on('newOrder', handleNewNotif)
+
     // Listen for updates from the notifications panel
     const onUpdate = () => fetchNotifications()
     window.addEventListener('notificationsUpdated', onUpdate)
@@ -183,10 +200,14 @@ const AdminLayout = ({ children, title }) => {
 
     return () => {
       clearInterval(interval)
+      socket.off('newNotification', handleNewNotif)
+      socket.off('adminNotification', handleNewNotif)
+      socket.off('newOrder', handleNewNotif)
+      socket.disconnect()
       window.removeEventListener('notificationsUpdated', onUpdate)
       window.removeEventListener('storage', onUpdate)
     }
-  }, [fetchNotifications])
+  }, [fetchNotifications, user])
 
   /* ── Close dropdown on outside click ── */
   useEffect(() => {

@@ -143,7 +143,7 @@ const productSlice = createSlice({
       .addCase(fetchAPIProducts.fulfilled, (state, action) => {
         state.apiLoading = false
         const normalized = action.payload
-          .filter(p => p.status === 'Active')
+          .filter(p => !p.status || p.status.toLowerCase() === 'active')
           .map(normalizeDBProduct)
         state.products = normalized
         state.allProducts = normalized

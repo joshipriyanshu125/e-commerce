@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import api from '../../services/axiosInstance'
+import { io } from 'socket.io-client'
 
 // ─── Month name helper ────────────────────────────────────────────────────────
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -177,6 +178,34 @@ const AdminDashboard = () => {
   }, [])
 
   useEffect(() => { loadDashboardData() }, [loadDashboardData])
+
+  // ── Real-Time Socket.IO Auto-Refresh ──────────────────────────────────────
+  useEffect(() => {
+    const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
+    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] })
+
+    const handleRealTimeUpdate = () => {
+      // Re-fetch analytics without showing full-page loader spinner
+      api.get('admin/analytics').then(res => {
+        if (res.data?.analytics) setAnalytics(res.data.analytics)
+      }).catch(err => console.error('Realtime analytics update error:', err))
+
+      api.get('orders').then(res => {
+        if (res.data?.orders) setRecentOrders(res.data.orders.slice(0, 5))
+      }).catch(err => console.error('Realtime orders update error:', err))
+    }
+
+    socket.on('newOrder', handleRealTimeUpdate)
+    socket.on('orderStatusUpdated', handleRealTimeUpdate)
+    socket.on('adminNotification', handleRealTimeUpdate)
+
+    return () => {
+      socket.off('newOrder', handleRealTimeUpdate)
+      socket.off('orderStatusUpdated', handleRealTimeUpdate)
+      socket.off('adminNotification', handleRealTimeUpdate)
+      socket.disconnect()
+    }
+  }, [])
 
   // ── Derived chart data ────────────────────────────────────────────────────
   const revenueChartData = analytics?.revenueByMonth?.map(d => ({

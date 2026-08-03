@@ -7,6 +7,7 @@ import {
   Calendar, Hash, AlertTriangle, ChevronDown, X
 } from 'lucide-react'
 import api from '../../services/axiosInstance'
+import { io } from 'socket.io-client'
 
 // ─── Status Configuration ────────────────────────────────────────────────────
 const STATUS_PIPELINE = [
@@ -124,6 +125,27 @@ const AdminOrdersManager = () => {
   }
 
   useEffect(() => { fetchOrders() }, [])
+
+  // ── Real-Time Socket.IO Updates ──────────────────────────────────────────
+  useEffect(() => {
+    const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
+    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] })
+
+    const handleOrderUpdate = () => {
+      api.get('orders').then(res => {
+        if (res.data?.success) setOrders(res.data.orders || [])
+      }).catch(err => console.error('Realtime orders error:', err))
+    }
+
+    socket.on('newOrder', handleOrderUpdate)
+    socket.on('orderStatusUpdated', handleOrderUpdate)
+
+    return () => {
+      socket.off('newOrder', handleOrderUpdate)
+      socket.off('orderStatusUpdated', handleOrderUpdate)
+      socket.disconnect()
+    }
+  }, [])
 
   // Sync detail panel when orders update
   useEffect(() => {

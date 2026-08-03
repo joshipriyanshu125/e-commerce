@@ -66,6 +66,14 @@ const notifyAdmins = async ({ title, message, type = "general" }) => {
                 type,
             });
         }
+        try {
+            const io = getIO();
+            if (io) {
+                io.emit("adminNotification", { title, message, type, createdAt: new Date() });
+            }
+        } catch (socketErr) {
+            console.error("Socket adminNotification Error:", socketErr.message);
+        }
     } catch (error) {
         console.error(
             "Failed to notify admins:",
