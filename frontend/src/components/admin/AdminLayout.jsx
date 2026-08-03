@@ -1,50 +1,228 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { logout } from '../../features/auth/authSlice'
 import {
   LayoutDashboard, Package, ShoppingCart, Users,
-  Star, Tag, Bell, Settings, LogOut, Menu, X, ChevronRight, FolderTree
+  Star, Tag, Bell, Settings, LogOut, Menu, X, ChevronRight, FolderTree,
+  CheckCircle, Trash2, CheckCheck, AlertTriangle, UserPlus, CreditCard,
+  RotateCcw, TrendingDown, Info, Package as PackageIcon
 } from 'lucide-react'
 import api from '../../services/axiosInstance'
 
+/* ── Type config (mirrors NotificationsPanel) ────────── */
+const TYPE_CFG = {
+  new_order:        { icon: PackageIcon,   text: 'text-emerald-400', bg: 'bg-emerald-500/15' },
+  new_user:         { icon: UserPlus,      text: 'text-sky-400',     bg: 'bg-sky-500/15' },
+  out_of_stock:     { icon: AlertTriangle, text: 'text-red-400',     bg: 'bg-red-500/15' },
+  low_inventory:    { icon: TrendingDown,  text: 'text-orange-400',  bg: 'bg-orange-500/15' },
+  coupon_expired:   { icon: Tag,           text: 'text-purple-400',  bg: 'bg-purple-500/15' },
+  payment_failed:   { icon: CreditCard,    text: 'text-rose-400',    bg: 'bg-rose-500/15' },
+  refund_requested: { icon: RotateCcw,     text: 'text-amber-400',   bg: 'bg-amber-500/15' },
+  order_status:     { icon: PackageIcon,   text: 'text-blue-400',    bg: 'bg-blue-500/15' },
+  general:          { icon: Info,          text: 'text-white/60',    bg: 'bg-white/5' },
+}
+
+const timeAgo = (dateStr) => {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const s = Math.floor(diff / 1000)
+  if (s < 60) return `${s}s ago`
+  const m = Math.floor(s / 60)
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
+
 const navItems = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/products', label: 'Products', icon: Package },
-  { to: '/admin/categories', label: 'Categories', icon: FolderTree },
-  { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
-  { to: '/admin/users', label: 'Users', icon: Users },
-  { to: '/admin/reviews', label: 'Reviews', icon: Star },
-  { to: '/admin/coupons', label: 'Coupons', icon: Tag },
+  { to: '/admin',               label: 'Dashboard',    icon: LayoutDashboard, end: true },
+  { to: '/admin/products',      label: 'Products',     icon: Package },
+  { to: '/admin/categories',    label: 'Categories',   icon: FolderTree },
+  { to: '/admin/orders',        label: 'Orders',       icon: ShoppingCart },
+  { to: '/admin/users',         label: 'Users',        icon: Users },
+  { to: '/admin/reviews',       label: 'Reviews',      icon: Star },
+  { to: '/admin/coupons',       label: 'Coupons',      icon: Tag },
   { to: '/admin/notifications', label: 'Notifications', icon: Bell },
-  { to: '/admin/settings', label: 'Settings', icon: Settings },
+  { to: '/admin/settings',      label: 'Settings',     icon: Settings },
 ]
 
+/* ── Notification Dropdown ───────────────────────────── */
+const NotificationDropdown = ({ notifications, unreadCount, onMarkRead, onDelete, onMarkAll, onViewAll, onClose }) => {
+  const preview = notifications.slice(0, 8)
+
+  return (
+    <div className="absolute right-0 top-full mt-2 w-80 bg-[#1a1a24] border border-white/10 rounded-2xl shadow-2xl shadow-black/60 z-[100] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+        <div className="flex items-center gap-2">
+          <Bell size={14} className="text-amber-400" />
+          <span className="text-sm font-semibold text-white">Notifications</span>
+          {unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full font-mono">
+              {unreadCount}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {unreadCount > 0 && (
+            <button
+              onClick={onMarkAll}
+              className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-emerald-400 transition-colors"
+              title="Mark all read"
+            >
+              <CheckCheck size={13} />
+            </button>
+          )}
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-colors">
+            <X size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="max-h-80 overflow-y-auto no-scrollbar">
+        {notifications.length === 0 ? (
+          <div className="py-10 text-center">
+            <Bell size={24} className="mx-auto text-white/10 mb-2" />
+            <p className="text-xs text-white/25">No notifications</p>
+          </div>
+        ) : (
+          preview.map((n) => {
+            const cfg = TYPE_CFG[n.type] || TYPE_CFG.general
+            const Icon = cfg.icon
+            return (
+              <div
+                key={n._id}
+                className={`group flex items-start gap-3 px-4 py-3 border-b border-white/[0.04] transition-colors hover:bg-white/[0.03] ${!n.read ? 'bg-white/[0.02]' : ''}`}
+              >
+                {/* Type icon */}
+                <div className={`flex-shrink-0 w-8 h-8 rounded-lg ${cfg.bg} flex items-center justify-center mt-0.5`}>
+                  <Icon size={13} className={cfg.text} />
+                </div>
+
+                {/* Text */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />}
+                    <p className={`text-xs font-semibold truncate ${n.read ? 'text-white/50' : 'text-white'}`}>
+                      {n.title}
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-white/35 line-clamp-2 leading-relaxed">{n.message}</p>
+                  <p className="text-[9px] text-white/20 font-mono mt-1">{timeAgo(n.createdAt)}</p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex-shrink-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {!n.read && (
+                    <button
+                      onClick={() => onMarkRead(n._id)}
+                      className="w-5 h-5 flex items-center justify-center rounded bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-400 transition-colors"
+                    >
+                      <CheckCircle size={10} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onDelete(n._id)}
+                    className="w-5 h-5 flex items-center justify-center rounded bg-red-500/10 hover:bg-red-500/25 text-red-400 transition-colors"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Footer */}
+      {notifications.length > 0 && (
+        <div className="px-4 py-2.5 border-t border-white/5">
+          <button
+            onClick={onViewAll}
+            className="w-full text-center text-[11px] text-amber-400 hover:text-amber-300 font-semibold transition-colors"
+          >
+            View all notifications →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ── AdminLayout ─────────────────────────────────────── */
 const AdminLayout = ({ children, title }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [notifications, setNotifications] = useState([])
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { user } = useSelector(state => state.auth)
 
-  const fetchUnreadNotifications = async () => {
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  /* ── Fetch ── */
+  const fetchNotifications = useCallback(async () => {
     try {
       const res = await api.get('notifications')
-      if (res.data.success && res.data.notifications) {
-        const unread = res.data.notifications.filter(n => !n.read).length
-        setUnreadCount(unread)
+      if (res.data.success) {
+        setNotifications(res.data.notifications || [])
       }
-    } catch (err) {
-      console.error('Failed to fetch unread notification counts:', err)
-    }
-  }
+    } catch { /* silent */ }
+  }, [])
 
   useEffect(() => {
-    fetchUnreadNotifications()
-    // Poll every 30 seconds for live notifications
-    const interval = setInterval(fetchUnreadNotifications, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, 30000)
+
+    // Listen for updates from the notifications panel
+    const onUpdate = () => fetchNotifications()
+    window.addEventListener('notificationsUpdated', onUpdate)
+    window.addEventListener('storage', onUpdate)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('notificationsUpdated', onUpdate)
+      window.removeEventListener('storage', onUpdate)
+    }
+  }, [fetchNotifications])
+
+  /* ── Close dropdown on outside click ── */
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    if (dropdownOpen) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [dropdownOpen])
+
+  /* ── Dropdown handlers ── */
+  const handleMarkRead = async (id) => {
+    try {
+      await api.put(`notifications/${id}/read`)
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n))
+      window.dispatchEvent(new Event('notificationsUpdated'))
+    } catch { /* silent */ }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`notifications/${id}`)
+      setNotifications(prev => prev.filter(n => n._id !== id))
+      window.dispatchEvent(new Event('notificationsUpdated'))
+    } catch { /* silent */ }
+  }
+
+  const handleMarkAll = async () => {
+    try {
+      await api.put('notifications/mark-all-read')
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      window.dispatchEvent(new Event('notificationsUpdated'))
+    } catch { /* silent */ }
+  }
 
   const handleLogout = () => {
     dispatch(logout())
@@ -149,15 +327,42 @@ const AdminLayout = ({ children, title }) => {
             <Menu size={20} />
           </button>
           <h1 className="text-sm font-semibold text-white/80 tracking-wide">{title || 'Admin'}</h1>
+
           <div className="ml-auto flex items-center gap-3">
-            {unreadCount > 0 && (
-              <div 
-                onClick={() => navigate('/admin/notifications')}
-                className="bg-red-500/15 border border-red-500/20 text-red-400 font-mono text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider font-semibold cursor-pointer animate-pulse hover:bg-red-500/20"
+            {/* Notification bell */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                id="admin-notification-bell"
+                onClick={() => setDropdownOpen(v => !v)}
+                className={`
+                  relative w-9 h-9 flex items-center justify-center rounded-xl transition-all
+                  ${dropdownOpen
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white border border-transparent'
+                  }
+                `}
               >
-                {unreadCount} Unread Message{unreadCount > 1 ? 's' : ''}
-              </div>
-            )}
+                <Bell size={16} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white font-mono text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {dropdownOpen && (
+                <NotificationDropdown
+                  notifications={notifications}
+                  unreadCount={unreadCount}
+                  onMarkRead={handleMarkRead}
+                  onDelete={handleDelete}
+                  onMarkAll={handleMarkAll}
+                  onViewAll={() => { navigate('/admin/notifications'); setDropdownOpen(false) }}
+                  onClose={() => setDropdownOpen(false)}
+                />
+              )}
+            </div>
+
             <span className="text-[10px] font-mono bg-amber-500/15 text-amber-400 px-2 py-1 rounded-full uppercase tracking-widest">
               Admin Mode
             </span>

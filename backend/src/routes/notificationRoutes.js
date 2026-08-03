@@ -2,25 +2,33 @@ import express from "express";
 
 import {
     getNotifications,
+    getUnreadCount,
     markNotificationRead,
+    markAllNotificationsRead,
+    deleteNotification,
+    clearReadNotifications,
 } from "../controllers/notificationController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get(
-    "/",
-    protect,
-    getNotifications
-);
+// GET all notifications (with optional ?type= filter)
+router.get("/", protect, getNotifications);
 
-router.put(
-    "/:id/read",
-    protect,
-    markNotificationRead
-);
+// GET unread count (lightweight endpoint for polling)
+router.get("/unread-count", protect, getUnreadCount);
 
-// Web push subscribe/unsubscribe are now separate under /api/push
+// PUT mark single as read
+router.put("/:id/read", protect, markNotificationRead);
+
+// PUT mark all as read
+router.put("/mark-all-read", protect, markAllNotificationsRead);
+
+// DELETE single notification
+router.delete("/:id", protect, deleteNotification);
+
+// DELETE all read notifications
+router.delete("/clear-read", protect, clearReadNotifications);
 
 export default router;

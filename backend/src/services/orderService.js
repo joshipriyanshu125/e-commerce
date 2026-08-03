@@ -10,6 +10,7 @@ import {
 
 import {
     sendNotification,
+    notifyAdmins,
 } from "./notificationService.js";
 
 import {
@@ -42,6 +43,7 @@ const createOrderService = async ({
         taxPrice,
         totalPrice,
         addressId,
+        paymentInfo,
     } = body;
 
     // GET USER CART
@@ -106,13 +108,15 @@ const createOrderService = async ({
 
             totalPrice,
 
-            paymentMethod:
-                "Cash On Delivery",
+            paymentInfo: paymentInfo || {
+                method: "COD",
+                paymentStatus: "Pending",
+            },
 
-            isPaid: false,
+            isPaid: paymentInfo?.paymentStatus === "Paid",
 
             orderStatus:
-                "Processing",
+                paymentInfo?.paymentStatus === "Failed" ? "Cancelled" : "Processing",
         });
 
     // REDUCE STOCK
@@ -128,6 +132,21 @@ const createOrderService = async ({
                     item.quantity;
 
                 await product.save();
+
+                // Check and notify admins for stock levels
+                if (product.countInStock <= 0) {
+                    notifyAdmins({
+                        title: "Product Out of Stock",
+                        message: `Product "${product.name}" is now out of stock!`,
+                        type: "out_of_stock",
+                    }).catch(err => console.error("Out of stock notify error:", err));
+                } else if (product.countInStock <= 5) {
+                    notifyAdmins({
+                        title: "Low Inventory",
+                        message: `Low inventory: "${product.name}" (Only ${product.countInStock} left)`,
+                        type: "low_inventory",
+                    }).catch(err => console.error("Low inventory notify error:", err));
+                }
             }
         }
     }
@@ -165,11 +184,29 @@ const createOrderService = async ({
     try {
         await sendNotification({
             userId: user._id,
-            title: "Order Placed",
-            message: `Your order ${order._id} has been placed successfully.`,
+            title: paymentInfo?.paymentStatus === "Failed" ? "Payment Failed" : "Order Placed",
+            message: paymentInfo?.paymentStatus === "Failed" 
+                ? `Your payment for order ${order._id} failed.` 
+                : `Your order ${order._id} has been placed successfully.`,
+            type: paymentInfo?.paymentStatus === "Failed" ? "payment_failed" : "new_order",
         });
     } catch (notifErr) {
         console.error("Order notification failed (order still created):", notifErr.message);
+    }
+
+    // Send admin notification
+    if (paymentInfo?.paymentStatus === "Failed") {
+        notifyAdmins({
+            title: "Payment Failed",
+            message: `Payment failed for order #${order._id.toString().slice(-6).toUpperCase()} (Amount: $${totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`,
+            type: "payment_failed",
+        }).catch(err => console.error("Payment failed admin notification failed:", err.message));
+    } else {
+        notifyAdmins({
+            title: "New Order",
+            message: `New order #${order._id.toString().slice(-6).toUpperCase()} placed by ${user.name} for $${totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            type: "new_order",
+        }).catch(err => console.error("New order admin notification failed:", err.message));
     }
 
     return order;
@@ -307,6 +344,7 @@ const updateOrderStatusService =
                     userId: order.user._id,
                     title: subject,
                     message: `Your order #${order._id.toString().slice(-6).toUpperCase()} status is now ${status}.`,
+                    type: "order_status",
                 });
             } catch (err) {
                 console.error("Notification failed:", err.message);
@@ -393,6 +431,7 @@ const adminCancelOrderService = async (orderId) => {
             userId: order.user._id,
             title: "Order Cancelled",
             message: `Your order #${order._id.toString().slice(-6).toUpperCase()} has been cancelled by admin.`,
+            type: "order_status",
         });
     } catch (err) {
         console.error("Cancel notification failed:", err.message);
@@ -424,6 +463,7 @@ const refundOrderService = async (orderId) => {
             userId: order.user._id,
             title: "Refund Initiated",
             message: `A refund for your order #${order._id.toString().slice(-6).toUpperCase()} has been initiated.`,
+            type: "refund_requested",
         });
     } catch (err) {
         console.error("Refund notification failed:", err.message);

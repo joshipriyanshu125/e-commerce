@@ -10,6 +10,7 @@ const sendNotification = async ({
     userId,
     title,
     message,
+    type = "general",
 }) => {
     try {
         // Save notification to database
@@ -17,6 +18,7 @@ const sendNotification = async ({
             user: userId,
             title,
             message,
+            type,
         });
 
         // Emit notification through Socket.IO
@@ -47,6 +49,32 @@ const sendNotification = async ({
     }
 };
 
+/*
+==================================================
+NOTIFY ALL ADMINS
+==================================================
+*/
+const notifyAdmins = async ({ title, message, type = "general" }) => {
+    try {
+        const User = (await import("../models/userModel.js")).default;
+        const admins = await User.find({ role: "admin" });
+        for (const admin of admins) {
+            await sendNotification({
+                userId: admin._id,
+                title,
+                message,
+                type,
+            });
+        }
+    } catch (error) {
+        console.error(
+            "Failed to notify admins:",
+            error.message
+        );
+    }
+};
+
 export {
     sendNotification,
+    notifyAdmins,
 };

@@ -32,6 +32,8 @@ import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import debugRoutes from "./routes/debugRoutes.js";
 
+import { startCouponExpiryJob } from "./jobs/couponExpiryJob.js";
+
 import apiLimiter from "./middleware/rateLimitMiddleware.js";
 import requestLogger from "./middleware/requestLogger.js";
 
@@ -61,6 +63,9 @@ DATABASE
 =========================================
 */
 connectDB();
+
+// Start scheduled jobs after DB connection
+startCouponExpiryJob();
 
 /*
 =========================================

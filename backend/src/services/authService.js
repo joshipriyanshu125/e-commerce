@@ -5,6 +5,8 @@ import {
     createUser,
 } from "../../repositories/userRepository.js";
 
+import { notifyAdmins } from "./notificationService.js";
+
 /*
 ==================================================
 GENERATE JWT
@@ -44,6 +46,13 @@ const registerUserService = async ({
             email,
             password,
         });
+
+    // Notify admins about new user registration (non-blocking)
+    notifyAdmins({
+        title: "New User Registered",
+        message: `New user registered: ${name} (${email})`,
+        type: "new_user",
+    }).catch(err => console.error("Admin user registration notify error:", err));
 
     return {
         success: true,

@@ -3,6 +3,7 @@ import ReturnRequest from "../models/returnModel.js";
 import Order from "../models/Order.js";
 import streamifier from "streamifier";
 import cloudinary from "../config/cloudinary.js";
+import { notifyAdmins } from "../services/notificationService.js";
 
 // Create return request (with optional photos uploaded)
 const createReturnRequest = asyncHandler(async (req, res) => {
@@ -42,6 +43,13 @@ const createReturnRequest = asyncHandler(async (req, res) => {
     status: "Requested",
     notes,
   });
+
+  // Notify admins about the refund request
+  notifyAdmins({
+    title: "Refund Requested",
+    message: `User requested a refund for order #${order._id.toString().slice(-6).toUpperCase()}.`,
+    type: "refund_requested",
+  }).catch((err) => console.error("Return request notify error:", err));
 
   res.status(201).json({ success: true, returnReq });
 });
