@@ -100,7 +100,7 @@ export const getAdminAnalytics = async (req, res) => {
                     as: "product"
                 }
             },
-            { $unwind: { path: "$product", preserveNullAndEmpty: true } },
+            { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
             {
                 $project: {
                     name: { $ifNull: ["$product.name", "Unknown"] },
@@ -123,7 +123,7 @@ export const getAdminAnalytics = async (req, res) => {
                     as: "productData"
                 }
             },
-            { $unwind: { path: "$productData", preserveNullAndEmpty: true } },
+            { $unwind: { path: "$productData", preserveNullAndEmptyArrays: true } },
             {
                 $group: {
                     _id: "$productData.category",
