@@ -139,10 +139,12 @@ const Shop = () => {
   // All slugs under the active category (itself + all descendants)
   const activeSlugSet = activeNode ? new Set(collectSlugs(activeNode)) : null
 
-  // Filter products: match by category slug
+  // Filter products: match by category slug case-insensitively
   let displayProducts = allProducts.filter((p) => {
     if (!activeSlugSet) return true  // "All" – show everything
-    return activeSlugSet.has(p.category)
+    const productCat = (p.category || '').toLowerCase()
+    const lowerSlugSet = new Set(Array.from(activeSlugSet).map(s => s.toLowerCase()))
+    return lowerSlugSet.has(productCat)
   })
 
   // Sort
