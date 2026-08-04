@@ -14,7 +14,7 @@ const ACTIVE_STATUSES = ['Pending', 'Confirmed', 'Packed', 'Shipped', 'Out for D
 const MyOrders = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { orders, loading, error } = useSelector(s => s.orders)
+  const { orders = [], loading, error } = useSelector(s => s.orders || {})
   const { user } = useSelector(s => s.auth)
 
   const [filter, setFilter] = useState('All')
@@ -40,7 +40,7 @@ const MyOrders = () => {
   }, [user, dispatch])
 
   // Filter logic
-  const filtered = orders.filter(order => {
+  const filtered = (orders || []).filter(order => {
     const activeTab = FILTER_TABS.find(t => t.key === filter)
     let passesFilter = true
 
