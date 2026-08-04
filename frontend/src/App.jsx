@@ -17,6 +17,8 @@ import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import Account from './pages/Account'
 import Journal from './pages/Journal'
+import MyOrders from './pages/MyOrders'
+import OrderDetails from './pages/OrderDetails'
 import NotFound from './pages/NotFound'
 
 // Route Protection
@@ -63,6 +65,14 @@ function App() {
         <Route
           path="/account"
           element={<MainLayout><ProtectedRoute><Account /></ProtectedRoute></MainLayout>}
+        />
+        <Route
+          path="/orders"
+          element={<MainLayout><ProtectedRoute><MyOrders /></ProtectedRoute></MainLayout>}
+        />
+        <Route
+          path="/orders/:id"
+          element={<MainLayout><ProtectedRoute><OrderDetails /></ProtectedRoute></MainLayout>}
         />
 
         {/* =========================

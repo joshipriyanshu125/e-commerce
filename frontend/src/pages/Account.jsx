@@ -3,83 +3,28 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../features/auth/authSlice'
 import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight, Undo2, BellRing, Trash2, Star } from 'lucide-react'
-import OrderDetailsDrawer from '../components/account/OrderDetailsDrawer'
 import axios from '../services/axiosInstance'
-import { io } from 'socket.io-client'
 
 const Account = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  
   const { user, isAuthenticated } = useSelector(state => state.auth)
-  const [activeTab, setActiveTab] = useState('profile') // 'profile', 'orders', 'addresses', 'returns'
-  const [selectedOrder, setSelectedOrder] = useState(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  
-  // Address states
+  const [activeTab, setActiveTab] = useState('profile')
+
+  // Addresses state
   const [addresses, setAddresses] = useState([])
   const [loadingAddresses, setLoadingAddresses] = useState(false)
   const [showAddAddress, setShowAddAddress] = useState(false)
   const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', state: '', zip: '', country: '', phone: '' })
 
-  const [orders, setOrders] = useState([])
-  const [loadingOrders, setLoadingOrders] = useState(false)
-  const [error, setError] = useState("")
-
+  // Returns state
   const [returns, setReturns] = useState([])
   const [loadingReturns, setLoadingReturns] = useState(false)
+
+  // Push notifications
   const [pushEnabled, setPushEnabled] = useState(false)
 
-  // Realtime updates & Push notifications
-  useEffect(() => {
-    let socket;
-    if (isAuthenticated && user) {
-      socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000')
-      socket.emit("join", user._id || user.id)
-
-      socket.on("orderStatusUpdated", (data) => {
-        setOrders(prevOrders => 
-          prevOrders.map(o => {
-            if ((o._id || o.id) === data.orderId) {
-              return { ...o, orderStatus: data.status, deliveredAt: data.deliveredAt || o.deliveredAt }
-            }
-            return o;
-          })
-        )
-      })
-
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        navigator.serviceWorker.register('/push-sw.js').then(async (reg) => {
-          const sub = await reg.pushManager.getSubscription();
-          if (sub) setPushEnabled(true);
-        });
-      }
-    }
-    return () => {
-      if (socket) socket.disconnect()
-    }
-  }, [isAuthenticated, user])
-
-  useEffect(() => {
-    if (activeTab === 'returns' && returns.length === 0) {
-      const fetchReturns = async () => {
-        try {
-          setLoadingReturns(true)
-          const res = await axios.get('returns')
-          if (res && res.data && res.data.returns) {
-            setReturns(res.data.returns)
-          }
-        } catch (err) {
-          console.error(err)
-        } finally {
-          setLoadingReturns(false)
-        }
-      }
-      fetchReturns()
-    }
-  }, [activeTab, returns.length])
-
-  // Fetch addresses from API
+  // Fetch addresses
   useEffect(() => {
     const fetchAddresses = async () => {
       if (!isAuthenticated || !user) return;
@@ -153,31 +98,23 @@ const Account = () => {
     }
   }
 
-  // Debug: Check auth state
+  // Fetch returns when tab is active
   useEffect(() => {
-    console.log("Account Component Auth State:", { user, isAuthenticated, token: !!localStorage.getItem("token") })
-  }, [user, isAuthenticated])
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoadingOrders(true)
-        const res = await axios.get('orders/my-orders')
-        if (res && res.data && res.data.orders) {
-          setOrders(res.data.orders)
+    if (activeTab === 'returns' && returns.length === 0) {
+      const fetchReturns = async () => {
+        try {
+          setLoadingReturns(true)
+          const res = await axios.get('returns')
+          if (res && res.data && res.data.returns) setReturns(res.data.returns)
+        } catch (err) {
+          console.error(err)
+        } finally {
+          setLoadingReturns(false)
         }
-      } catch (err) {
-        console.error('Error fetching orders', err)
-        setError(err.message)
-      } finally {
-        setLoadingOrders(false)
       }
+      fetchReturns()
     }
-
-    if (isAuthenticated && user) {
-      fetchOrders()
-    }
-  }, [isAuthenticated, user])
+  }, [activeTab, returns.length])
 
   // Show loading state while user data is being loaded
 if (!user || !isAuthenticated) {
@@ -252,16 +189,6 @@ const handleLogout = () => {
       {/* Upper greetings & logout */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between border-b border-atelier-lightgray/50 pb-6 mb-8 gap-4">
         <div>
-
-      <OrderDetailsDrawer 
-        order={selectedOrder} 
-        open={drawerOpen} 
-        onClose={() => setDrawerOpen(false)} 
-        onOrderUpdated={(updatedOrder) => {
-          setOrders(prev => prev.map(o => ((o._id || o.id) === (updatedOrder._id || updatedOrder.id) ? updatedOrder : o)));
-          setSelectedOrder(updatedOrder);
-        }}
-      />
           <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block mb-1">
             Your Account
           </span>
@@ -410,83 +337,29 @@ const handleLogout = () => {
             </div>
           )}
 
-          {/* 2. Orders History tab */}
+          {/* 2. Orders — link to dedicated page */}
           {activeTab === 'orders' && (
-            <div className="space-y-6 animate-fade-in">
+            <div className="space-y-5 animate-fade-in">
               <h3 className="font-mono text-sm tracking-widest uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-3 mb-4">
-                Order History ({orders.length})
+                Order History
               </h3>
-              
-              {loadingOrders ? (
-                <p className="text-sm text-atelier-gray">Loading orders…</p>
-              ) : orders && orders.length > 0 ? (
-                <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order._id} className="border border-atelier-lightgray bg-atelier-cream/30 mb-6">
-                      {/* Order info header */}
-                      <div className="flex flex-col sm:flex-row justify-between border-b border-atelier-lightgray/40 p-6 pb-3 font-mono text-sm tracking-wider uppercase text-atelier-gray gap-2">
-                        <div>
-                          <span className="block text-xs">ORDER • {order._id.slice(-8).toUpperCase()}</span>
-                          <span className="font-serif text-2xl text-atelier-dark font-medium capitalize mt-1 block">{new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric'})}</span>
-                          <span className="flex items-center text-atelier-dark mt-1 text-xs"><div className="w-1.5 h-1.5 rounded-full bg-atelier-dark mr-1.5"></div> {order.orderStatus}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="block text-xs">TOTAL</span>
-                          <span className="font-serif text-xl text-atelier-dark font-medium">${order.totalPrice || order.total}</span>
-                        </div>
-                      </div>
-
-                      {/* Order Timeline Progress */}
-                      {order.orderStatus !== 'Cancelled' && (
-                        <div className="px-6 py-4 border-b border-atelier-lightgray/40 relative">
-                          <div className="absolute top-1/2 left-6 right-6 h-[1px] bg-atelier-lightgray -translate-y-1/2 z-0 hidden sm:block"></div>
-                          <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center sm:items-start space-y-4 sm:space-y-0 text-center sm:text-left">
-                            {['Processing', 'Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'].map((step, idx, arr) => {
-                               const statusOrder = ['Processing', 'Confirmed', 'Shipped', 'Out for Delivery', 'Delivered'];
-                               const currentIdx = statusOrder.indexOf(order.orderStatus);
-                               const isCompleted = idx <= currentIdx || currentIdx === -1 && order.orderStatus === 'Delivered';
-                               return (
-                                 <div key={step} className="flex flex-col items-center bg-transparent sm:bg-[#F3F1EC] sm:px-2">
-                                   <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 mb-2 ${isCompleted ? 'bg-atelier-dark border-atelier-dark text-white' : 'bg-transparent border-atelier-lightgray text-atelier-gray'}`}>
-                                      {isCompleted ? <CheckCircle2 size={14} /> : <Package size={14} />}
-                                   </div>
-                                   <span className={`font-mono text-[10px] uppercase tracking-widest ${isCompleted ? 'text-atelier-dark font-bold' : 'text-atelier-gray'}`}>{step}</span>
-                                 </div>
-                               )
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Order items */}
-                      <div className="p-6">
-                        {order.orderItems.map((item, i) => (
-                          <div key={i} className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-4">
-                              {item.image && <img src={item.image} alt={item.name} className="w-16 h-16 object-cover bg-atelier-lightgray" />}
-                              <div>
-                                <h4 className="font-serif text-sm text-atelier-dark font-medium">{item.name}</h4>
-                                <p className="font-mono text-xs text-atelier-gray uppercase mt-0.5">
-                                  Qty: {item.quantity}
-                                </p>
-                              </div>
-                            </div>
-                            <span className="font-mono text-sm text-atelier-dark font-medium">${item.price * item.quantity}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Total */}
-                      <div className="px-6 flex justify-end pt-3">
-                        <button onClick={() => { setSelectedOrder(order); setDrawerOpen(true) }} className="px-4 py-2 border border-atelier-dark text-sm font-mono uppercase bg-white hover:bg-atelier-lightgray transition-colors">View details</button>
-                      </div>
-                      <div className="pb-6"></div>
-                    </div>
-                  ))}
+              <div className="border border-atelier-lightgray/60 bg-atelier-cream/30 p-8 text-center space-y-4">
+                <div className="w-14 h-14 rounded-full bg-atelier-dark/5 border border-atelier-lightgray/50 flex items-center justify-center mx-auto">
+                  <Package size={22} className="text-atelier-dark/50" />
                 </div>
-              ) : (
-                <p className="font-serif text-sm text-atelier-gray italic">You haven't placed any orders yet.</p>
-              )}
+                <div>
+                  <h4 className="font-serif text-lg text-atelier-dark mb-1">Track Your Orders</h4>
+                  <p className="text-xs text-atelier-gray font-mono">
+                    View real-time tracking, download invoices, manage returns and more on the Orders page.
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/orders')}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-atelier-dark text-white text-xs font-mono uppercase tracking-widest hover:opacity-90 transition-opacity"
+                >
+                  <Package size={14} /> View My Orders <ChevronRight size={14} />
+                </button>
+              </div>
             </div>
           )}
 

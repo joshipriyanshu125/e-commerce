@@ -122,6 +122,7 @@ const Navbar = () => {
                 {user?.role === 'admin' && (
                   <Link to="/admin" className="hover:opacity-75">Admin Panel</Link>
                 )}
+                <Link to="/orders" className="hover:opacity-75">My Orders</Link>
                 <Link to="/account" className="flex items-center space-x-1 hover:opacity-75">
                   <User size={18} strokeWidth={1.5} />
                   <span>{user?.name || user?.email?.split('@')[0] || 'Account'}</span>
@@ -253,6 +254,9 @@ const Navbar = () => {
                 <>
                   <Link to="/account" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
                     My Account
+                  </Link>
+                  <Link to="/orders" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
+                    My Orders
                   </Link>
                   <button onClick={handleLogout} className="text-left text-atelier-gray uppercase tracking-[0.2em]">
                     Sign Out
