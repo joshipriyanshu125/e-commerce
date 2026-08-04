@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { ShoppingBag, RefreshCw } from 'lucide-react'
@@ -41,7 +41,6 @@ const MyOrders = () => {
 
   // Filter logic
   const filtered = (orders || []).filter(order => {
-    const activeTab = FILTER_TABS.find(t => t.key === filter)
     let passesFilter = true
 
     if (filter === 'All') {
@@ -61,29 +60,32 @@ const MyOrders = () => {
   })
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-atelier-beige text-atelier-dark font-sans selection:bg-atelier-accent selection:text-white">
       <div className="max-w-3xl mx-auto px-4 py-10 sm:py-16">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-8 border-b border-atelier-lightgray pb-5">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">My Orders</h1>
-            <p className="text-sm text-white/40 mt-1">
-              {orders.length > 0 ? `${orders.length} order${orders.length !== 1 ? 's' : ''} total` : 'No orders yet'}
+            <span className="font-mono text-xs tracking-[0.25em] uppercase text-atelier-gray block mb-1">
+              Fulfillment Status
+            </span>
+            <h1 className="text-3xl font-serif font-semibold text-atelier-dark">My Orders</h1>
+            <p className="text-xs text-atelier-gray font-mono mt-1">
+              {orders.length > 0 ? `${orders.length} order${orders.length !== 1 ? 's' : ''} recorded` : 'No orders recorded'}
             </p>
           </div>
           <button
             onClick={() => dispatch(fetchMyOrders())}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/8 text-white/40
-              hover:text-white/70 hover:border-white/15 transition-all"
-            title="Refresh"
+            className="p-2.5 bg-atelier-cream border border-atelier-lightgray text-atelier-gray
+              hover:text-atelier-dark hover:border-atelier-dark transition-all duration-300"
+            title="Refresh list"
           >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="mb-6">
+        <div className="mb-8">
           <OrderFilters
             filter={filter}
             setFilter={setFilter}
@@ -92,59 +94,56 @@ const MyOrders = () => {
           />
         </div>
 
-        {/* Error */}
+        {/* Error notification */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm">
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-none text-rose-800 text-xs font-mono uppercase">
             {error}
           </div>
         )}
 
-        {/* Loading skeletons */}
+        {/* Loading Skeletons */}
         {loading && (
           <div className="space-y-4">
-            {[1, 2, 3].map(i => <OrderSkeleton key={i} />)}
+            {[1, 2].map(i => <OrderSkeleton key={i} />)}
           </div>
         )}
 
-        {/* Order list */}
+        {/* Order Cards */}
         {!loading && filtered.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in">
             {filtered.map(order => (
               <OrderCard key={order._id} order={order} />
             ))}
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty State */}
         {!loading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-5">
-              <ShoppingBag size={32} className="text-white/20" />
+          <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-atelier-lightgray bg-atelier-cream/40 p-8">
+            <div className="w-14 h-14 rounded-full bg-atelier-dark/5 flex items-center justify-center mb-4">
+              <ShoppingBag size={22} className="text-atelier-gray/40" />
             </div>
-            <h3 className="text-lg font-semibold text-white/60 mb-2">
-              {search || filter !== 'All' ? 'No matching orders' : 'No orders yet'}
+            <h3 className="font-serif text-lg text-atelier-dark font-medium mb-1">
+              {search || filter !== 'All' ? 'No matching orders found' : 'No orders placed'}
             </h3>
-            <p className="text-sm text-white/30 max-w-xs mb-6">
+            <p className="text-xs text-atelier-gray font-mono max-w-xs mb-6">
               {search || filter !== 'All'
-                ? 'Try adjusting your filters or search query.'
-                : "Looks like you haven't placed any orders yet. Start shopping!"}
+                ? 'Try adjusting your filters or keywords.'
+                : "It looks like you haven't placed an order with us yet."}
             </p>
-            {filter === 'All' && !search && (
+            {filter === 'All' && !search ? (
               <button
                 onClick={() => navigate('/shop')}
-                className="px-6 py-2.5 bg-white text-black text-sm font-semibold rounded-xl
-                  hover:bg-white/90 transition-colors"
+                className="btn-atelier-dark"
               >
-                Shop Now
+                Start Shopping
               </button>
-            )}
-            {(search || filter !== 'All') && (
+            ) : (
               <button
                 onClick={() => { setFilter('All'); setSearch('') }}
-                className="px-6 py-2.5 bg-white/10 text-white text-sm font-medium rounded-xl
-                  hover:bg-white/15 transition-colors"
+                className="px-5 py-2.5 border border-atelier-dark font-mono text-[10px] uppercase tracking-widest text-atelier-dark hover:bg-atelier-dark hover:text-white transition-all"
               >
-                Clear filters
+                Clear Filters
               </button>
             )}
           </div>

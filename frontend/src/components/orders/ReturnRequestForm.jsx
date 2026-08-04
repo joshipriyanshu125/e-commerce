@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
-import { UploadCloud, X, Loader2, Camera } from 'lucide-react'
+import { X, Loader2, Camera } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
-import { submitReturnRequest, resetReturnSuccess } from '../../features/orders/orderSlice'
+import { submitReturnRequest } from '../../features/orders/orderSlice'
 
 const RETURN_REASONS = [
   'Defective / Damaged product',
@@ -72,20 +72,20 @@ const ReturnRequestForm = ({ order, onSuccess, onClose }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Reason */}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Reason list */}
       <div>
-        <label className="block text-xs font-mono uppercase tracking-widest text-white/50 mb-2">
-          Return reason *
+        <label className="block text-[10px] font-mono uppercase tracking-widest text-atelier-gray mb-3">
+          Return Reason *
         </label>
         <div className="space-y-2">
           {RETURN_REASONS.map((r) => (
             <label
               key={r}
-              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+              className={`flex items-center gap-3 p-3.5 border cursor-pointer transition-all ${
                 reason === r
-                  ? 'border-violet-500/40 bg-violet-500/5 text-white'
-                  : 'border-white/8 bg-white/3 text-white/50 hover:border-white/15 hover:text-white/70'
+                  ? 'border-atelier-dark bg-atelier-dark text-white'
+                  : 'border-atelier-lightgray bg-transparent text-atelier-gray hover:text-atelier-dark hover:border-atelier-gray'
               }`}
             >
               <input
@@ -96,10 +96,12 @@ const ReturnRequestForm = ({ order, onSuccess, onClose }) => {
                 onChange={() => setReason(r)}
                 className="sr-only"
               />
-              <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all ${
-                reason === r ? 'border-violet-400 bg-violet-400' : 'border-white/20'
-              }`} />
-              <span className="text-sm">{r}</span>
+              <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
+                reason === r ? 'border-white bg-white' : 'border-atelier-gray/40 bg-transparent'
+              }`}>
+                {reason === r && <div className="w-1.5 h-1.5 rounded-full bg-atelier-dark" />}
+              </div>
+              <span className="text-xs font-mono uppercase tracking-widest font-semibold">{r}</span>
             </label>
           ))}
         </div>
@@ -107,39 +109,39 @@ const ReturnRequestForm = ({ order, onSuccess, onClose }) => {
 
       {/* Additional comments */}
       <div>
-        <label className="block text-xs font-mono uppercase tracking-widest text-white/50 mb-2">
+        <label className="block text-[10px] font-mono uppercase tracking-widest text-atelier-gray mb-2">
           Additional comments
         </label>
         <textarea
           value={additionalComments}
           onChange={e => setAdditionalComments(e.target.value)}
-          placeholder="Describe the issue in more detail..."
+          placeholder="Please describe the issue in detail..."
           rows={3}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white
-            placeholder-white/25 focus:outline-none focus:border-white/25 resize-none transition-colors"
+          className="w-full bg-transparent border border-atelier-lightgray p-3 text-xs text-atelier-dark
+            placeholder-atelier-gray/30 focus:outline-none focus:border-atelier-dark resize-none transition-colors"
         />
       </div>
 
       {/* Photo upload */}
       <div>
-        <label className="block text-xs font-mono uppercase tracking-widest text-white/50 mb-2">
-          Upload photos (up to 5)
+        <label className="block text-[10px] font-mono uppercase tracking-widest text-atelier-gray mb-3">
+          Upload Photos (up to 5)
         </label>
 
         {/* Previews */}
         {previews.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex flex-wrap gap-2.5 mb-3">
             {previews.map((url, idx) => (
               <div key={idx} className="relative group">
                 <img
                   src={url}
                   alt={`Photo ${idx + 1}`}
-                  className="w-20 h-20 object-cover rounded-xl ring-1 ring-white/10"
+                  className="w-20 h-20 object-cover border border-atelier-lightgray"
                 />
                 <button
                   type="button"
                   onClick={() => removePhoto(idx)}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-700 text-white
                     flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <X size={10} />
@@ -153,12 +155,12 @@ const ReturnRequestForm = ({ order, onSuccess, onClose }) => {
           <div
             onClick={() => fileInputRef.current?.click()}
             className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed
-              border-white/10 rounded-xl bg-white/3 cursor-pointer hover:border-white/20
-              hover:bg-white/5 transition-all"
+              border-atelier-lightgray bg-atelier-cream/50 cursor-pointer hover:border-atelier-dark/45
+              transition-all"
           >
-            <Camera size={22} className="text-white/30" />
-            <p className="text-sm text-white/40">Click to add photos</p>
-            <p className="text-xs text-white/25">{photos.length}/5 added</p>
+            <Camera size={20} className="text-atelier-gray" />
+            <p className="text-xs font-mono uppercase tracking-widest text-atelier-gray font-semibold">Add Image Attachment</p>
+            <p className="text-[10px] text-atelier-gray/40 font-mono">{photos.length}/5 photos</p>
             <input
               ref={fileInputRef}
               type="file"
@@ -171,21 +173,21 @@ const ReturnRequestForm = ({ order, onSuccess, onClose }) => {
         )}
       </div>
 
-      {/* Error */}
+      {/* Error display */}
       {error && (
-        <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
+        <p className="text-xs font-mono uppercase text-rose-700 bg-rose-50 border border-rose-100 px-4 py-3">
           {error}
         </p>
       )}
 
-      {/* Actions */}
-      <div className="flex gap-3 pt-1">
+      {/* Action buttons */}
+      <div className="flex gap-3">
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl border border-white/10 bg-white/5 text-white/60
-              text-sm font-medium hover:bg-white/8 hover:text-white/80 transition-colors"
+            className="flex-1 py-3 border border-atelier-lightgray text-atelier-gray text-xs font-mono
+              uppercase tracking-widest hover:border-atelier-dark hover:text-atelier-dark transition-all"
           >
             Cancel
           </button>
@@ -193,14 +195,14 @@ const ReturnRequestForm = ({ order, onSuccess, onClose }) => {
         <button
           type="submit"
           disabled={!reason || returnLoading}
-          className="flex-1 py-3 rounded-xl bg-violet-600/90 hover:bg-violet-600 text-white text-sm
-            font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors
+          className="flex-1 py-3 bg-atelier-dark hover:bg-opacity-95 text-white text-xs
+            font-mono uppercase tracking-widest font-semibold disabled:opacity-40 transition-colors
             flex items-center justify-center gap-2"
         >
           {returnLoading ? (
-            <><Loader2 size={15} className="animate-spin" /> Submitting…</>
+            <><Loader2 size={13} className="animate-spin" /> Submitting</>
           ) : (
-            'Submit Return'
+            'Request Return'
           )}
         </button>
       </div>
