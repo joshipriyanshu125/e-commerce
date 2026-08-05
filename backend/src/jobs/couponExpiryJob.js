@@ -19,16 +19,21 @@ const checkExpiredCoupons = async () => {
         const expiredCoupons = await Coupon.find({
             isActive: true,
             expiryDate: { $lt: new Date() },
-        });
+        }).lean(); // lean() — plain JS objects, no Mongoose overhead needed for reading
 
         if (expiredCoupons.length === 0) return;
 
-        for (const coupon of expiredCoupons) {
-            // Mark inactive
-            coupon.isActive = false;
-            await coupon.save();
+        const expiredIds = expiredCoupons.map((c) => c._id);
 
-            // Notify all admins
+        // Bulk deactivate using updateMany — bypasses Mongoose validation entirely,
+        // so stale/incomplete documents in the DB don't cause save() errors.
+        await Coupon.updateMany(
+            { _id: { $in: expiredIds } },
+            { $set: { isActive: false } }
+        );
+
+        // Send per-coupon admin notifications
+        for (const coupon of expiredCoupons) {
             notifyAdmins({
                 title: "Coupon Expired",
                 message: `Coupon "${coupon.code}" has expired and has been deactivated automatically.`,
