@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { 
   ArrowLeft, Download, Trash2, Undo2, Truck, 
-  MapPin, CreditCard, Calendar, ShieldCheck, Mail, Phone 
+  MapPin, CreditCard, Calendar, ShieldCheck, Mail, Phone, Receipt
 } from 'lucide-react'
 import { io } from 'socket.io-client'
 
@@ -159,6 +159,12 @@ const OrderDetails = () => {
           </div>
           
           <div className="flex gap-2">
+            <button
+              onClick={() => navigate(`/invoice/${id}`)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-atelier-cream border border-atelier-lightgray text-atelier-gray hover:text-atelier-dark hover:border-atelier-dark text-[10px] font-mono uppercase tracking-wider transition-all"
+            >
+              <Receipt size={13} /> View Invoice
+            </button>
             <button
               onClick={handleDownloadInvoice}
               className="flex items-center gap-2 px-4 py-2.5 bg-atelier-cream border border-atelier-lightgray text-atelier-gray hover:text-atelier-dark hover:border-atelier-dark text-[10px] font-mono uppercase tracking-wider transition-all"

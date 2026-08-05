@@ -26,6 +26,10 @@ import PushSubscription from "../models/pushSubscriptionModel.js";
 import ReturnRequest from "../models/returnModel.js";
 import { sendWebPush } from "../utils/webPush.js";
 import { getIO } from "../config/socket.js";
+import Invoice from "../models/invoiceModel.js";
+import generateInvoice from "../utils/generateInvoice.js";
+import path from "path";
+import fs from "fs";
 
 /*
 ==============================
@@ -47,6 +51,30 @@ const isValidTransition = (from, to) => {
     // Admin can also cancel at any non-terminal state
     if (to === "Cancelled" && !["Delivered", "Cancelled", "Refunded"].includes(from)) return true;
     return (VALID_TRANSITIONS[from] || []).includes(to);
+};
+
+const triggerInvoiceRegeneration = async (orderId) => {
+    try {
+        const invoice = await Invoice.findOne({ order: orderId });
+        if (invoice) {
+            const invoicesDir = path.join(process.cwd(), "src", "invoices");
+            if (!fs.existsSync(invoicesDir)) {
+                fs.mkdirSync(invoicesDir, { recursive: true });
+            }
+            const invoicePath = path.join(invoicesDir, `${invoice.invoiceNumber}.pdf`);
+            const populatedInvoice = await Invoice.findById(invoice._id)
+                .populate({
+                    path: "order",
+                    populate: { path: "user", select: "name email" }
+                })
+                .populate("user");
+            if (populatedInvoice) {
+                await generateInvoice(populatedInvoice, invoicePath);
+            }
+        }
+    } catch (err) {
+        console.error("Internal triggerInvoiceRegeneration failed:", err.message);
+    }
 };
 
 /*
@@ -197,6 +225,34 @@ const createOrderService = async ({ body, user }) => {
             message: `New order #${order._id.toString().slice(-6).toUpperCase()} by ${user.name} — $${totalPrice.toFixed(2)}`,
             type: "new_order",
         }).catch(err => console.error("New order admin notification:", err.message));
+    }
+
+    // AUTOMATICALLY GENERATE INVOICE
+    try {
+        const invoiceNumber = `INV-${Date.now()}`;
+        const invoice = await Invoice.create({
+            user: user._id,
+            order: order._id,
+            invoiceNumber,
+            totalAmount: totalPrice
+        });
+
+        const invoicesDir = path.join(process.cwd(), "src", "invoices");
+        if (!fs.existsSync(invoicesDir)) {
+            fs.mkdirSync(invoicesDir, { recursive: true });
+        }
+        const invoicePath = path.join(invoicesDir, `${invoiceNumber}.pdf`);
+
+        const populatedInvoice = await Invoice.findById(invoice._id)
+            .populate({
+                path: "order",
+                populate: { path: "user", select: "name email" }
+            })
+            .populate("user");
+        
+        await generateInvoice(populatedInvoice, invoicePath);
+    } catch (invoiceErr) {
+        console.error("Auto invoice generation failed:", invoiceErr.message);
     }
 
     return order;
@@ -382,6 +438,9 @@ const updateOrderStatusService = async (orderId, status, extras = {}, adminUser 
         console.error("Socket emit error:", socketErr.message);
     }
 
+    // Regenerate invoice PDF
+    await triggerInvoiceRegeneration(order._id);
+
     return order;
 };
 
@@ -446,6 +505,9 @@ const cancelOrderService = async (orderId, user, reason = "") => {
         console.error("Socket cancel error:", err.message);
     }
 
+    // Regenerate invoice PDF
+    await triggerInvoiceRegeneration(order._id);
+
     return order;
 };
 
@@ -503,6 +565,9 @@ const adminCancelOrderService = async (orderId, reason = "", adminUser = null) =
         console.error("Socket admin cancel error:", err.message);
     }
 
+    // Regenerate invoice PDF
+    await triggerInvoiceRegeneration(order._id);
+
     return order;
 };
 
@@ -552,6 +617,9 @@ const refundOrderService = async (orderId) => {
     } catch (err) {
         console.error("Socket refund error:", err.message);
     }
+
+    // Regenerate invoice PDF
+    await triggerInvoiceRegeneration(order._id);
 
     return order;
 };

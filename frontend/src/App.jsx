@@ -19,6 +19,7 @@ import Account from './pages/Account'
 import Journal from './pages/Journal'
 import MyOrders from './pages/MyOrders'
 import OrderDetails from './pages/OrderDetails'
+import InvoicePreview from './pages/InvoicePreview'
 import NotFound from './pages/NotFound'
 
 // Route Protection
@@ -36,6 +37,7 @@ import AdminCouponsManager from './pages/admin/AdminCouponsManager'
 import AdminNotificationsPanel from './pages/admin/AdminNotificationsPanel'
 import AdminSettingsPanel from './pages/admin/AdminSettingsPanel'
 import AdminCategoriesManager from './pages/admin/AdminCategoriesManager'
+import AdminInvoiceHistory from './pages/admin/AdminInvoiceHistory'
 
 function App() {
   return (
@@ -73,6 +75,10 @@ function App() {
         <Route
           path="/orders/:id"
           element={<MainLayout><ProtectedRoute><OrderDetails /></ProtectedRoute></MainLayout>}
+        />
+        <Route
+          path="/invoice/:orderId"
+          element={<MainLayout><ProtectedRoute><InvoicePreview /></ProtectedRoute></MainLayout>}
         />
 
         {/* =========================
@@ -117,6 +123,10 @@ function App() {
         <Route
           path="/admin/settings"
           element={<AdminRoute><AdminSettingsPanel /></AdminRoute>}
+        />
+        <Route
+          path="/admin/invoices"
+          element={<AdminRoute><AdminInvoiceHistory /></AdminRoute>}
         />
         <Route
           path="/admin/categories"

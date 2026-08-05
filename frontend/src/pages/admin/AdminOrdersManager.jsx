@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 import {
   ShoppingBag, Eye, Search, Filter, RefreshCw,
@@ -24,6 +25,7 @@ const ALL_STATUSES = [
 ]
 
 const AdminOrdersManager = () => {
+  const navigate = useNavigate()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -61,6 +63,30 @@ const AdminOrdersManager = () => {
   const [activeTab, setActiveTab] = useState('orders') // 'orders' or 'returns'
   const [returnPage, setReturnPage] = useState(1)
   const [returnPages, setReturnPages] = useState(1)
+  
+  const [selectedInvoice, setSelectedInvoice] = useState(null)
+  const [loadingInvoice, setLoadingInvoice] = useState(false)
+
+  useEffect(() => {
+    if (selectedOrder) {
+      setLoadingInvoice(true)
+      setSelectedInvoice(null)
+      api.get(`invoice/order/${selectedOrder._id}`)
+        .then(res => {
+          if (res.data && res.data.invoice) {
+            setSelectedInvoice(res.data.invoice)
+          }
+        })
+        .catch(err => {
+          console.error("Could not fetch invoice for order", err)
+        })
+        .finally(() => {
+          setLoadingInvoice(false)
+        })
+    } else {
+      setSelectedInvoice(null)
+    }
+  }, [selectedOrder])
   
   // ── Fetch Orders from Server ───────────────────────────────────────────────
   const fetchOrders = async () => {
@@ -613,6 +639,94 @@ const AdminOrdersManager = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Invoice / Billing Card */}
+                  <div className="bg-white/3 border border-white/5 p-4 rounded-xl space-y-3">
+                    <h4 className="text-xs font-semibold font-mono uppercase text-violet-400">Invoice & Billing</h4>
+                    {loadingInvoice ? (
+                      <p className="text-[10px] text-white/40 font-mono animate-pulse">Loading billing metadata...</p>
+                    ) : selectedInvoice ? (
+                      <div className="space-y-2">
+                        <div className="text-xs space-y-1">
+                          <p className="text-white/60">Invoice No: <span className="font-mono text-white font-semibold">{selectedInvoice.invoiceNumber}</span></p>
+                          <p className="text-white/60">Amount: <span className="font-mono text-white">${selectedInvoice.totalAmount?.toFixed(2)}</span></p>
+                        </div>
+                        <div className="flex gap-2 pt-1.5">
+                          <button
+                            onClick={() => navigate(`/invoice/${selectedOrder._id}`)}
+                            className="flex-1 py-1.5 bg-white/5 hover:bg-white/10 text-[10px] font-mono uppercase tracking-wider rounded-lg border border-white/5 flex items-center justify-center gap-1"
+                          >
+                            <Eye size={12} /> View
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const response = await api.get(`invoice/download?id=${encodeURIComponent(selectedInvoice._id)}`, {
+                                  responseType: 'blob'
+                                })
+                                const blob = new Blob([response.data], { type: 'application/pdf' })
+                                const url = window.URL.createObjectURL(blob)
+                                const link = document.createElement('a')
+                                link.href = url
+                                link.setAttribute('download', `${selectedInvoice.invoiceNumber}.pdf`)
+                                document.body.appendChild(link)
+                                link.click()
+                                link.remove()
+                                window.URL.revokeObjectURL(url)
+                              } catch (err) {
+                                alert("Failed to download PDF")
+                              }
+                            }}
+                            className="flex-1 py-1.5 bg-white/5 hover:bg-white/10 text-[10px] font-mono uppercase tracking-wider rounded-lg border border-white/5 flex items-center justify-center gap-1"
+                          >
+                            <Download size={12} /> PDF
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                setLoadingInvoice(true)
+                                const res = await api.post(`invoice/${selectedInvoice._id}/regenerate`)
+                                if (res.data && res.data.success) {
+                                  alert("Invoice regenerated successfully!")
+                                  setSelectedInvoice(res.data.invoice)
+                                }
+                              } catch (err) {
+                                alert("Regeneration failed")
+                              } finally {
+                                setLoadingInvoice(false)
+                              }
+                            }}
+                            className="flex-1 py-1.5 bg-violet-600/20 hover:bg-violet-600/30 text-violet-400 text-[10px] font-mono uppercase tracking-wider rounded-lg border border-violet-500/20 flex items-center justify-center gap-1"
+                          >
+                            <RefreshCw size={12} /> Sync
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-[10px] text-white/40 font-mono">No invoice exists yet.</p>
+                        <button
+                          onClick={async () => {
+                            try {
+                              setLoadingInvoice(true)
+                              const res = await api.post("invoice", { orderId: selectedOrder._id })
+                              if (res.data && res.data.invoice) {
+                                setSelectedInvoice(res.data.invoice)
+                                alert("Invoice generated successfully!")
+                              }
+                            } catch (err) {
+                              alert("Generation failed")
+                            } finally {
+                              setLoadingInvoice(false)
+                            }
+                          }}
+                          className="w-full py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-[10px] font-semibold font-mono uppercase tracking-wider rounded-lg flex items-center justify-center gap-1"
+                        >
+                          <RefreshCw size={12} /> Generate Invoice
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Detailed Items list */}
                   <div className="space-y-3 pt-2">
