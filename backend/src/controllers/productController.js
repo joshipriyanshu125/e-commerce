@@ -203,7 +203,6 @@ export const getProductById = asyncHandler(async (req, res) => {
     );
 
     if (product) {
-        const wasOutOfStock = product.countInStock <= 0 || product.status === "OutOfStock";
         const productObj = product.toObject();
         productObj.reviews = (productObj.reviews || []).filter(r => r.status === "Approved");
 
@@ -229,6 +228,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
+        const wasOutOfStock = product.countInStock <= 0 || product.status === "OutOfStock";
         product.name = req.body.name || product.name;
         product.description = req.body.description || product.description;
         product.price = req.body.price !== undefined ? Number(req.body.price) : product.price;
@@ -249,17 +249,24 @@ export const updateProduct = asyncHandler(async (req, res) => {
             product.colors = Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors);
         }
 
+        // The edit form sends the assets that remain after an admin removes an
+        // existing image. Delete only those removed assets from Cloudinary.
+        if (req.body.retainedImageIds !== undefined) {
+            const retainedImageIds = Array.isArray(req.body.retainedImageIds)
+                ? req.body.retainedImageIds
+                : JSON.parse(req.body.retainedImageIds);
+            const removedImages = product.images.filter(image => !retainedImageIds.includes(image.public_id));
+            await Promise.all(removedImages.map(image => cloudinary.uploader.destroy(image.public_id)));
+            product.images = product.images.filter(image => retainedImageIds.includes(image.public_id));
+        }
 
-        // OPTIONAL IMAGE UPDATE
+
+        // Append new images to the existing gallery. Replacing images here would
+        // unexpectedly delete every existing Cloudinary asset when an admin adds one.
         if (req.files && req.files.length > 0) {
-
-            // DELETE OLD IMAGES
-            for (const image of product.images) {
-
-                await cloudinary.uploader.destroy(
-                    image.public_id
-                );
-
+            if (product.images.length + req.files.length > 5) {
+                res.status(400);
+                throw new Error("A product can have a maximum of five images.");
             }
 
             const images = [];
@@ -277,7 +284,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
             }
 
-            product.images = images;
+            product.images.push(...images);
 
         }
 

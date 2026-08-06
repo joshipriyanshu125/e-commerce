@@ -173,6 +173,7 @@ const AdminProductForm = () => {
       formData.append('tags', JSON.stringify(pendingTags))
       formData.append('sizes', JSON.stringify(pendingSizes))
       formData.append('colors', JSON.stringify(pendingColors))
+      if (isEdit) formData.append('retainedImageIds', JSON.stringify(existingImages.map(image => image.public_id)))
       images.forEach(img => formData.append('images', img.file))
 
       if (isEdit) {
