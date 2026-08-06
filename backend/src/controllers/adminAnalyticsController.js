@@ -1,6 +1,7 @@
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import User from "../models/userModel.js";
+import Wishlist from "../models/wishlistModel.js";
 
 export const getAdminAnalytics = async (req, res) => {
     try {
@@ -156,6 +157,16 @@ export const getAdminAnalytics = async (req, res) => {
         const newCustomers = customerOrderCounts[0]?.newCustomers || 0;
         const repeatCustomers = customerOrderCounts[0]?.repeatCustomers || 0;
 
+        const [wishlistSummary] = await Wishlist.aggregate([
+            { $unwind: "$items" }, { $group: { _id: null, totalItems: { $sum: 1 }, customers: { $addToSet: "$user" } } },
+            { $project: { totalItems: 1, customerCount: { $size: "$customers" } } }
+        ]);
+        const mostWishlistedProducts = await Wishlist.aggregate([
+            { $unwind: "$items" }, { $group: { _id: "$items.product", wishlistCount: { $sum: 1 } } }, { $sort: { wishlistCount: -1 } }, { $limit: 8 },
+            { $lookup: { from: "products", localField: "_id", foreignField: "_id", as: "product" } }, { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
+            { $project: { name: { $ifNull: ["$product.name", "Deleted product"] }, wishlistCount: 1, price: "$product.price" } }
+        ]);
+
         // ── NEW USERS per month (last 6 months) ───────────────────────
         const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
         const newUsersPerMonth = await User.aggregate([
@@ -195,6 +206,9 @@ export const getAdminAnalytics = async (req, res) => {
                 totalProducts,
                 newCustomers,
                 repeatCustomers,
+                wishlistItems: wishlistSummary?.totalItems || 0,
+                wishlistCustomers: wishlistSummary?.customerCount || 0,
+                mostWishlistedProducts,
                 // Charts
                 revenueByMonth,
                 ordersPerDay,

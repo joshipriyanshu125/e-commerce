@@ -30,6 +30,7 @@ const notificationSchema = new mongoose.Schema(
                 "payment_failed",
                 "refund_requested",
                 "order_status",
+                "wishlist_back_in_stock",
                 "general",
             ],
             default: "general",

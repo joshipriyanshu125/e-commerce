@@ -1,6 +1,8 @@
 import asyncHandler from "../middleware/asyncHandler.js";
 import Product from "../models/Product.js";
 import { getIO } from "../config/socket.js";
+import Wishlist from "../models/wishlistModel.js";
+import { sendNotification } from "../services/notificationService.js";
 
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
@@ -216,6 +218,7 @@ export const getProductById = asyncHandler(async (req, res) => {
     );
 
     if (product) {
+        const wasOutOfStock = product.countInStock <= 0 || product.status === "OutOfStock";
         const productObj = product.toObject();
         productObj.reviews = (productObj.reviews || []).filter(r => r.status === "Approved");
 
@@ -293,6 +296,11 @@ export const updateProduct = asyncHandler(async (req, res) => {
         }
 
         const updatedProduct = await product.save();
+
+        if (wasOutOfStock && updatedProduct.countInStock > 0 && updatedProduct.status !== "OutOfStock") {
+            const watching = await Wishlist.find({ items: { $elemMatch: { product: updatedProduct._id, notifyOnRestock: true } } }).select("user");
+            await Promise.all(watching.map(({ user }) => sendNotification({ userId: user, title: "Back in stock", message: `${updatedProduct.name} is available again.`, type: "wishlist_back_in_stock" })));
+        }
 
         // CLEAR REDIS CACHE
         await clearCachePattern("all_products*");
@@ -575,4 +583,4 @@ export const replyToReview = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error("Product not found");
     }
-});
+});

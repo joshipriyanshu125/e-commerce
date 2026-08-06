@@ -9,10 +9,12 @@ import {
   Menu,
   X,
   ChevronDown,
+  Heart,
 } from 'lucide-react'
 
 import { toggleCart } from '../../features/cart/cartSlice'
 import { logout } from '../../features/auth/authSlice'
+import { clearWishlist, fetchWishlist } from '../../features/wishlist/wishlistSlice'
 import SearchModal from '../common/SearchModal'
 import CategoryMegaMenu from './CategoryMegaMenu'
 import { useCategoryMenu, getCategoryLink } from '../../utils/categories'
@@ -28,6 +30,7 @@ const Navbar = () => {
 
   const { user, isAuthenticated } = useSelector((state) => state.auth)
   const { items } = useSelector((state) => state.cart)
+  const wishlistCount = useSelector((state) => state.wishlist.items.length)
   const { menu, loading: menuLoading } = useCategoryMenu()
 
   const cartCount = items.reduce(
@@ -39,6 +42,7 @@ const Navbar = () => {
     setIsMobileMenuOpen(false)
     setIsSearchOpen(false)
   }, [location.pathname, location.search])
+  useEffect(() => { if (isAuthenticated) dispatch(fetchWishlist()); else dispatch(clearWishlist()) }, [dispatch, isAuthenticated])
 
   const handleCartClick = () => {
     dispatch(toggleCart())
@@ -47,6 +51,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('token')
     dispatch(logout())
+    dispatch(clearWishlist())
     navigate('/')
   }
 
@@ -105,6 +110,11 @@ const Navbar = () => {
               className="font-serif text-3xl tracking-wide text-atelier-dark hover:opacity-90"
             >
               Atelier
+            </Link>
+
+            <Link to={isAuthenticated ? '/wishlist' : '/login?redirect=/wishlist'} className="p-2 text-atelier-dark hover:opacity-70 transition-opacity relative" aria-label="Wishlist">
+              <Heart size={20} strokeWidth={1.5} />
+              {wishlistCount > 0 && <span className="absolute top-0.5 right-0.5 bg-atelier-dark text-atelier-beige text-xs font-mono min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-bold">{wishlistCount > 99 ? '99+' : wishlistCount}</span>}
             </Link>
           </div>
 
@@ -257,6 +267,7 @@ const Navbar = () => {
                   <Link to="/account" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
                     My Account
                   </Link>
+                  <Link to="/wishlist" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">Wishlist ({wishlistCount})</Link>
                   {user?.role !== 'admin' && (
                     <Link to="/orders" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
                       My Orders

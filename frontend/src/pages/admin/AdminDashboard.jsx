@@ -3,7 +3,7 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import {
   DollarSign, ShoppingBag, Users, Package,
   ArrowUpRight, RefreshCw, TrendingUp, TrendingDown,
-  Eye, BarChart2, PieChart, ShoppingCart, Star, UserCheck, UserPlus
+  Eye, BarChart2, PieChart, ShoppingCart, Star, UserCheck, UserPlus, Heart
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import api from '../../services/axiosInstance'
@@ -229,6 +229,11 @@ const AdminDashboard = () => {
     revenue: c.totalRevenue || 0
   })) || []
 
+  const mostWishlistedData = analytics?.mostWishlistedProducts?.map(p => ({
+    label: p.name?.split(' ').slice(0, 3).join(' ') || 'Deleted product',
+    value: p.wishlistCount || 0
+  })) || []
+
   const newUsersData = analytics?.newUsersPerMonth?.map(d => ({
     label: MONTHS[d._id.month - 1],
     value: d.count
@@ -287,6 +292,13 @@ const AdminDashboard = () => {
       icon: DollarSign,
       gradient: 'linear-gradient(135deg,#f43f5e,#e11d48)',
       sub: 'All time (paid)'
+    },
+    {
+      label: 'Wishlisted Items',
+      value: (analytics?.wishlistItems || 0).toLocaleString(),
+      icon: Heart,
+      gradient: 'linear-gradient(135deg,#ec4899,#be185d)',
+      sub: `${analytics?.wishlistCustomers || 0} customers saving products`
     },
   ]
 

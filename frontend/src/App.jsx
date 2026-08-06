@@ -21,6 +21,8 @@ import MyOrders from './pages/MyOrders'
 import OrderDetails from './pages/OrderDetails'
 import InvoicePreview from './pages/InvoicePreview'
 import NotFound from './pages/NotFound'
+import Wishlist from './pages/Wishlist'
+import ToastHost from './components/common/ToastHost'
 
 // Route Protection
 import ProtectedRoute from './components/routes/ProtectedRoute'
@@ -42,6 +44,7 @@ import AdminInvoiceHistory from './pages/admin/AdminInvoiceHistory'
 function App() {
   return (
     <Router>
+      <ToastHost />
       <Routes>
         {/* =========================
             Public Routes (inside MainLayout)
@@ -72,6 +75,7 @@ function App() {
           path="/orders"
           element={<MainLayout><ProtectedRoute><MyOrders /></ProtectedRoute></MainLayout>}
         />
+        <Route path="/wishlist" element={<MainLayout><ProtectedRoute><Wishlist /></ProtectedRoute></MainLayout>} />
         <Route
           path="/orders/:id"
           element={<MainLayout><ProtectedRoute><OrderDetails /></ProtectedRoute></MainLayout>}

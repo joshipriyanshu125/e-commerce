@@ -1,5 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { Heart } from 'lucide-react'
+import { deleteWishlistItem, fetchWishlist, optimisticAdd, optimisticRemove, saveWishlistItem } from '../../features/wishlist/wishlistSlice'
+import { toast } from '../common/ToastHost'
 
 const colorToHex = (name) => {
   const map = {
@@ -15,6 +19,9 @@ const colorToHex = (name) => {
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
+  const isAuthenticated = useSelector(state => state.auth.isAuthenticated)
+  const wishlisted = useSelector(state => state.wishlist.items.some(item => (item.product._id || item.product.id) === (product._id || product.id)))
 
   // Normalize colors: accept both [{name, hex}] and plain strings
   const normalizedColors = (product.colors || []).map(c =>
@@ -34,6 +41,12 @@ const ProductCard = ({ product }) => {
     e.stopPropagation()
     setSelectedColor(color)
   }
+  const handleWishlist = async (e) => {
+    e.stopPropagation(); const id = product._id || product.id
+    if (!isAuthenticated) { toast('Please sign in to save products.', 'error'); return navigate('/login?redirect=/wishlist') }
+    if (wishlisted) { dispatch(optimisticRemove(id)); const r = await dispatch(deleteWishlistItem(id)); if (r.error) { dispatch(fetchWishlist()); toast('Could not update wishlist.', 'error') } else toast('Removed from wishlist.') }
+    else { dispatch(optimisticAdd(product)); const r = await dispatch(saveWishlistItem({ productId: id })); if (r.error) { dispatch(fetchWishlist()); toast('Could not update wishlist.', 'error') } else toast('Added to wishlist.') }
+  }
 
   // Normalize image src: DB products have {url} objects, mock products have plain strings
   const rawImage = product.images?.[0]
@@ -52,6 +65,7 @@ const ProductCard = ({ product }) => {
     >
       {/* Product Image Wrapper */}
       <div className="relative aspect-square w-full bg-atelier-cream overflow-hidden mb-4 border border-atelier-lightgray/30 transition-all duration-300 group-hover:shadow-xl">
+        <button onClick={handleWishlist} className={`absolute z-20 top-3 right-3 p-2 bg-atelier-beige/90 hover:bg-white ${wishlisted ? 'text-red-600' : 'text-atelier-dark'}`} aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}><Heart size={18} fill={wishlisted ? 'currentColor' : 'none'} strokeWidth={1.5}/></button>
         {/* Badges (New, Sale) */}
         {product.tag && (
           <span className="absolute top-3 left-3 bg-atelier-beige border border-atelier-dark/40 font-mono text-sm tracking-widest uppercase py-1 px-2.5 z-10 select-none">
