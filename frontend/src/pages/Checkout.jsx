@@ -145,9 +145,13 @@ const Checkout = () => {
         orderItems: items.map(item => ({
           product: item.product._id || item.product.id,
           name: item.product.name,
-          image: item.product.images?.[0],
+          image: typeof item.product.images?.[0] === 'string'
+            ? item.product.images?.[0]
+            : item.product.images?.[0]?.url || '',
           price: item.product.price,
-          quantity: item.quantity
+          quantity: item.quantity,
+          size: item.size || 'N/A',
+          color: item.color?.name || item.color || 'N/A'
         })),
         shippingInfo: {
           fullName: `${firstName} ${lastName}`.trim(),

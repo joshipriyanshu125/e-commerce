@@ -436,7 +436,7 @@ const AdminOrdersManager = () => {
                               ${o.totalPrice.toFixed(2)}
                             </td>
                             <td className="p-4 text-center">
-                              <StatusBadge status={o.orderStatus} size="sm" />
+                              <StatusBadge status={o.orderStatus} size="sm" dark />
                             </td>
                             <td className="p-4 text-right">
                               <ChevronRight size={14} className="text-white/20" />
@@ -495,7 +495,7 @@ const AdminOrdersManager = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/3 p-3 rounded-xl border border-white/5">
                       <span className="text-[10px] text-white/30 font-mono uppercase block">Status</span>
-                      <span className="mt-1 block"><StatusBadge status={selectedOrder.orderStatus} size="sm" /></span>
+                      <span className="mt-1 block"><StatusBadge status={selectedOrder.orderStatus} size="sm" dark /></span>
                     </div>
                     <div className="bg-white/3 p-3 rounded-xl border border-white/5">
                       <span className="text-[10px] text-white/30 font-mono uppercase block">Total Price</span>
@@ -737,7 +737,7 @@ const AdminOrdersManager = () => {
                           <img src={item.image || '/placeholder.jpg'} alt="" className="w-10 h-10 object-cover rounded bg-white/5 ring-1 ring-white/10" />
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold truncate">{item.name}</p>
-                            <p className="text-[10px] text-white/40">Qty: {item.quantity} | Size: {item.size || 'N/A'}</p>
+                            <p className="text-[10px] text-white/40">Qty: {item.quantity} | Size: {item.size || 'N/A'} | Color: {item.color || 'N/A'}</p>
                           </div>
                         </div>
                       ))}

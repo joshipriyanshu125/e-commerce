@@ -115,7 +115,11 @@ const OrderDetailsDrawer = ({ order, open, onClose, onOrderUpdated }) => {
                     {item.image && <img src={item.image} alt={item.name} className="w-16 h-16 object-cover bg-atelier-lightgray" />}
                     <div>
                       <span className="block text-sm font-serif text-atelier-dark">{item.name || item.product || "Item"}</span>
-                      <span className="block text-xs font-mono text-atelier-gray uppercase mt-1">Qty: {item.quantity}</span>
+                      <span className="block text-xs font-mono text-atelier-gray uppercase mt-1">
+                        Qty: {item.quantity}
+                        {item.size && ` | Size: ${item.size}`}
+                        {item.color && ` | Color: ${item.color}`}
+                      </span>
                     </div>
                   </div>
                   <span className="text-sm font-mono text-atelier-dark">${((item.price || 0) * item.quantity).toFixed(2)}</span>
