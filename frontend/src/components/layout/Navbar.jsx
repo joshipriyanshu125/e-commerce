@@ -104,7 +104,7 @@ const Navbar = () => {
             </nav>
           )}
 
-          <div className="absolute left-1/2 -translate-x-1/2">
+          <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto">
             <Link
               to="/"
               className="font-serif text-3xl tracking-wide text-atelier-dark hover:opacity-90"
@@ -112,10 +112,6 @@ const Navbar = () => {
               Atelier
             </Link>
 
-            <Link to={isAuthenticated ? '/wishlist' : '/login?redirect=/wishlist'} className="p-2 text-atelier-dark hover:opacity-70 transition-opacity relative" aria-label="Wishlist">
-              <Heart size={20} strokeWidth={1.5} />
-              {wishlistCount > 0 && <span className="absolute top-0.5 right-0.5 bg-atelier-dark text-atelier-beige text-xs font-mono min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-bold">{wishlistCount > 99 ? '99+' : wishlistCount}</span>}
-            </Link>
           </div>
 
           <div className="flex items-center space-x-3 sm:space-x-5">
@@ -162,6 +158,15 @@ const Navbar = () => {
               className="sm:hidden p-2 text-atelier-dark"
             >
               <User size={20} strokeWidth={1.5} />
+            </Link>
+
+            <Link
+              to={isAuthenticated ? '/wishlist' : '/login?redirect=/wishlist'}
+              className="p-2 text-atelier-dark hover:opacity-70 transition-opacity relative"
+              aria-label="Wishlist"
+            >
+              <Heart size={20} strokeWidth={1.5} />
+              {wishlistCount > 0 && <span className="absolute top-0.5 right-0.5 bg-atelier-dark text-atelier-beige text-xs font-mono min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-bold">{wishlistCount > 99 ? '99+' : wishlistCount}</span>}
             </Link>
 
             <button
