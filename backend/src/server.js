@@ -296,6 +296,14 @@ process.on(
     }
 );
 
+const gracefulShutdown = (signal) => {
+    logger.info(`${signal} received; closing HTTP server`);
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), 10000).unref();
+};
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
 /*
 =========================================
 UNCAUGHT EXCEPTION

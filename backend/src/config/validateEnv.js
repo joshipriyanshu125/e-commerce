@@ -7,6 +7,10 @@ const envSchema = Joi.object({
 
     JWT_SECRET: Joi.string().required(),
 
+    CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+    CLOUDINARY_API_KEY: Joi.string().required(),
+    CLOUDINARY_API_SECRET: Joi.string().required(),
+
     NODE_ENV: Joi.string()
         .valid("development", "production")
         .required(),

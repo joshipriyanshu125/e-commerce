@@ -16,8 +16,13 @@ axiosInstance.interceptors.request.use(
     // CRITICAL: Do NOT set Content-Type for FormData requests.
     // Axios must set it automatically so it includes the multipart boundary.
     // If the body is FormData, remove the Content-Type header entirely.
-    if (config.data instanceof FormData) {
+    const isFormData = typeof FormData !== "undefined" && (
+      config.data instanceof FormData ||
+      Object.prototype.toString.call(config.data) === "[object FormData]"
+    );
+    if (isFormData) {
       delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
     } else if (!config.headers["Content-Type"]) {
       config.headers["Content-Type"] = "application/json";
     }

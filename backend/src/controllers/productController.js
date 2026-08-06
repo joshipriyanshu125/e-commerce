@@ -29,6 +29,10 @@ const streamUpload = (buffer) => {
         const stream = cloudinary.uploader.upload_stream(
             {
                 folder: "products",
+                resource_type: "image",
+                transformation: [
+                    { quality: "auto", fetch_format: "auto" },
+                ],
             },
             (error, result) => {
 
@@ -74,10 +78,15 @@ export const createProduct = asyncHandler(async (req, res) => {
     const sizes = req.body.sizes ? (Array.isArray(req.body.sizes) ? req.body.sizes : JSON.parse(req.body.sizes)) : [];
     const colors = req.body.colors ? (Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors)) : [];
 
+    if (!req.files?.length) {
+        res.status(400);
+        throw new Error("At least one product image is required. Ensure the request uses multipart/form-data with the 'images' field.");
+    }
+
     const images = [];
 
     // UPLOAD IMAGES TO CLOUDINARY
-    if (req.files && req.files.length > 0) {
+    if (req.files.length > 0) {
 
         for (const file of req.files) {
 
@@ -227,6 +236,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         product.countInStock = req.body.countInStock !== undefined ? Number(req.body.countInStock) : product.countInStock;
         product.category = req.body.category || product.category;
         product.brand = req.body.brand !== undefined ? req.body.brand : product.brand;
+        product.gender = req.body.gender || product.gender;
         product.status = req.body.status || product.status;
 
         if (req.body.tags !== undefined) {

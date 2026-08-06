@@ -82,7 +82,19 @@ const AdminProductForm = () => {
   }
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files)
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    const invalid = files.find(file => !file.type.startsWith('image/'))
+    if (invalid) {
+      setError('Only image files can be uploaded.')
+      e.target.value = ''
+      return
+    }
+    if (images.length + files.length > 5) {
+      setError('You can upload a maximum of five images per product.')
+      e.target.value = ''
+      return
+    }
     const newImages = files.map(file => ({ file, preview: URL.createObjectURL(file) }))
     setImages(prev => [...prev, ...newImages])
     e.target.value = ''
@@ -164,9 +176,9 @@ const AdminProductForm = () => {
       images.forEach(img => formData.append('images', img.file))
 
       if (isEdit) {
-        await api.put(`products/${id}`, formData)
+        await api.put(`products/${id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
       } else {
-        await api.post('products', formData)
+        await api.post('products', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
       }
 
       navigate('/admin/products', { replace: true })

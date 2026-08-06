@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Heart } from 'lucide-react'
 import { deleteWishlistItem, fetchWishlist, optimisticAdd, optimisticRemove, saveWishlistItem } from '../../features/wishlist/wishlistSlice'
 import { toast } from '../common/ToastHost'
+import { optimizeImage } from '../../utils/cloudinary'
 
 const colorToHex = (name) => {
   const map = {
@@ -50,9 +51,9 @@ const ProductCard = ({ product }) => {
 
   // Normalize image src: DB products have {url} objects, mock products have plain strings
   const rawImage = product.images?.[0]
-  const imageSrc = rawImage
+  const imageSrc = optimizeImage(rawImage
     ? (typeof rawImage === 'string' ? rawImage : rawImage.url)
-    : 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
+    : 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80', { width: 720, height: 720 })
 
   const fallbackSrc = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
 
@@ -77,6 +78,8 @@ const ProductCard = ({ product }) => {
         <img 
           src={imageSrc}
           alt={product.name}
+          loading="lazy"
+          decoding="async"
           className={`h-full w-full object-cover transition-transform duration-700 ease-out ${hovered ? 'scale-105' : 'scale-100'}`}
           onError={(e) => {
             e.target.onerror = null

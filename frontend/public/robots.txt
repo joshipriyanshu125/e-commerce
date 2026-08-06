@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Set the deployed canonical domain before production release.
+# Sitemap: https://your-domain.example/sitemap.xml

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,22 +6,24 @@ import {
 } from 'react-router-dom'
 
 import MainLayout from './components/layout/MainLayout'
+import RouteLoader from './components/common/RouteLoader'
+import RouteSeo from './components/common/RouteSeo'
 
 // Pages
-import Home from './pages/Home'
-import Shop from './pages/Shop'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ProductDetails from './pages/ProductDetails'
-import Cart from './pages/Cart'
-import Checkout from './pages/Checkout'
-import Account from './pages/Account'
-import Journal from './pages/Journal'
-import MyOrders from './pages/MyOrders'
-import OrderDetails from './pages/OrderDetails'
-import InvoicePreview from './pages/InvoicePreview'
-import NotFound from './pages/NotFound'
-import Wishlist from './pages/Wishlist'
+const Home = lazy(() => import('./pages/Home'))
+const Shop = lazy(() => import('./pages/Shop'))
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const ProductDetails = lazy(() => import('./pages/ProductDetails'))
+const Cart = lazy(() => import('./pages/Cart'))
+const Checkout = lazy(() => import('./pages/Checkout'))
+const Account = lazy(() => import('./pages/Account'))
+const Journal = lazy(() => import('./pages/Journal'))
+const MyOrders = lazy(() => import('./pages/MyOrders'))
+const OrderDetails = lazy(() => import('./pages/OrderDetails'))
+const InvoicePreview = lazy(() => import('./pages/InvoicePreview'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const Wishlist = lazy(() => import('./pages/Wishlist'))
 import ToastHost from './components/common/ToastHost'
 
 // Route Protection
@@ -29,23 +31,24 @@ import ProtectedRoute from './components/routes/ProtectedRoute'
 import AdminRoute from './components/routes/AdminRoute'
 
 // Admin Pages
-import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminProductsManager from './pages/admin/AdminProductsManager'
-import AdminProductForm from './pages/admin/AdminProductForm'
-import AdminOrdersManager from './pages/admin/AdminOrdersManager'
-import AdminUsersManager from './pages/admin/AdminUsersManager'
-import AdminReviewsModerator from './pages/admin/AdminReviewsModerator'
-import AdminCouponsManager from './pages/admin/AdminCouponsManager'
-import AdminNotificationsPanel from './pages/admin/AdminNotificationsPanel'
-import AdminSettingsPanel from './pages/admin/AdminSettingsPanel'
-import AdminCategoriesManager from './pages/admin/AdminCategoriesManager'
-import AdminInvoiceHistory from './pages/admin/AdminInvoiceHistory'
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminProductsManager = lazy(() => import('./pages/admin/AdminProductsManager'))
+const AdminProductForm = lazy(() => import('./pages/admin/AdminProductForm'))
+const AdminOrdersManager = lazy(() => import('./pages/admin/AdminOrdersManager'))
+const AdminUsersManager = lazy(() => import('./pages/admin/AdminUsersManager'))
+const AdminReviewsModerator = lazy(() => import('./pages/admin/AdminReviewsModerator'))
+const AdminCouponsManager = lazy(() => import('./pages/admin/AdminCouponsManager'))
+const AdminNotificationsPanel = lazy(() => import('./pages/admin/AdminNotificationsPanel'))
+const AdminSettingsPanel = lazy(() => import('./pages/admin/AdminSettingsPanel'))
+const AdminCategoriesManager = lazy(() => import('./pages/admin/AdminCategoriesManager'))
+const AdminInvoiceHistory = lazy(() => import('./pages/admin/AdminInvoiceHistory'))
 
 function App() {
   return (
     <Router>
+      <RouteSeo />
       <ToastHost />
-      <Routes>
+      <Suspense fallback={<RouteLoader />}><Routes>
         {/* =========================
             Public Routes (inside MainLayout)
         ========================= */}
@@ -141,7 +144,7 @@ function App() {
             404
         ========================= */}
         <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
-      </Routes>
+      </Routes></Suspense>
     </Router>
   )
 }
