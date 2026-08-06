@@ -30,6 +30,9 @@ const ProductDetails = () => {
   const thumbnailRef = useRef(null)
 
   useEffect(() => {
+    // React Router preserves scroll position between routes by default. A newly
+    // opened product should always begin at its product header, not the prior page's offset.
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     dispatch(selectProductById(id))
     setSelectedSize('')
     setQuantity(1)
@@ -131,10 +134,17 @@ const ProductDetails = () => {
       setActiveImageIdx(idx)
       setIsSliding(false)
     }, 280)
-    // Scroll thumbnail into view
+    // Keep movement inside the horizontal thumbnail rail. Element.scrollIntoView
+    // can also scroll the main document, which made image navigation jump the page.
     if (thumbnailRef.current) {
-      const thumb = thumbnailRef.current.children[idx]
-      if (thumb) thumb.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' })
+      const rail = thumbnailRef.current
+      const thumb = rail.children[idx]
+      if (thumb) {
+        rail.scrollTo({
+          left: thumb.offsetLeft - (rail.clientWidth - thumb.clientWidth) / 2,
+          behavior: 'smooth',
+        })
+      }
     }
   }
 
@@ -254,6 +264,7 @@ const ProductDetails = () => {
             {images.length > 1 && (
               <>
                 <button
+                  type="button"
                   onClick={goPrev}
                   className="absolute left-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 backdrop-blur-sm border border-atelier-lightgray/50 flex items-center justify-center text-atelier-dark shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-white z-10"
                   aria-label="Previous image"
@@ -261,6 +272,7 @@ const ProductDetails = () => {
                   <ChevronLeft size={18} strokeWidth={2} />
                 </button>
                 <button
+                  type="button"
                   onClick={goNext}
                   className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/80 backdrop-blur-sm border border-atelier-lightgray/50 flex items-center justify-center text-atelier-dark shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-white z-10"
                   aria-label="Next image"
@@ -271,6 +283,7 @@ const ProductDetails = () => {
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                   {images.map((_, idx) => (
                     <button
+                      type="button"
                       key={idx}
                       onClick={() => goToImage(idx, idx > activeImageIdx ? 'next' : 'prev')}
                       className={`rounded-full transition-all duration-200 ${
@@ -295,6 +308,7 @@ const ProductDetails = () => {
             >
               {images.map((img, idx) => (
                 <button
+                  type="button"
                   key={idx}
                   onClick={() => goToImage(idx, idx > activeImageIdx ? 'next' : 'prev')}
                   className={`flex-shrink-0 h-16 w-16 sm:h-20 sm:w-20 bg-atelier-cream border-2 overflow-hidden rounded-md transition-all duration-200 ${
