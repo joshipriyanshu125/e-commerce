@@ -66,6 +66,12 @@ const productSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        gender: {
+            type: String,
+            enum: ["men", "women", "unisex", "kids"],
+            default: "unisex",
+        },
+        soldCount: { type: Number, default: 0, min: 0 },
         // Tags e.g. ["running", "sports"]
         tags: {
             type: [String],
@@ -112,6 +118,12 @@ const productSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+// Supports the catalogue's common filter and sort paths. Text search remains a
+// safe fallback for installations without an Atlas Search index.
+productSchema.index({ name: "text", description: "text", category: "text", brand: "text", tags: "text" });
+productSchema.index({ status: 1, category: 1, brand: 1, price: 1 });
+productSchema.index({ status: 1, createdAt: -1 });
 
 const Product = mongoose.model("Product", productSchema);
 

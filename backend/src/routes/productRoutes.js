@@ -13,6 +13,7 @@ import {
     getAllReviews,
     updateReviewStatus,
     replyToReview,
+    getSearchSuggestions,
 } from "../controllers/productController.js";
 
 import {
@@ -24,6 +25,11 @@ import upload from "../middleware/uploadMiddleware.js";
 
 import cacheMiddleware from "../middleware/cacheMiddleware.js";
 
+
+router.get(
+    "/suggestions",
+    getSearchSuggestions
+);
 
 router.get(
     "/",

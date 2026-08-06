@@ -1,0 +1,11 @@
+import express from "express";
+import { protect, admin } from "../middleware/authMiddleware.js";
+import { getActivePromotions, getPromotions, createPromotion, updatePromotion, togglePromotion, promotionAnalytics } from "../controllers/promotionController.js";
+const router = express.Router();
+router.get("/active", getActivePromotions);
+router.get("/", protect, admin, getPromotions);
+router.get("/analytics", protect, admin, promotionAnalytics);
+router.post("/", protect, admin, createPromotion);
+router.put("/:id", protect, admin, updatePromotion);
+router.patch("/:id/toggle", protect, admin, togglePromotion);
+export default router;

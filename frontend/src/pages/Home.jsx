@@ -5,6 +5,7 @@ import { setType, setCategory, setSortOption, fetchAPIProducts } from '../featur
 import ProductCard from '../components/product/ProductCard'
 import { ArrowRight, SlidersHorizontal } from 'lucide-react'
 import { IMAGES } from '../utils/images'
+import PromotionStrip from '../components/common/PromotionStrip'
 
 const Home = () => {
   const [searchParams] = useSearchParams()
@@ -134,6 +135,7 @@ const Home = () => {
   // Standard Homepage view
   return (
     <div className="animate-fade-in">
+      <PromotionStrip />
       {/* 1. Hero Section */}
       <section className="border-b border-atelier-lightgray/60 grid grid-cols-1 md:grid-cols-2 h-auto md:h-[600px] overflow-hidden bg-atelier-cream">
         {/* Left Side: Image */}

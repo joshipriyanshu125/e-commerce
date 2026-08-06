@@ -76,7 +76,7 @@ export const createCoupon = async (req, res) => {
 // APPLY COUPON
 export const applyCoupon = async (req, res) => {
     try {
-        const { code, totalAmount } = req.body;
+        const { code, totalAmount, cartItems = [] } = req.body;
 
         if (!code || totalAmount === undefined || totalAmount === null) {
             return res.status(400).json({
@@ -122,6 +122,19 @@ export const applyCoupon = async (req, res) => {
             });
         }
 
+        const customerUses = coupon.usedBy.filter(entry => entry.user?.toString() === req.user?._id?.toString()).length;
+        if (customerUses >= coupon.perUserLimit) {
+            return res.status(400).json({ success: false, message: "This coupon has already been used the maximum number of times." });
+        }
+
+        // Scoped coupons only apply when an eligible item is in the trusted cart payload.
+        if (coupon.categories.length || coupon.products.length) {
+            const eligible = cartItems.some(item =>
+                coupon.categories.includes(item.category) || coupon.products.some(id => id.toString() === String(item.product || item._id))
+            );
+            if (!eligible) return res.status(400).json({ success: false, message: "This coupon is not valid for the items in your bag." });
+        }
+
         // MINIMUM PURCHASE CHECK
         if (coupon.minPurchase > 0 && amount < coupon.minPurchase) {
             return res.status(400).json({
@@ -155,6 +168,8 @@ export const applyCoupon = async (req, res) => {
             discountAmount,
             originalAmount: amount,
             finalAmount,
+            eligibleCategories: coupon.categories,
+            eligibleProducts: coupon.products,
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

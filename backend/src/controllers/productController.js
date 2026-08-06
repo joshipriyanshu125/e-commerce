@@ -65,6 +65,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         countInStock,
         category,
         brand,
+        gender,
         status,
     } = req.body;
 
@@ -101,6 +102,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         countInStock,
         category,
         brand,
+        gender: gender || "unisex",
         tags,
         sizes,
         colors,
@@ -129,69 +131,33 @@ export const createProduct = asyncHandler(async (req, res) => {
 
 // GET ALL PRODUCTS
 export const getProducts = asyncHandler(async (req, res) => {
-
-    const pageSize = Math.min(Number(req.query.limit) || 10, 100);
-
-    const page = Number(req.query.page) || 1;
-
-    const keyword = req.query.keyword
-
-        ? {
-            name: {
-                $regex: req.query.keyword,
-                $options: "i",
-            },
-        }
-
-        : {};
-
-    const category = req.query.category
-
-        ? {
-            category: req.query.category,
-        }
-
-        : {};
-
-    let sortOption = {};
-
-    if (req.query.sort === "lowToHigh") {
-
-        sortOption = { price: 1 };
-
+    const pageSize = Math.min(Math.max(Number(req.query.limit) || 24, 1), 100);
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const valueList = (value) => String(value || "").split(",").map(v => v.trim()).filter(Boolean);
+    const query = { status: { $ne: "Draft" } };
+    const search = String(req.query.q || req.query.keyword || "").trim();
+    if (search) {
+        const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const rx = new RegExp(escaped, "i");
+        query.$or = [{ name: rx }, { description: rx }, { category: rx }, { brand: rx }, { tags: rx }];
     }
-
-    if (req.query.sort === "highToLow") {
-
-        sortOption = { price: -1 };
-
-    }
-
-    if (req.query.sort === "newest") {
-
-        sortOption = { createdAt: -1 };
-
-    }
-
-    const query = {
-
-        ...keyword,
-
-        ...category,
-
-    };
+    const categories = valueList(req.query.category); if (categories.length) query.category = { $in: categories };
+    const brands = valueList(req.query.brand); if (brands.length) query.brand = { $in: brands };
+    const genders = valueList(req.query.gender); if (genders.length) query.gender = { $in: genders };
+    const sizes = valueList(req.query.size); if (sizes.length) query.sizes = { $in: sizes };
+    const colors = valueList(req.query.color); if (colors.length) query.colors = { $in: colors };
+    if (req.query.availability === "in-stock") query.countInStock = { $gt: 0 };
+    if (req.query.minPrice || req.query.maxPrice) query.price = { ...(req.query.minPrice ? { $gte: Number(req.query.minPrice) } : {}), ...(req.query.maxPrice ? { $lte: Number(req.query.maxPrice) } : {}) };
+    if (req.query.rating) query.rating = { $gte: Number(req.query.rating) };
+    if (req.query.discount === "true") query.$expr = { $lt: ["$discountPrice", "$price"] };
+    const sortMap = { newest: { createdAt: -1 }, lowToHigh: { price: 1 }, highToLow: { price: -1 }, popularity: { numReviews: -1, soldCount: -1 }, bestSelling: { soldCount: -1 }, highestRated: { rating: -1, numReviews: -1 } };
+    const sortOption = sortMap[req.query.sort] || { createdAt: -1 };
 
     const count = await Product.countDocuments(
         query
     );
 
-    const products = await Product.find(query)
-
-        .sort(sortOption)
-
-        .limit(pageSize)
-
-        .skip(pageSize * (page - 1));
+    const products = await Product.find(query).sort(sortOption).limit(pageSize).skip(pageSize * (page - 1)).lean();
 
     res.status(200).json({
 
@@ -207,6 +173,16 @@ export const getProducts = asyncHandler(async (req, res) => {
 
     });
 
+});
+
+export const getSearchSuggestions = asyncHandler(async (req, res) => {
+    const q = String(req.query.q || "").trim();
+    if (q.length < 2) return res.json({ success: true, suggestions: [] });
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const rx = new RegExp(escaped, "i");
+    const products = await Product.find({ status: "Active", $or: [{ name: rx }, { brand: rx }, { category: rx }, { tags: rx }] })
+        .select("name category brand images price discountPrice").limit(8).lean();
+    res.json({ success: true, suggestions: products });
 });
 
 

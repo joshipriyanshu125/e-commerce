@@ -1,171 +1,37 @@
-import React, { useEffect, useRef } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { Link, useNavigate } from 'react-router-dom'
-import { X, Search } from 'lucide-react'
-import { setSearchQuery } from '../../features/products/productSlice'
+import React, { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Clock, Search, TrendingUp, X } from 'lucide-react'
+import api from '../../services/axiosInstance'
 
-const SearchModal = ({ onClose }) => {
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
+const RECENT_KEY = 'recentSearches'
+const trending = ['Linen shirts', 'Summer dresses', 'Leather bags', 'Sneakers']
+
+export default function SearchModal({ onClose }) {
   const inputRef = useRef(null)
-  
-  const { searchQuery, filteredProducts } = useSelector(state => state.products)
+  const navigate = useNavigate()
+  const [query, setQuery] = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [recent, setRecent] = useState(() => JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'))
 
+  useEffect(() => { inputRef.current?.focus(); document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
   useEffect(() => {
-    // Focus search input on mount
-    if (inputRef.current) {
-      inputRef.current.focus()
-    }
-    // Prevent background scrolling
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [])
-
-  const handleSearchChange = (e) => {
-    dispatch(setSearchQuery(e.target.value))
+    if (query.trim().length < 2) return setSuggestions([])
+    const timer = setTimeout(async () => {
+      try { const { data } = await api.get(`products/suggestions?q=${encodeURIComponent(query)}`); setSuggestions(data.suggestions || []) } catch { setSuggestions([]) }
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [query])
+  const search = (term = query) => {
+    const value = term.trim(); if (!value) return
+    const next = [value, ...recent.filter(x => x.toLowerCase() !== value.toLowerCase())].slice(0, 5)
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next)); setRecent(next); onClose(); navigate(`/shop?q=${encodeURIComponent(value)}`)
   }
-
-  const handleClearSearch = () => {
-    dispatch(setSearchQuery(''))
-  }
-
-  const handleProductClick = (productId) => {
-    onClose()
-    navigate(`/product/${productId}`)
-  }
-
-  const handleSuggestedClick = (term) => {
-    dispatch(setSearchQuery(term))
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="relative w-full max-w-5xl bg-atelier-beige shadow-2xl rounded-[32px] overflow-hidden">
-        {/* Header section with Close */}
-        <div className="flex justify-end p-4 border-b border-atelier-lightgray/40 bg-atelier-beige">
-          <button 
-            onClick={() => {
-              handleClearSearch()
-              onClose()
-            }}
-            className="p-2 text-atelier-dark hover:opacity-70 transition-opacity"
-            aria-label="Close search"
-          >
-            <X size={24} strokeWidth={1.5} />
-          </button>
-        </div>
-
-        {/* Main Search Area */}
-        <div className="w-full min-h-[70vh] max-h-[90vh] overflow-y-auto px-6 sm:px-8 py-8">
-        {/* Input field */}
-        <div className="relative border-b border-atelier-dark pb-4 flex flex-col sm:flex-row sm:items-center gap-4 mb-10">
-          <div className="flex items-center gap-4 w-full sm:max-w-2xl">
-            <Search size={22} className="text-atelier-gray" strokeWidth={1.5} />
-            <input
-              ref={inputRef}
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              placeholder="Search by product name, category, brand..."
-              className="w-full bg-transparent text-xl sm:text-2xl font-serif text-atelier-dark focus:outline-none placeholder-atelier-gray/40"
-            />
-          </div>
-          <div className="flex items-center justify-between w-full sm:w-auto gap-4">
-            {searchQuery && (
-              <button 
-                onClick={handleClearSearch}
-                className="text-xs font-mono tracking-widest text-atelier-gray hover:text-atelier-dark uppercase"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Dynamic results layout */}
-        {searchQuery.trim() === '' ? (
-          <div className="space-y-8 animate-fade-in">
-            <div>
-              <h4 className="font-mono text-xs tracking-[0.2em] uppercase text-atelier-gray mb-4">Suggested Categories</h4>
-              <div className="flex flex-wrap gap-3">
-                {['Fashion', 'Outerwear', 'Accessories', 'Shoes', 'Bags', 'Tops'].map((term) => (
-                  <button
-                    key={term}
-                    onClick={() => handleSuggestedClick(term)}
-                    className="px-4 py-2 border border-atelier-lightgray hover:border-atelier-dark text-xs text-atelier-dark font-mono uppercase tracking-wider transition-colors duration-200"
-                  >
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h4 className="font-mono text-xs tracking-[0.2em] uppercase text-atelier-gray mb-4">Recent Searches</h4>
-              <div className="flex flex-col space-y-2 font-serif text-lg text-atelier-dark">
-                <button onClick={() => handleSuggestedClick('Wool Coat')} className="text-left hover:text-atelier-accent transition-colors">Atelier Wool Coat</button>
-                <button onClick={() => handleSuggestedClick('Watch')} className="text-left hover:text-atelier-accent transition-colors">Noir Automatic Watch</button>
-                <button onClick={() => handleSuggestedClick('Headphones')} className="text-left hover:text-atelier-accent transition-colors">Acoustic Over-Ear Headphones</button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <h4 className="font-mono text-sm tracking-[0.2em] uppercase text-atelier-gray">
-              Results ({filteredProducts.length})
-            </h4>
-
-            {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-12">
-                {filteredProducts.map((product) => (
-                  <div 
-                    key={product.id}
-                    onClick={() => handleProductClick(product.id)}
-                    className="flex items-center space-x-4 p-4 border border-atelier-lightgray/40 hover:border-atelier-dark bg-atelier-cream/40 hover:bg-atelier-cream cursor-pointer transition-all duration-300"
-                  >
-                    {/* Image */}
-                    <div className="h-16 w-16 bg-atelier-lightgray flex-shrink-0 overflow-hidden rounded-md">
-                      <img 
-                        src={product.images[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'} 
-                        alt={product.name}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        onError={(e) => {
-                          e.target.onerror = null
-                          e.target.src = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
-                        }}
-                      />
-                    </div>
-                    {/* Metadata */}
-                    <div className="flex-grow">
-                      <span className="font-mono text-xs tracking-widest text-atelier-gray uppercase block mb-0.5">
-                        {product.category}
-                      </span>
-                      <h3 className="font-serif text-sm text-atelier-dark font-medium leading-tight">
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-xs text-atelier-dark font-light">${product.price}</span>
-                        {product.originalPrice && (
-                          <span className="text-xs text-atelier-gray line-through font-light">${product.originalPrice}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center">
-                <p className="font-serif text-lg text-atelier-gray italic">No results found for "{searchQuery}".</p>
-                <p className="text-xs text-atelier-gray/80 mt-2 font-mono uppercase tracking-wider">Try searching with other keywords.</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+  return <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm p-4 sm:p-10" onMouseDown={onClose}>
+    <div className="mx-auto max-w-3xl bg-atelier-beige shadow-2xl p-6 sm:p-8" onMouseDown={e => e.stopPropagation()}>
+      <div className="flex items-center border-b border-atelier-dark gap-3 pb-3"><Search size={20}/><input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && search()} placeholder="Search products, brands, categories and styles" className="w-full bg-transparent font-serif text-xl outline-none"/><button onClick={onClose}><X/></button></div>
+      {query && <button onClick={() => search()} className="mt-4 btn-atelier-dark text-xs">Search for “{query}”</button>}
+      {suggestions.length > 0 && <section className="mt-7"><p className="font-mono text-xs uppercase tracking-widest text-atelier-gray mb-3">Live suggestions</p>{suggestions.map(p => <button key={p._id} onClick={() => { onClose(); navigate(`/product/${p._id}`) }} className="w-full flex items-center gap-3 border-b border-atelier-lightgray/50 py-3 text-left hover:bg-atelier-cream"><img className="h-12 w-12 object-cover bg-atelier-cream" src={p.images?.[0]?.url} alt=""/><span className="flex-1"><b className="font-serif">{p.name}</b><small className="block text-atelier-gray">{p.brand || p.category}</small></span><span>${p.discountPrice || p.price}</span></button>)}</section>}
+      {!query && <div className="grid sm:grid-cols-2 gap-8 mt-8"><section><p className="flex gap-2 font-mono text-xs uppercase tracking-widest text-atelier-gray mb-3"><Clock size={14}/> Recent</p>{recent.length ? recent.map(t => <button key={t} onClick={() => search(t)} className="block py-1 hover:text-atelier-accent">{t}</button>) : <p className="text-sm text-atelier-gray">Your searches will appear here.</p>}</section><section><p className="flex gap-2 font-mono text-xs uppercase tracking-widest text-atelier-gray mb-3"><TrendingUp size={14}/> Trending</p>{trending.map(t => <button key={t} onClick={() => search(t)} className="block py-1 hover:text-atelier-accent">{t}</button>)}</section></div>}
     </div>
   </div>
-  )
 }
-
-export default SearchModal
