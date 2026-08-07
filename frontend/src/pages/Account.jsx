@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../features/auth/authSlice'
-import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight, Undo2, BellRing, Trash2, Star } from 'lucide-react'
+import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight, Undo2, BellRing, Trash2, Star, Bell } from 'lucide-react'
 import axios from '../services/axiosInstance'
+import NotificationSettings from '../components/account/NotificationSettings'
 
 const Account = () => {
   const dispatch = useDispatch()
@@ -258,6 +259,18 @@ const handleLogout = () => {
           >
             <Undo2 size={14} />
             <span>Returns</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('notifications')}
+            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-sm tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
+              activeTab === 'notifications'
+                ? 'text-atelier-dark border-b-2 md:border-b-0 md:border-l-2 border-atelier-dark font-semibold'
+                : 'text-atelier-gray hover:text-atelier-dark'
+            }`}
+          >
+            <Bell size={14} />
+            <span>Notifications</span>
           </button>
 
         </div>
@@ -572,6 +585,13 @@ const handleLogout = () => {
                   <p className="text-sm text-atelier-gray">Start a return from an order's details.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* 5. Notifications Settings tab */}
+          {activeTab === 'notifications' && (
+            <div className="animate-fade-in">
+              <NotificationSettings />
             </div>
           )}
 

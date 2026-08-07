@@ -33,8 +33,12 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import debugRoutes from "./routes/debugRoutes.js";
 import promotionRoutes from "./routes/promotionRoutes.js";
+import emailRoutes from "./routes/emailRoutes.js";
+import newsletterRoutes from "./routes/newsletterRoutes.js";
 
 import { startCouponExpiryJob } from "./jobs/couponExpiryJob.js";
+import { startEmailRetryJob } from "./jobs/emailRetryJob.js";
+import { startCartRecoveryJob } from "./jobs/cartRecoveryJob.js";
 
 import apiLimiter from "./middleware/rateLimitMiddleware.js";
 import requestLogger from "./middleware/requestLogger.js";
@@ -68,6 +72,8 @@ connectDB();
 
 // Start scheduled jobs after DB connection
 startCouponExpiryJob();
+startEmailRetryJob();
+startCartRecoveryJob();
 
 /*
 =========================================
@@ -211,6 +217,9 @@ app.use(
 
 app.use("/api/categories", categoryRoutes);
 app.use("/api/settings", settingsRoutes);
+
+app.use("/api/email", emailRoutes);
+app.use("/api/newsletter", newsletterRoutes);
 
 /*
 =========================================

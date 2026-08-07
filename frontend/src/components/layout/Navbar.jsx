@@ -18,6 +18,7 @@ import { clearWishlist, fetchWishlist } from '../../features/wishlist/wishlistSl
 import SearchModal from '../common/SearchModal'
 import CategoryMegaMenu from './CategoryMegaMenu'
 import { useCategoryMenu, getCategoryLink } from '../../utils/categories'
+import NotificationBell from '../notifications/NotificationBell'
 
 const Navbar = () => {
   const navigate = useNavigate()
@@ -42,7 +43,11 @@ const Navbar = () => {
     setIsMobileMenuOpen(false)
     setIsSearchOpen(false)
   }, [location.pathname, location.search])
-  useEffect(() => { if (isAuthenticated) dispatch(fetchWishlist()); else dispatch(clearWishlist()) }, [dispatch, isAuthenticated])
+
+  useEffect(() => {
+    if (isAuthenticated) dispatch(fetchWishlist())
+    else dispatch(clearWishlist())
+  }, [dispatch, isAuthenticated])
 
   const handleCartClick = () => {
     dispatch(toggleCart())
@@ -111,7 +116,6 @@ const Navbar = () => {
             >
               Atelier
             </Link>
-
           </div>
 
           <div className="flex items-center space-x-3 sm:space-x-5">
@@ -166,8 +170,15 @@ const Navbar = () => {
               aria-label="Wishlist"
             >
               <Heart size={20} strokeWidth={1.5} />
-              {wishlistCount > 0 && <span className="absolute top-0.5 right-0.5 bg-atelier-dark text-atelier-beige text-xs font-mono min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-bold">{wishlistCount > 99 ? '99+' : wishlistCount}</span>}
+              {wishlistCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 bg-atelier-dark text-atelier-beige text-xs font-mono min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center font-bold">
+                  {wishlistCount > 99 ? '99+' : wishlistCount}
+                </span>
+              )}
             </Link>
+
+            {/* Notification Bell — authenticated users only */}
+            <NotificationBell />
 
             <button
               onClick={handleCartClick}
@@ -272,7 +283,12 @@ const Navbar = () => {
                   <Link to="/account" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
                     My Account
                   </Link>
-                  <Link to="/wishlist" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">Wishlist ({wishlistCount})</Link>
+                  <Link to="/notifications" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
+                    Notifications
+                  </Link>
+                  <Link to="/wishlist" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
+                    Wishlist ({wishlistCount})
+                  </Link>
                   {user?.role !== 'admin' && (
                     <Link to="/orders" onClick={closeMenus} className="text-atelier-dark border-b border-atelier-lightgray/40 pb-3">
                       My Orders

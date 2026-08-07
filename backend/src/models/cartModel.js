@@ -27,7 +27,20 @@ const cartSchema = new mongoose.Schema(
         totalPrice: {
             type: Number,
             default: 0
-        }
+        },
+
+        // Cart recovery tracking — updated whenever cart is modified
+        lastActivityAt: {
+            type: Date,
+            default: Date.now,
+        },
+
+        // Tracks which recovery reminder tiers have been sent
+        reminderSentAt: {
+            twoHours: { type: Date, default: null },
+            twentyFourHours: { type: Date, default: null },
+            threeDays: { type: Date, default: null },
+        },
     },
     { timestamps: true }
 );
