@@ -176,7 +176,7 @@ emailLogSchema.index({ "recipient.email": 1, createdAt: -1 });
 emailLogSchema.index({ status: 1, createdAt: -1 });
 emailLogSchema.index({ template: 1, createdAt: -1 });
 emailLogSchema.index({ campaign: 1 });
-emailLogSchema.index({ openTrackingId: 1 }, { sparse: true });
+
 emailLogSchema.index({ nextRetryAt: 1 }, { sparse: true });
 
 // TTL index for old logs (auto-delete after 2 years)
