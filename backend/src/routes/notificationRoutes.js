@@ -1,34 +1,35 @@
 import express from "express";
-
+import { protect } from "../middleware/authMiddleware.js";
 import {
     getNotifications,
     getUnreadCount,
-    markNotificationRead,
-    markAllNotificationsRead,
+    markAsRead,
+    markAllAsRead,
     deleteNotification,
     clearReadNotifications,
+    getPreferences,
+    updatePreferences,
+    unsubscribeAll,
 } from "../controllers/notificationController.js";
-
-import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// GET all notifications (with optional ?type= filter)
-router.get("/", protect, getNotifications);
+// All routes require authentication
+router.use(protect);
 
-// GET unread count (lightweight endpoint for polling)
-router.get("/unread-count", protect, getUnreadCount);
+// Notification CRUD
+router.get("/", getNotifications);
+router.get("/unread-count", getUnreadCount);
+router.put("/:id/read", markAsRead);
+router.put("/mark-all-read", markAllAsRead);
+router.delete("/:id", deleteNotification);
+router.delete("/clear-read", clearReadNotifications);
 
-// PUT mark single as read
-router.put("/:id/read", protect, markNotificationRead);
+// Notification preferences
+router.get("/settings", getPreferences);
+router.put("/settings", updatePreferences);
 
-// PUT mark all as read
-router.put("/mark-all-read", protect, markAllNotificationsRead);
-
-// DELETE single notification
-router.delete("/:id", protect, deleteNotification);
-
-// DELETE all read notifications
-router.delete("/clear-read", protect, clearReadNotifications);
+// Unsubscribe (public, via token)
+router.get("/unsubscribe/:token", unsubscribeAll);
 
 export default router;

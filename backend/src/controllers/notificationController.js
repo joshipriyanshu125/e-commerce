@@ -1,38 +1,60 @@
 import Notification from "../models/notificationModel.js";
+import NotificationPreference from "../models/notificationPreferenceModel.js";
+import { getIO } from "../config/socket.js";
 
 /*
 ==================================================
-GET NOTIFICATIONS (with optional filter by type)
+GET USER NOTIFICATIONS
 ==================================================
 */
 export const getNotifications = async (req, res) => {
     try {
-        const filter = { user: req.user._id };
+        const { page = 1, limit = 20, type, read } = req.query;
+        const filter = {
+            user: req.user._id,
+            deletedAt: null,
+        };
 
-        // Optional type filter from query string
-        if (req.query.type && req.query.type !== "all") {
-            filter.type = req.query.type;
-        }
+        if (type && type !== "all") filter.type = type;
+        if (read === "true") filter.read = true;
+        if (read === "false") filter.read = false;
 
+        const skip = (parseInt(page) - 1) * parseInt(limit);
         const notifications = await Notification.find(filter)
             .sort({ createdAt: -1 })
-            .limit(100);
+            .skip(skip)
+            .limit(parseInt(limit));
 
-        res.status(200).json({
+        const total = await Notification.countDocuments(filter);
+        const unreadCount = await Notification.countDocuments({
+            user: req.user._id,
+            read: false,
+            deletedAt: null,
+        });
+
+        res.json({
             success: true,
             notifications,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                pages: Math.ceil(total / parseInt(limit)),
+            },
+            unreadCount,
         });
     } catch (error) {
+        console.error("Get notifications error:", error.message);
         res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to fetch notifications",
         });
     }
 };
 
 /*
 ==================================================
-GET UNREAD COUNT
+GET UNREAD NOTIFICATION COUNT
 ==================================================
 */
 export const getUnreadCount = async (req, res) => {
@@ -40,28 +62,37 @@ export const getUnreadCount = async (req, res) => {
         const count = await Notification.countDocuments({
             user: req.user._id,
             read: false,
+            deletedAt: null,
         });
 
-        res.status(200).json({
+        res.json({
             success: true,
-            unreadCount: count,
+            count,
         });
     } catch (error) {
+        console.error("Get unread count error:", error.message);
         res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to fetch unread count",
         });
     }
 };
 
 /*
 ==================================================
-MARK SINGLE NOTIFICATION AS READ
+MARK NOTIFICATION AS READ
 ==================================================
 */
-export const markNotificationRead = async (req, res) => {
+export const markAsRead = async (req, res) => {
     try {
-        const notification = await Notification.findById(req.params.id);
+        const notification = await Notification.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                user: req.user._id,
+            },
+            { read: true, readAt: new Date() },
+            { new: true }
+        );
 
         if (!notification) {
             return res.status(404).json({
@@ -70,25 +101,30 @@ export const markNotificationRead = async (req, res) => {
             });
         }
 
-        // Only the owner can mark it
-        if (notification.user.toString() !== req.user._id.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: "Not authorized",
-            });
+        // Emit socket event to update unread count
+        try {
+            const io = getIO();
+            if (io) {
+                const unreadCount = await Notification.countDocuments({
+                    user: req.user._id,
+                    read: false,
+                    deletedAt: null,
+                });
+                io.to(req.user._id.toString()).emit("unreadCount", unreadCount);
+            }
+        } catch (socketError) {
+            console.error("Socket emit error:", socketError.message);
         }
 
-        notification.read = true;
-        await notification.save();
-
-        res.status(200).json({
+        res.json({
             success: true,
             notification,
         });
     } catch (error) {
+        console.error("Mark as read error:", error.message);
         res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to mark notification as read",
         });
     }
 };
@@ -98,33 +134,57 @@ export const markNotificationRead = async (req, res) => {
 MARK ALL NOTIFICATIONS AS READ
 ==================================================
 */
-export const markAllNotificationsRead = async (req, res) => {
+export const markAllAsRead = async (req, res) => {
     try {
-        await Notification.updateMany(
-            { user: req.user._id, read: false },
-            { $set: { read: true } }
+        const result = await Notification.updateMany(
+            {
+                user: req.user._id,
+                read: false,
+                deletedAt: null,
+            },
+            { read: true, readAt: new Date() }
         );
 
-        res.status(200).json({
+        // Emit socket event
+        try {
+            const io = getIO();
+            if (io) {
+                io.to(req.user._id.toString()).emit("unreadCount", 0);
+                io.to(req.user._id.toString()).emit("notificationsUpdated");
+            }
+        } catch (socketError) {
+            console.error("Socket emit error:", socketError.message);
+        }
+
+        res.json({
             success: true,
             message: "All notifications marked as read",
+            modifiedCount: result.modifiedCount,
         });
     } catch (error) {
+        console.error("Mark all as read error:", error.message);
         res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to mark all notifications as read",
         });
     }
 };
 
 /*
 ==================================================
-DELETE A SINGLE NOTIFICATION
+DELETE NOTIFICATION
 ==================================================
 */
 export const deleteNotification = async (req, res) => {
     try {
-        const notification = await Notification.findById(req.params.id);
+        const notification = await Notification.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                user: req.user._id,
+            },
+            { deletedAt: new Date() },
+            { new: true }
+        );
 
         if (!notification) {
             return res.status(404).json({
@@ -133,47 +193,176 @@ export const deleteNotification = async (req, res) => {
             });
         }
 
-        if (notification.user.toString() !== req.user._id.toString()) {
-            return res.status(403).json({
-                success: false,
-                message: "Not authorized",
-            });
-        }
-
-        await notification.deleteOne();
-
-        res.status(200).json({
+        res.json({
             success: true,
             message: "Notification deleted",
         });
     } catch (error) {
+        console.error("Delete notification error:", error.message);
         res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to delete notification",
         });
     }
 };
 
 /*
 ==================================================
-DELETE ALL READ NOTIFICATIONS (CLEAR)
+CLEAR ALL READ NOTIFICATIONS
 ==================================================
 */
 export const clearReadNotifications = async (req, res) => {
     try {
-        await Notification.deleteMany({
-            user: req.user._id,
-            read: true,
-        });
+        const result = await Notification.updateMany(
+            {
+                user: req.user._id,
+                read: true,
+                deletedAt: null,
+            },
+            { deletedAt: new Date() }
+        );
 
-        res.status(200).json({
+        res.json({
             success: true,
-            message: "All read notifications cleared",
+            message: "Read notifications cleared",
+            deletedCount: result.modifiedCount,
         });
     } catch (error) {
+        console.error("Clear read notifications error:", error.message);
         res.status(500).json({
             success: false,
-            message: error.message,
+            message: "Failed to clear read notifications",
+        });
+    }
+};
+
+/*
+==================================================
+GET NOTIFICATION PREFERENCES
+==================================================
+*/
+export const getPreferences = async (req, res) => {
+    try {
+        const preferences = await NotificationPreference.getOrCreate(
+            req.user._id
+        );
+
+        res.json({
+            success: true,
+            preferences,
+        });
+    } catch (error) {
+        console.error("Get preferences error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch notification preferences",
+        });
+    }
+};
+
+/*
+==================================================
+UPDATE NOTIFICATION PREFERENCES
+==================================================
+*/
+export const updatePreferences = async (req, res) => {
+    try {
+        const { email, inApp, push, sms, allEmailsOptedOut, marketingOptedOut } =
+            req.body;
+
+        let preferences = await NotificationPreference.getOrCreate(
+            req.user._id
+        );
+
+        // Update email preferences
+        if (email) {
+            Object.keys(email).forEach((key) => {
+                if (preferences.email[key] !== undefined) {
+                    preferences.email[key] = email[key];
+                }
+            });
+        }
+
+        // Update in-app preferences
+        if (inApp) {
+            Object.keys(inApp).forEach((key) => {
+                if (preferences.inApp[key] !== undefined) {
+                    preferences.inApp[key] = inApp[key];
+                }
+            });
+        }
+
+        // Update push preferences
+        if (push) {
+            Object.keys(push).forEach((key) => {
+                if (preferences.push[key] !== undefined) {
+                    preferences.push[key] = push[key];
+                }
+            });
+        }
+
+        // Update SMS preferences
+        if (sms) {
+            Object.keys(sms).forEach((key) => {
+                if (preferences.sms[key] !== undefined) {
+                    preferences.sms[key] = sms[key];
+                }
+            });
+        }
+
+        // Global opt-outs
+        if (allEmailsOptedOut !== undefined)
+            preferences.allEmailsOptedOut = allEmailsOptedOut;
+        if (marketingOptedOut !== undefined)
+            preferences.marketingOptedOut = marketingOptedOut;
+
+        await preferences.save();
+
+        res.json({
+            success: true,
+            message: "Notification preferences updated",
+            preferences,
+        });
+    } catch (error) {
+        console.error("Update preferences error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Failed to update notification preferences",
+        });
+    }
+};
+
+/*
+==================================================
+UNSUBSCRIBE ALL EMAILS
+==================================================
+*/
+export const unsubscribeAll = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const preferences = await NotificationPreference.findOne({
+            unsubscribeToken: token,
+        });
+
+        if (!preferences) {
+            return res.status(404).json({
+                success: false,
+                message: "Invalid unsubscribe token",
+            });
+        }
+
+        preferences.allEmailsOptedOut = true;
+        await preferences.save();
+
+        res.json({
+            success: true,
+            message: "You have been unsubscribed from all emails",
+        });
+    } catch (error) {
+        console.error("Unsubscribe error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Failed to unsubscribe",
         });
     }
 };
