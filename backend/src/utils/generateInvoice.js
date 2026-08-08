@@ -16,7 +16,9 @@ const getImageBuffer = async (url) => {
     }
 };
 
-const generateInvoice = async (invoice, filePath) => {
+const generateInvoice = async (invoice, filePath, options = {}) => {
+    const { isRefundDoc = false, refundedAt = null } = options;
+
     // 1. Fetch store settings for company details
     let settings = await Settings.findOne();
     if (!settings) {
@@ -45,7 +47,7 @@ const generateInvoice = async (invoice, filePath) => {
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
-        // Header section (Store Details on Left, Invoice Details on Right)
+        // Header section (Store Details on Left, Invoice/Refund Details on Right)
         doc.font("Helvetica-Bold").fontSize(18).fillColor("#1c1c1c").text(settings.storeInfo.name, 40, 40);
         doc.font("Helvetica").fontSize(9).fillColor("#555555")
            .text(settings.storeInfo.address, 40, 60, { width: 230 })
@@ -56,15 +58,29 @@ const generateInvoice = async (invoice, filePath) => {
             doc.text(`${settings.tax.taxType}IN: ${settings.tax.taxId}`, 40, 109);
         }
 
-        // Invoice metadata on the right
-        doc.font("Helvetica-Bold").fontSize(20).fillColor("#1c1c1c").text("INVOICE", 380, 40, { align: "right" });
-        doc.font("Helvetica-Bold").fontSize(9).fillColor("#1c1c1c").text("Invoice Details", 380, 65, { align: "right" });
+        // Title: INVOICE or REFUND DOCUMENT
+        const docTitle = isRefundDoc ? "REFUND DOCUMENT" : "INVOICE";
+        const titleColor = isRefundDoc ? "#7c3aed" : "#1c1c1c";
+        doc.font("Helvetica-Bold").fontSize(isRefundDoc ? 16 : 20).fillColor(titleColor).text(docTitle, 380, 40, { align: "right" });
+
+        if (isRefundDoc) {
+            // Show refund stamp
+            doc.font("Helvetica-Bold").fontSize(9).fillColor("#7c3aed").text("REFUNDED", 380, 65, { align: "right" });
+        }
+
+        doc.font("Helvetica-Bold").fontSize(9).fillColor("#1c1c1c").text(isRefundDoc ? "Refund Details" : "Invoice Details", 380, isRefundDoc ? 80 : 65, { align: "right" });
         doc.font("Helvetica").fontSize(9).fillColor("#555555")
-           .text(`Invoice No: ${invoice.invoiceNumber}`, 380, 80, { align: "right" })
-           .text(`Order ID: #${order._id.toString().slice(-8).toUpperCase()}`, 380, 92, { align: "right" })
-           .text(`Date: ${new Date(invoice.createdAt || Date.now()).toLocaleDateString()}`, 380, 104, { align: "right" })
-           .text(`Payment Status: ${order.paymentInfo?.paymentStatus || "Pending"}`, 380, 116, { align: "right" })
-           .text(`Payment Method: ${order.paymentInfo?.method || "COD"}`, 380, 128, { align: "right" });
+           .text(`Invoice No: ${invoice.invoiceNumber}`, 380, isRefundDoc ? 95 : 80, { align: "right" })
+           .text(`Order ID: #${order._id.toString().slice(-8).toUpperCase()}`, 380, isRefundDoc ? 107 : 92, { align: "right" })
+           .text(`Date: ${new Date(invoice.createdAt || Date.now()).toLocaleDateString()}`, 380, isRefundDoc ? 119 : 104, { align: "right" })
+           .text(`Payment Status: ${order.paymentInfo?.paymentStatus || "Pending"}`, 380, isRefundDoc ? 131 : 116, { align: "right" })
+           .text(`Payment Method: ${order.paymentInfo?.method || "COD"}`, 380, isRefundDoc ? 143 : 128, { align: "right" });
+
+        if (isRefundDoc && refundedAt) {
+            doc.font("Helvetica-Bold").fontSize(9).fillColor("#7c3aed")
+               .text(`Refunded On: ${new Date(refundedAt).toLocaleDateString()}`, 380, 155, { align: "right" });
+        }
+
 
         // Divider
         doc.moveTo(40, 150).lineTo(555, 150).strokeColor("#e2e8f0").lineWidth(1).stroke();
@@ -227,8 +243,12 @@ const generateInvoice = async (invoice, filePath) => {
         y += 30;
 
         // Footer Message
+        const footerMsg = isRefundDoc
+            ? "This is an official refund document. The refund has been processed for your order. Please retain this for your records."
+            : "Thank you for shopping with us! If you have any billing inquiries, please contact our support desk.";
         doc.font("Helvetica-Oblique").fontSize(8).fillColor("#718096")
-           .text("Thank you for shopping with us! If you have any billing inquiries, please contact our support desk.", 40, y, { align: "center", width: 515 });
+           .text(footerMsg, 40, y, { align: "center", width: 515 });
+
 
         doc.end();
 

@@ -19,6 +19,8 @@ const getInvoicePath = (invoiceNumber) => {
 CREATE OR GET INVOICE (Automatic / Explicit)
 ========================================
 */
+const INVOICE_ALLOWED_STATUSES = ["Shipped", "Out for Delivery", "Delivered", "Refunded"];
+
 export const createInvoice = asyncHandler(async (req, res) => {
     const { orderId } = req.body;
 
@@ -35,6 +37,16 @@ export const createInvoice = asyncHandler(async (req, res) => {
     // Authorize: User must own the order, or be an admin
     if (req.user._id.toString() !== order.user._id.toString() && !req.user.isAdmin && req.user.role !== "admin") {
         return res.status(403).json({ success: false, message: "Unauthorized to access this order invoice" });
+    }
+
+    // Block invoice access for non-shipped/cancelled orders (unless admin)
+    if (req.user.role !== "admin" && !req.user.isAdmin && !INVOICE_ALLOWED_STATUSES.includes(order.orderStatus)) {
+        return res.status(403).json({ success: false, message: "Invoice is only available after the order has been shipped." });
+    }
+
+    // Block cancelled orders
+    if (req.user.role !== "admin" && !req.user.isAdmin && order.orderStatus === "Cancelled") {
+        return res.status(403).json({ success: false, message: "Invoice is not available for cancelled orders." });
     }
 
     // Check if invoice already exists for this order
@@ -92,6 +104,12 @@ export const downloadInvoice = asyncHandler(async (req, res) => {
         return res.status(403).json({ success: false, message: "Unauthorized to download this invoice" });
     }
 
+    // Block for ineligible statuses (non-admin)
+    const orderStatus = invoice.order?.orderStatus;
+    if (req.user.role !== "admin" && !req.user.isAdmin && !INVOICE_ALLOWED_STATUSES.includes(orderStatus)) {
+        return res.status(403).json({ success: false, message: "Invoice download is only available after the order has been shipped." });
+    }
+
     const invoicePath = getInvoicePath(invoice.invoiceNumber);
 
     // Regenerate PDF if it doesn't exist on disk
@@ -123,10 +141,61 @@ export const getInvoiceByOrderId = asyncHandler(async (req, res) => {
         return res.status(403).json({ success: false, message: "Unauthorized to view this invoice" });
     }
 
+    // Block for ineligible statuses (non-admin)
+    const orderStatus = invoice.order?.orderStatus;
+    if (req.user.role !== "admin" && !req.user.isAdmin && !INVOICE_ALLOWED_STATUSES.includes(orderStatus)) {
+        return res.status(403).json({ success: false, message: "Invoice is only accessible after the order has been shipped." });
+    }
+
     res.status(200).json({
         success: true,
         invoice
     });
+});
+
+/*
+========================================
+DOWNLOAD REFUND DOCUMENT (user: refunded orders only)
+========================================
+*/
+export const downloadRefundDoc = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId).populate("user", "name email");
+
+    if (!order) {
+        return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    // Authorization
+    if (req.user._id.toString() !== order.user._id.toString() && !req.user.isAdmin && req.user.role !== "admin") {
+        return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    // Only for refunded orders
+    if (order.orderStatus !== "Refunded") {
+        return res.status(403).json({ success: false, message: "Refund document is only available for refunded orders." });
+    }
+
+    const invoice = await Invoice.findOne({ order: orderId })
+        .populate("user", "name email")
+        .populate("order");
+
+    if (!invoice) {
+        return res.status(404).json({ success: false, message: "Invoice not found for this order" });
+    }
+
+    // Generate a refund document (reuse generateInvoice with a refund flag)
+    const refundDocNumber = `REFUND-${invoice.invoiceNumber}`;
+    const invoicesDir = path.join(process.cwd(), "src", "invoices");
+    if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
+    const refundPath = path.join(invoicesDir, `${refundDocNumber}.pdf`);
+
+    if (!fs.existsSync(refundPath)) {
+        await generateInvoice(invoice, refundPath, { isRefundDoc: true, refundedAt: order.refundedAt });
+    }
+
+    res.download(refundPath, `${refundDocNumber}.pdf`);
 });
 
 /*
