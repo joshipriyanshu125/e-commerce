@@ -135,7 +135,7 @@ const AdminNotificationsPanel = () => {
     try {
       if (!silent) setLoading(true)
       setError(null)
-      const res = await api.get('notifications')
+      const res = await api.get('notifications', { params: { view: 'admin' } })
       if (res.data.success) {
         setNotifications(res.data.notifications || [])
       }

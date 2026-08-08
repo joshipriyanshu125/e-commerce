@@ -7,13 +7,32 @@ import { getIO } from "../config/socket.js";
 GET USER NOTIFICATIONS
 ==================================================
 */
+const ADMIN_TYPES = [
+    "new_order",
+    "new_user",
+    "payment_failed",
+    "return_requested",
+    "refund_requested",
+    "low_inventory",
+    "out_of_stock",
+    "coupon_expired",
+    "negative_review",
+    "admin"
+];
+
 export const getNotifications = async (req, res) => {
     try {
-        const { page = 1, limit = 20, type, read } = req.query;
+        const { page = 1, limit = 20, type, read, view } = req.query;
         const filter = {
             user: req.user._id,
             deletedAt: null,
         };
+
+        if (view === "admin") {
+            filter.type = { $in: ADMIN_TYPES };
+        } else if (view === "user") {
+            filter.type = { $nin: ADMIN_TYPES };
+        }
 
         if (type && type !== "all") filter.type = type;
         if (read === "true") filter.read = true;
@@ -26,11 +45,18 @@ export const getNotifications = async (req, res) => {
             .limit(parseInt(limit));
 
         const total = await Notification.countDocuments(filter);
-        const unreadCount = await Notification.countDocuments({
+        
+        const unreadFilter = {
             user: req.user._id,
             read: false,
             deletedAt: null,
-        });
+        };
+        if (view === "admin") {
+            unreadFilter.type = { $in: ADMIN_TYPES };
+        } else if (view === "user") {
+            unreadFilter.type = { $nin: ADMIN_TYPES };
+        }
+        const unreadCount = await Notification.countDocuments(unreadFilter);
 
         res.json({
             success: true,
@@ -59,11 +85,20 @@ GET UNREAD NOTIFICATION COUNT
 */
 export const getUnreadCount = async (req, res) => {
     try {
-        const count = await Notification.countDocuments({
+        const { view } = req.query;
+        const filter = {
             user: req.user._id,
             read: false,
             deletedAt: null,
-        });
+        };
+
+        if (view === "admin") {
+            filter.type = { $in: ADMIN_TYPES };
+        } else if (view === "user") {
+            filter.type = { $nin: ADMIN_TYPES };
+        }
+
+        const count = await Notification.countDocuments(filter);
 
         res.json({
             success: true,
@@ -105,12 +140,20 @@ export const markAsRead = async (req, res) => {
         try {
             const io = getIO();
             if (io) {
-                const unreadCount = await Notification.countDocuments({
+                const unreadCountUser = await Notification.countDocuments({
                     user: req.user._id,
                     read: false,
                     deletedAt: null,
+                    type: { $nin: ADMIN_TYPES }
                 });
-                io.to(req.user._id.toString()).emit("unreadCount", unreadCount);
+                const unreadCountAdmin = await Notification.countDocuments({
+                    user: req.user._id,
+                    read: false,
+                    deletedAt: null,
+                    type: { $in: ADMIN_TYPES }
+                });
+                io.to(req.user._id.toString()).emit("unreadCountUser", unreadCountUser);
+                io.to(req.user._id.toString()).emit("unreadCountAdmin", unreadCountAdmin);
             }
         } catch (socketError) {
             console.error("Socket emit error:", socketError.message);
@@ -150,6 +193,8 @@ export const markAllAsRead = async (req, res) => {
             const io = getIO();
             if (io) {
                 io.to(req.user._id.toString()).emit("unreadCount", 0);
+                io.to(req.user._id.toString()).emit("unreadCountUser", 0);
+                io.to(req.user._id.toString()).emit("unreadCountAdmin", 0);
                 io.to(req.user._id.toString()).emit("notificationsUpdated");
             }
         } catch (socketError) {

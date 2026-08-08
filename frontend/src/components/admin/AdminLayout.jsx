@@ -167,7 +167,7 @@ const AdminLayout = ({ children, title }) => {
   /* ── Fetch ── */
   const fetchNotifications = useCallback(async () => {
     try {
-      const res = await api.get('notifications')
+      const res = await api.get('notifications', { params: { view: 'admin' } })
       if (res.data.success) {
         setNotifications(res.data.notifications || [])
       }

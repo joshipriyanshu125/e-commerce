@@ -91,8 +91,8 @@ const NotificationBell = () => {
   useEffect(() => {
     if (!isAuthenticated || !user) return
     if (!initialized) {
-      dispatch(fetchNotifications({ page: 1, limit: 15 }))
-      dispatch(fetchUnreadCount())
+      dispatch(fetchNotifications({ page: 1, limit: 15, view: 'user' }))
+      dispatch(fetchUnreadCount({ view: 'user' }))
       setInitialized(true)
     }
   }, [isAuthenticated, user, initialized, dispatch])
@@ -111,7 +111,10 @@ const NotificationBell = () => {
     sock.emit('join', user._id)
 
     const handleNew = (notification) => {
-      dispatch(addNotification(notification))
+      const adminTypes = ["new_order", "new_user", "payment_failed", "return_requested", "refund_requested", "low_inventory", "out_of_stock", "coupon_expired", "negative_review", "admin"]
+      if (!adminTypes.includes(notification.type)) {
+        dispatch(addNotification(notification))
+      }
     }
 
     const handleCount = (count) => {
@@ -119,11 +122,11 @@ const NotificationBell = () => {
     }
 
     sock.on('newNotification', handleNew)
-    sock.on('unreadCount', handleCount)
+    sock.on('unreadCountUser', handleCount)
 
     return () => {
       sock.off('newNotification', handleNew)
-      sock.off('unreadCount', handleCount)
+      sock.off('unreadCountUser', handleCount)
     }
   }, [isAuthenticated, user?._id, dispatch])
 

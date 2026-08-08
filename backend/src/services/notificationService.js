@@ -63,13 +63,22 @@ const sendNotification = async ({
             if (io) {
                 io.to(userId.toString()).emit("newNotification", notification);
 
-                // Get updated unread count
-                const unreadCount = await Notification.countDocuments({
+                // Get updated unread counts
+                const adminTypes = ["new_order", "new_user", "payment_failed", "return_requested", "refund_requested", "low_inventory", "out_of_stock", "coupon_expired", "negative_review", "admin"];
+                const unreadCountUser = await Notification.countDocuments({
                     user: userId,
                     read: false,
                     deletedAt: null,
+                    type: { $nin: adminTypes }
                 });
-                io.to(userId.toString()).emit("unreadCount", unreadCount);
+                const unreadCountAdmin = await Notification.countDocuments({
+                    user: userId,
+                    read: false,
+                    deletedAt: null,
+                    type: { $in: adminTypes }
+                });
+                io.to(userId.toString()).emit("unreadCountUser", unreadCountUser);
+                io.to(userId.toString()).emit("unreadCountAdmin", unreadCountAdmin);
             }
         } catch (socketError) {
             console.error("Socket Notification Error:", socketError.message);

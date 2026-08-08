@@ -9,9 +9,9 @@ ASYNC THUNKS
 
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetchAll',
-  async ({ page = 1, limit = 20, filter = 'all' } = {}, { rejectWithValue }) => {
+  async ({ page = 1, limit = 20, filter = 'all', view = 'user' } = {}, { rejectWithValue }) => {
     try {
-      const params = { page, limit }
+      const params = { page, limit, view }
       if (filter !== 'all') params.type = filter
       const res = await axios.get('notifications', { params })
       return res.data
@@ -23,9 +23,9 @@ export const fetchNotifications = createAsyncThunk(
 
 export const fetchUnreadCount = createAsyncThunk(
   'notifications/fetchUnreadCount',
-  async (_, { rejectWithValue }) => {
+  async ({ view = 'user' } = {}, { rejectWithValue }) => {
     try {
-      const res = await axios.get('notifications/unread-count')
+      const res = await axios.get('notifications/unread-count', { params: { view } })
       return res.data.count ?? res.data.unreadCount ?? 0
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || 'Failed to fetch count')
