@@ -77,17 +77,40 @@ const OrderDetails = () => {
       const res = await api.post("invoice", { orderId: id })
       if (res.data && res.data.invoice) {
         const invoiceId = res.data.invoice._id || res.data.invoice.id
-        const downloadUrl = `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}/api/invoice/download?id=${encodeURIComponent(invoiceId)}`
+        const response = await api.get(`invoice/download?id=${encodeURIComponent(invoiceId)}`, {
+          responseType: 'blob'
+        })
+        const blob = new Blob([response.data], { type: 'application/pdf' })
+        const url = window.URL.createObjectURL(blob)
         const link = document.createElement("a")
-        link.href = downloadUrl
-        link.setAttribute("download", `INV-${id}.pdf`)
+        link.href = url
+        link.setAttribute("download", `Invoice-${id.slice(-8).toUpperCase()}.pdf`)
         document.body.appendChild(link)
         link.click()
-        document.body.removeChild(link)
+        link.remove()
+        window.URL.revokeObjectURL(url)
       }
     } catch (err) {
       console.error(err)
       alert("Failed to download invoice")
+    }
+  }
+
+  const handleDownloadRefundDoc = async () => {
+    try {
+      const response = await api.get(`invoice/refund-doc/${id}`, { responseType: 'blob' })
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.setAttribute("download", `RefundDoc-${id.slice(-8).toUpperCase()}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+      alert("Failed to download refund document")
     }
   }
 
@@ -119,6 +142,11 @@ const OrderDetails = () => {
   const items = selectedOrder.orderItems || selectedOrder.items || []
   const canCancel = ["Pending", "Confirmed"].includes(selectedOrder.orderStatus)
   const canReturn = selectedOrder.orderStatus === "Delivered" && !selectedOrder.returnInfo?.status
+
+  // Invoice is only accessible once the order has been shipped (not for pending/confirmed/packed/cancelled)
+  const INVOICE_ALLOWED_STATUSES = ["Shipped", "Out for Delivery", "Delivered", "Refunded"]
+  const canViewInvoice = INVOICE_ALLOWED_STATUSES.includes(selectedOrder.orderStatus)
+  const isRefunded = selectedOrder.orderStatus === "Refunded"
 
   return (
     <div className="min-h-screen bg-atelier-beige text-atelier-dark py-12 px-4 relative overflow-hidden font-sans">
@@ -158,19 +186,36 @@ const OrderDetails = () => {
             </p>
           </div>
           
-          <div className="flex gap-2">
-            <button
-              onClick={() => navigate(`/invoice/${id}`)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-atelier-cream border border-atelier-lightgray text-atelier-gray hover:text-atelier-dark hover:border-atelier-dark text-[10px] font-mono uppercase tracking-wider transition-all"
-            >
-              <Receipt size={13} /> View Invoice
-            </button>
-            <button
-              onClick={handleDownloadInvoice}
-              className="flex items-center gap-2 px-4 py-2.5 bg-atelier-cream border border-atelier-lightgray text-atelier-gray hover:text-atelier-dark hover:border-atelier-dark text-[10px] font-mono uppercase tracking-wider transition-all"
-            >
-              <Download size={13} /> Download Invoice
-            </button>
+          <div className="flex gap-2 flex-wrap">
+            {canViewInvoice ? (
+              <>
+                <button
+                  onClick={() => navigate(`/invoice/${id}`)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-atelier-cream border border-atelier-lightgray text-atelier-gray hover:text-atelier-dark hover:border-atelier-dark text-[10px] font-mono uppercase tracking-wider transition-all"
+                >
+                  <Receipt size={13} /> View Invoice
+                </button>
+                <button
+                  onClick={handleDownloadInvoice}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-atelier-cream border border-atelier-lightgray text-atelier-gray hover:text-atelier-dark hover:border-atelier-dark text-[10px] font-mono uppercase tracking-wider transition-all"
+                >
+                  <Download size={13} /> Download Invoice
+                </button>
+                {isRefunded && (
+                  <button
+                    onClick={handleDownloadRefundDoc}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-violet-50 border border-violet-200 text-violet-700 hover:bg-violet-100 text-[10px] font-mono uppercase tracking-wider transition-all"
+                  >
+                    <Download size={13} /> Refund Document
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2.5 border border-atelier-lightgray/50 text-atelier-gray/50 text-[10px] font-mono uppercase tracking-wider cursor-not-allowed select-none bg-atelier-lightgray/10">
+                <Receipt size={13} />
+                Invoice available after shipment
+              </div>
+            )}
             {canCancel && (
               <button
                 onClick={() => setShowCancelModal(true)}
