@@ -511,7 +511,21 @@ const AdminOrdersManager = () => {
                       onChange={(e) => handleStatusChange(e.target.value)}
                       className="w-full bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-sm text-white/90 focus:outline-none"
                     >
-                      {ALL_STATUSES.map(s => (
+                      {/* Current status — always shown, disabled */}
+                      <option value={selectedOrder.orderStatus} className="bg-black" disabled>
+                        {selectedOrder.orderStatus} (current)
+                      </option>
+                      {/* Valid next transitions only */}
+                      {({
+                        Pending:            ['Confirmed', 'Cancelled'],
+                        Confirmed:          ['Packed', 'Cancelled'],
+                        Packed:             ['Shipped', 'Cancelled'],
+                        Shipped:            ['Out for Delivery'],
+                        'Out for Delivery': ['Delivered'],
+                        Delivered:          ['Refunded'],
+                        Cancelled:          [],
+                        Refunded:           [],
+                      }[selectedOrder.orderStatus] || []).map(s => (
                         <option key={s} value={s} className="bg-black">{s}</option>
                       ))}
                     </select>
@@ -532,10 +546,11 @@ const AdminOrdersManager = () => {
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-mono text-white/40 block mb-1">Tracking Number</label>
+                        <label className="text-[10px] font-mono text-white/40 block mb-1">Tracking Number <span className="text-white/25">(max 25 chars)</span></label>
                         <input
                           type="text"
                           required
+                          maxLength={25}
                           value={trackingNumber}
                           onChange={(e) => setTrackingNumber(e.target.value)}
                           className="w-full bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-xs text-white"
