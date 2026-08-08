@@ -112,12 +112,28 @@ export const downloadInvoice = asyncHandler(async (req, res) => {
 
     const invoicePath = getInvoicePath(invoice.invoiceNumber);
 
-    // Regenerate PDF if it doesn't exist on disk
-    if (!fs.existsSync(invoicePath)) {
+    // Always regenerate to ensure the file is fresh / exists
+    try {
         await generateInvoice(invoice, invoicePath);
+    } catch (genErr) {
+        console.error("PDF generation failed:", genErr.message);
+        return res.status(500).json({ success: false, message: "Failed to generate invoice PDF" });
     }
 
-    res.download(invoicePath, `${invoice.invoiceNumber}.pdf`);
+    if (!fs.existsSync(invoicePath)) {
+        return res.status(500).json({ success: false, message: "Invoice PDF could not be created" });
+    }
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${invoice.invoiceNumber}.pdf"`);
+    res.sendFile(invoicePath, (err) => {
+        if (err) {
+            console.error("sendFile error:", err.message);
+            if (!res.headersSent) {
+                res.status(500).json({ success: false, message: "Error sending invoice file" });
+            }
+        }
+    });
 });
 
 /*
@@ -192,10 +208,28 @@ export const downloadRefundDoc = asyncHandler(async (req, res) => {
     const refundPath = path.join(invoicesDir, `${refundDocNumber}.pdf`);
 
     if (!fs.existsSync(refundPath)) {
-        await generateInvoice(invoice, refundPath, { isRefundDoc: true, refundedAt: order.refundedAt });
+        try {
+            await generateInvoice(invoice, refundPath, { isRefundDoc: true, refundedAt: order.refundedAt });
+        } catch (genErr) {
+            console.error("Refund PDF generation failed:", genErr.message);
+            return res.status(500).json({ success: false, message: "Failed to generate refund document" });
+        }
     }
 
-    res.download(refundPath, `${refundDocNumber}.pdf`);
+    if (!fs.existsSync(refundPath)) {
+        return res.status(500).json({ success: false, message: "Refund document could not be created" });
+    }
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${refundDocNumber}.pdf"`);
+    res.sendFile(refundPath, (err) => {
+        if (err) {
+            console.error("sendFile refund error:", err.message);
+            if (!res.headersSent) {
+                res.status(500).json({ success: false, message: "Error sending refund document" });
+            }
+        }
+    });
 });
 
 /*

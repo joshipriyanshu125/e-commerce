@@ -438,8 +438,10 @@ const updateOrderStatusService = async (orderId, status, extras = {}, adminUser 
         console.error("Socket emit error:", socketErr.message);
     }
 
-    // Regenerate invoice PDF
-    await triggerInvoiceRegeneration(order._id);
+    // Regenerate invoice PDF (non-blocking — never fail the status update)
+    triggerInvoiceRegeneration(order._id).catch(err =>
+        console.error("Invoice regen failed (status update):", err.message)
+    );
 
     return order;
 };
@@ -505,8 +507,10 @@ const cancelOrderService = async (orderId, user, reason = "") => {
         console.error("Socket cancel error:", err.message);
     }
 
-    // Regenerate invoice PDF
-    await triggerInvoiceRegeneration(order._id);
+    // Regenerate invoice PDF (non-blocking)
+    triggerInvoiceRegeneration(order._id).catch(err =>
+        console.error("Invoice regen failed (user cancel):", err.message)
+    );
 
     return order;
 };
@@ -565,8 +569,10 @@ const adminCancelOrderService = async (orderId, reason = "", adminUser = null) =
         console.error("Socket admin cancel error:", err.message);
     }
 
-    // Regenerate invoice PDF
-    await triggerInvoiceRegeneration(order._id);
+    // Regenerate invoice PDF (non-blocking)
+    triggerInvoiceRegeneration(order._id).catch(err =>
+        console.error("Invoice regen failed (admin cancel):", err.message)
+    );
 
     return order;
 };
@@ -618,8 +624,10 @@ const refundOrderService = async (orderId) => {
         console.error("Socket refund error:", err.message);
     }
 
-    // Regenerate invoice PDF
-    await triggerInvoiceRegeneration(order._id);
+    // Regenerate invoice PDF (non-blocking)
+    triggerInvoiceRegeneration(order._id).catch(err =>
+        console.error("Invoice regen failed (refund):", err.message)
+    );
 
     return order;
 };
