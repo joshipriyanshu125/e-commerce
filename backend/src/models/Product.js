@@ -1,5 +1,13 @@
 import mongoose from "mongoose";
 
+const reportSchema = new mongoose.Schema(
+    {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        reason: { type: String, required: true },
+    },
+    { timestamps: true, _id: false }
+);
+
 const reviewSchema = new mongoose.Schema(
     {
         user: {
@@ -11,6 +19,11 @@ const reviewSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        // NEW: review title
+        title: {
+            type: String,
+            default: "",
+        },
         rating: {
             type: Number,
             required: true,
@@ -21,6 +34,36 @@ const reviewSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        // NEW: review images uploaded to Cloudinary
+        images: [
+            {
+                public_id: { type: String, required: true },
+                url: { type: String, required: true },
+            },
+        ],
+        // NEW: verified purchase badge (set by system only)
+        isVerifiedPurchase: {
+            type: Boolean,
+            default: false,
+        },
+        // NEW: user IDs who marked this helpful (deduplication by userId)
+        helpfulVotes: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+            },
+        ],
+        // NEW: reports submitted against this review
+        reports: [reportSchema],
+        // NEW: edit history for audit trail
+        editHistory: [
+            {
+                rating: Number,
+                title: String,
+                comment: String,
+                editedAt: { type: Date, default: Date.now },
+            },
+        ],
         status: {
             type: String,
             enum: ["Pending", "Approved", "Hidden"],
@@ -32,6 +75,16 @@ const reviewSchema = new mongoose.Schema(
         },
     },
     { timestamps: true }
+);
+
+const variantSchema = new mongoose.Schema(
+    {
+        size: { type: String, default: "" },
+        color: { type: String, default: "" },
+        countInStock: { type: Number, required: true, default: 0, min: 0 },
+        lowStockThreshold: { type: Number, default: 5 },
+        sku: { type: String, default: "" },
+    }
 );
 
 const productSchema = new mongoose.Schema(
@@ -57,6 +110,16 @@ const productSchema = new mongoose.Schema(
             type: Number,
             required: true,
             default: 0,
+        },
+        // NEW: variant-level independent stock
+        variants: {
+            type: [variantSchema],
+            default: [],
+        },
+        // NEW: root-level threshold for products without variants
+        lowStockThreshold: {
+            type: Number,
+            default: 5,
         },
         category: {
             type: String,

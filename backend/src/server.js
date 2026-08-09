@@ -35,6 +35,8 @@ import debugRoutes from "./routes/debugRoutes.js";
 import promotionRoutes from "./routes/promotionRoutes.js";
 import emailRoutes from "./routes/emailRoutes.js";
 import newsletterRoutes from "./routes/newsletterRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import inventoryRoutes from "./routes/inventoryRoutes.js";
 
 import { startCouponExpiryJob } from "./jobs/couponExpiryJob.js";
 import { startEmailRetryJob } from "./jobs/emailRetryJob.js";
@@ -220,6 +222,8 @@ app.use("/api/settings", settingsRoutes);
 
 app.use("/api/email", emailRoutes);
 app.use("/api/newsletter", newsletterRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/admin/inventory", inventoryRoutes);
 
 /*
 =========================================

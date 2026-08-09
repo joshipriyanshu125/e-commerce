@@ -30,6 +30,7 @@ import Invoice from "../models/invoiceModel.js";
 import generateInvoice from "../utils/generateInvoice.js";
 import path from "path";
 import fs from "fs";
+import { decreaseStock, increaseStock, validateStock } from "./inventoryService.js";
 
 /*
 ==============================
@@ -115,11 +116,7 @@ const createOrderService = async ({ body, user }) => {
     // CHECK STOCK
     for (const item of orderItems) {
         if (mongoose.Types.ObjectId.isValid(item.product)) {
-            const product = await getProductByIdRepository(item.product);
-            if (!product) throw new Error("Product not found");
-            if (product.countInStock < item.quantity) {
-                throw new Error(`${product.name} is out of stock`);
-            }
+            await validateStock(item.product, item.size, item.color, item.quantity);
         }
     }
 
@@ -147,25 +144,7 @@ const createOrderService = async ({ body, user }) => {
     // REDUCE STOCK
     for (const item of orderItems) {
         if (mongoose.Types.ObjectId.isValid(item.product)) {
-            const product = await getProductByIdRepository(item.product);
-            if (product) {
-                product.countInStock -= item.quantity;
-                await product.save();
-
-                if (product.countInStock <= 0) {
-                    notifyAdmins({
-                        title: "Product Out of Stock",
-                        message: `Product "${product.name}" is now out of stock!`,
-                        type: "out_of_stock",
-                    }).catch(err => console.error("Out of stock notify error:", err));
-                } else if (product.countInStock <= 5) {
-                    notifyAdmins({
-                        title: "Low Inventory",
-                        message: `Low inventory: "${product.name}" (Only ${product.countInStock} left)`,
-                        type: "low_inventory",
-                    }).catch(err => console.error("Low inventory notify error:", err));
-                }
-            }
+            await decreaseStock(item.product, item.size, item.color, item.quantity, order._id, user.name);
         }
     }
 
@@ -659,6 +638,9 @@ const approveReturnService = async (orderId, adminUser) => {
     order.returnInfo.resolvedAt = new Date();
     pushTrackingHistory(order, "Return Approved", "Return request approved by admin", "admin");
 
+    // Restore inventory
+    await restoreInventory(order.orderItems, `Return Approved (Order #${order._id})`);
+
     await order.save();
 
     // Notify customer
@@ -726,16 +708,12 @@ const rejectReturnService = async (orderId, adminNotes, adminUser) => {
 RESTORE INVENTORY HELPER
 ==============================
 */
-const restoreInventory = async (orderItems) => {
+const restoreInventory = async (orderItems, reason = "Order Cancelled") => {
     if (!orderItems || orderItems.length === 0) return;
     for (const item of orderItems) {
         try {
             if (item.product && mongoose.Types.ObjectId.isValid(item.product)) {
-                const product = await getProductByIdRepository(item.product);
-                if (product && item.quantity) {
-                    product.countInStock += item.quantity;
-                    await product.save();
-                }
+                await increaseStock(item.product, item.size, item.color, item.quantity, reason);
             }
         } catch (err) {
             console.error(`Inventory restore error for product ${item.product}:`, err.message);

@@ -8,22 +8,11 @@ import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 
 import { deleteCache, clearCachePattern } from "../utils/cache.js";
-
-// RECALCULATE PRODUCT RATING BASED ON APPROVED REVIEWS ONLY
-const recalculateProductRating = (product) => {
-    const approvedReviews = product.reviews.filter(r => r.status === "Approved");
-    product.numReviews = approvedReviews.length;
-    if (approvedReviews.length > 0) {
-        product.rating = approvedReviews.reduce((acc, item) => item.rating + acc, 0) / approvedReviews.length;
-    } else {
-        product.rating = 0;
-    }
-};
+import { recalculateProductRating } from "../services/reviewService.js";
 
 
 // CLOUDINARY STREAM FUNCTION
 const streamUpload = (buffer) => {
-
     return new Promise((resolve, reject) => {
 
         const stream = cloudinary.uploader.upload_stream(

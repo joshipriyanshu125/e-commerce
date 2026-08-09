@@ -294,19 +294,27 @@ const OrderDetails = () => {
                 <h3 className="text-[10px] font-mono uppercase tracking-widest text-atelier-gray border-b border-atelier-lightgray/55 pb-3 mb-4 flex items-center gap-1.5">
                   <Truck size={12} /> Courier Tracking
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <span className="text-[9px] font-mono text-atelier-gray/65 uppercase tracking-wider block">Carrier</span>
-                    <span className="text-xs font-semibold text-atelier-dark mt-1 block">{selectedOrder.courierName}</span>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+                  {/* Carrier */}
+                  <div className="sm:w-1/4 shrink-0">
+                    <span className="text-[9px] font-mono text-atelier-gray/65 uppercase tracking-wider block mb-1">Carrier</span>
+                    <span className="text-sm font-semibold text-atelier-dark">{selectedOrder.courierName}</span>
                   </div>
-                  <div>
-                    <span className="text-[9px] font-mono text-atelier-gray/65 uppercase tracking-wider block">Tracking ID</span>
-                    <span className="text-xs font-mono font-semibold text-atelier-dark mt-1 block tracking-widest">{selectedOrder.trackingNumber}</span>
+                  {/* Tracking ID */}
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] font-mono text-atelier-gray/65 uppercase tracking-wider block mb-1">Tracking ID</span>
+                    <span
+                      className="text-xs font-mono font-semibold text-atelier-dark block break-all"
+                      title={selectedOrder.trackingNumber}
+                    >
+                      {selectedOrder.trackingNumber}
+                    </span>
                   </div>
-                  <div>
-                    <span className="text-[9px] font-mono text-atelier-gray/65 uppercase tracking-wider block">Est. Delivery</span>
-                    <span className="text-xs font-semibold text-atelier-dark mt-1 block">
-                      {selectedOrder.estimatedDelivery 
+                  {/* Est. Delivery */}
+                  <div className="sm:w-1/4 shrink-0">
+                    <span className="text-[9px] font-mono text-atelier-gray/65 uppercase tracking-wider block mb-1">Est. Delivery</span>
+                    <span className="text-sm font-semibold text-atelier-dark">
+                      {selectedOrder.estimatedDelivery
                         ? new Date(selectedOrder.estimatedDelivery).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                         : 'Pending'
                       }
@@ -315,6 +323,7 @@ const OrderDetails = () => {
                 </div>
               </div>
             )}
+
 
             {/* Return info panel */}
             {selectedOrder.returnInfo?.status && (

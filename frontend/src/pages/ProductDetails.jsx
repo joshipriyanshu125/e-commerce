@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { selectProductById, createProductReview, fetchAPIProducts } from '../features/products/productSlice'
+import { selectProductById, fetchAPIProducts } from '../features/products/productSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react'
+import ReviewSection from '../components/product/ReviewSection'
 
 const ProductDetails = () => {
   const { id } = useParams()
@@ -18,13 +19,6 @@ const ProductDetails = () => {
   const [activeImageIdx, setActiveImageIdx] = useState(0)
   const [isSliding, setIsSliding] = useState(false)
   const [slideDir, setSlideDir] = useState('next')
-
-  // Review form states
-  const [reviewName, setReviewName] = useState('')
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewComment, setReviewComment] = useState('')
-  const [isAddingReview, setIsAddingReview] = useState(false)
-  const [reviewAddedMsg, setReviewAddedMsg] = useState('')
 
   const [isAddingToBag, setIsAddingToBag] = useState(false)
   const thumbnailRef = useRef(null)
@@ -184,31 +178,8 @@ const ProductDetails = () => {
     }, 600)
   }
 
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault()
-    if (!reviewName.trim() || !reviewComment.trim()) return
 
-    const { payload, error } = await dispatch(createProductReview({
-      productId: selectedProduct.id || selectedProduct._id,
-      review: {
-        name: reviewName, // Handled automatically by backend if logged in, but passed anyway
-        rating: Number(reviewRating),
-        comment: reviewComment,
-      }
-    }))
 
-    if (error) {
-        setReviewAddedMsg(payload || error.message || 'Failed to post review. You might need to be logged in, or already reviewed it.')
-    } else {
-        setReviewAddedMsg('Review posted successfully!')
-        setReviewName('')
-        setReviewComment('')
-        setReviewRating(5)
-        setIsAddingReview(false)
-    }
-
-    setTimeout(() => setReviewAddedMsg(''), 4000)
-  }
 
   const activeImage = images.length > 0 ? images[activeImageIdx] : null
 
@@ -523,114 +494,12 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Reviews Section */}
-      <section className="border-t border-atelier-lightgray/60 pt-16 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div className="lg:col-span-4 space-y-6">
-            <h2 className="font-serif text-2xl text-atelier-dark font-medium">Customer reviews</h2>
-
-            <div className="flex items-center space-x-4">
-              <span className="text-5xl font-mono font-semibold text-atelier-dark">
-                {selectedProduct.rating}
-              </span>
-              <div>
-                <div className="flex text-atelier-accent">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={16}
-                      fill={i < Math.round(selectedProduct.rating) ? 'currentColor' : 'none'}
-                      strokeWidth={1.5}
-                    />
-                  ))}
-                </div>
-                <span className="text-xs text-atelier-gray tracking-wider font-mono">
-                  BASED ON {(selectedProduct.reviews || []).length} REVIEWS
-                </span>
-              </div>
-            </div>
-
-            {reviewAddedMsg && (
-              <p className="bg-atelier-cream border border-atelier-accent/40 text-atelier-accent px-4 py-3 text-xs font-mono uppercase tracking-wider">
-                {reviewAddedMsg}
-              </p>
-            )}
-
-            {!isAddingReview ? (
-              <button onClick={() => setIsAddingReview(true)} className="w-full btn-atelier-outline">
-                Write a review
-              </button>
-            ) : (
-              <form onSubmit={handleReviewSubmit} className="space-y-4 border border-atelier-lightgray p-6 bg-atelier-cream/40">
-                <h4 className="font-mono text-sm tracking-widest uppercase text-atelier-dark font-semibold border-b border-atelier-lightgray pb-2">
-                  New Review
-                </h4>
-                <div className="space-y-1">
-                  <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">Your Name</label>
-                  <input type="text" required value={reviewName} onChange={e => setReviewName(e.target.value)}
-                    className="w-full bg-atelier-beige border border-atelier-lightgray py-2 px-3 text-xs focus:outline-none focus:border-atelier-dark" />
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">Rating</label>
-                  <select value={reviewRating} onChange={e => setReviewRating(e.target.value)}
-                    className="w-full bg-atelier-beige border border-atelier-lightgray py-2 px-3 text-xs focus:outline-none focus:border-atelier-dark font-mono">
-                    <option value="5">5 Stars (Excellent)</option>
-                    <option value="4">4 Stars (Good)</option>
-                    <option value="3">3 Stars (Average)</option>
-                    <option value="2">2 Stars (Poor)</option>
-                    <option value="1">1 Star (Very Poor)</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="block text-xs font-mono tracking-wider text-atelier-gray uppercase">Comments</label>
-                  <textarea rows="3" required value={reviewComment} onChange={e => setReviewComment(e.target.value)}
-                    className="w-full bg-atelier-beige border border-atelier-lightgray py-2 px-3 text-xs focus:outline-none focus:border-atelier-dark" />
-                </div>
-                <div className="flex space-x-2 pt-2">
-                  <button type="submit" className="flex-grow py-2.5 bg-atelier-dark text-white font-mono text-xs tracking-widest uppercase hover:opacity-90 transition-opacity">
-                    Post Review
-                  </button>
-                  <button type="button" onClick={() => setIsAddingReview(false)}
-                    className="py-2.5 px-4 border border-atelier-lightgray font-mono text-xs tracking-widest uppercase hover:border-atelier-dark transition-colors">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-
-          <div className="lg:col-span-8 divide-y divide-atelier-lightgray/40">
-            {(selectedProduct.reviews || []).length > 0 ? (
-              selectedProduct.reviews.map((review, idx) => (
-                <div key={review.id || idx} className="py-6 first:pt-0 last:pb-0 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-atelier-dark font-semibold">{review.name}</span>
-                    <span className="font-mono text-sm text-atelier-gray">{review.date}</span>
-                  </div>
-                  <div className="flex text-atelier-accent">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={12} fill={i < review.rating ? 'currentColor' : 'none'} strokeWidth={1.5} />
-                    ))}
-                  </div>
-                  <p className="text-xs sm:text-sm text-atelier-gray font-light leading-relaxed max-w-2xl font-sans">
-                    {review.comment}
-                  </p>
-                  {review.reply && (
-                    <div className="mt-3 ml-4 p-3 bg-atelier-lightgray/10 border-l-2 border-atelier-dark/20 text-xs text-atelier-gray font-light leading-relaxed font-sans">
-                      <span className="font-mono font-semibold text-[10px] text-atelier-dark uppercase tracking-wider block mb-1">Atelier Response</span>
-                      {review.reply}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="py-8">
-                <p className="font-serif text-sm text-atelier-gray italic">No reviews yet. Be the first to share your thoughts.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+      {/* Reviews Section — uses new ReviewSection component */}
+      <ReviewSection
+        productId={selectedProduct._id || selectedProduct.id}
+        productRating={selectedProduct.rating}
+        productNumReviews={selectedProduct.numReviews}
+      />
     </div>
   )
 }
