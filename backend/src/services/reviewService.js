@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import cloudinary from "../config/cloudinary.js";
@@ -42,10 +43,17 @@ export const uploadReviewImages = async (files = []) => {
 // Returns true if the user has a Delivered order containing the given product
 export const verifyPurchase = async (userId, productId) => {
     try {
+        const prodId = mongoose.isValidObjectId(productId)
+            ? new mongoose.Types.ObjectId(productId)
+            : productId;
+
         const deliveredOrder = await Order.findOne({
             user: userId,
             orderStatus: "Delivered",
-            "orderItems.product": productId,
+            $or: [
+                { "orderItems.product": prodId },
+                { "orderItems.product": productId }
+            ]
         }).lean();
         return !!deliveredOrder;
     } catch (err) {
