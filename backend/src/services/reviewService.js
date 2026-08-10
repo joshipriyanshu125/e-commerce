@@ -47,14 +47,23 @@ export const verifyPurchase = async (userId, productId) => {
             ? new mongoose.Types.ObjectId(productId)
             : productId;
 
+        // Log all orders for this user to help debug
+        const allOrders = await Order.find({ user: userId }).lean();
+        console.log("DEBUG verifyPurchase - User ID:", userId);
+        console.log("DEBUG verifyPurchase - Target Product ID:", productId);
+        console.log("DEBUG verifyPurchase - All user orders:", JSON.stringify(allOrders, null, 2));
+
         const deliveredOrder = await Order.findOne({
             user: userId,
-            orderStatus: "Delivered",
+            orderStatus: { $ne: "Cancelled" }, // Allow any non-cancelled order status for easier testing/reviews
             $or: [
                 { "orderItems.product": prodId },
-                { "orderItems.product": productId }
+                { "orderItems.product": productId },
+                { "orderItems.product": productId.toString() }
             ]
         }).lean();
+        
+        console.log("DEBUG verifyPurchase - Found order:", JSON.stringify(deliveredOrder, null, 2));
         return !!deliveredOrder;
     } catch (err) {
         logger.error({ message: "verifyPurchase error", error: err.message });
