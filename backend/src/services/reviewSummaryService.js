@@ -65,7 +65,6 @@ const generateLocalSummary = (reviews) => {
 
     // Default fallbacks if empty
     if (praised.length === 0) praised.push("Quality", "Design", "Comfort");
-    if (complaints.length === 0) complaints.push("Sizing fits differently", "Expect minor variation");
 
     return {
         summary: summaryText,
@@ -114,7 +113,7 @@ Return your output ONLY as a valid JSON object matching this schema:
 {
   "summary": "A single sentence summary summarizing the main sentiment (e.g. ⭐ Customers love the oversized fit and fabric quality.)",
   "praised": ["Fit", "Fabric", "Color" (list the 3 most praised keywords/aspects)],
-  "complaints": ["Sleeves may feel long", "Some users recommend sizing down" (list 1 or 2 common complaints/criticisms)]
+  "complaints": ["Sleeves may feel long" (list 1 or 2 common complaints/criticisms. If there are no complaints or negative comments, return an empty array [])]
 }
 
 Do not include any markdown backticks, explanations, or text other than the JSON object.
