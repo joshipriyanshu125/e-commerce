@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import {
   Star, ThumbsUp, Flag, ChevronDown, ChevronUp,
   ShieldCheck, ImageIcon, X, Upload, Loader2,
@@ -455,8 +456,9 @@ const WriteReviewForm = ({ productId, onSuccess, onCancel }) => {
 
 // ─── Main ReviewSection ───────────────────────────────────────────────────────
 const ReviewSection = ({ productId, productRating, productNumReviews }) => {
-  const { userInfo } = useSelector(s => s.auth)
-  const currentUserId = userInfo?._id || userInfo?.id
+  const navigate = useNavigate()
+  const { user } = useSelector(s => s.auth)
+  const currentUserId = user?._id || user?.id
 
   const [reviews, setReviews] = useState([])
   const [stats, setStats] = useState({ average: 0, total: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } })
@@ -467,6 +469,8 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
   const [filter, setFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
   const [successMsg, setSuccessMsg] = useState('')
+  const [summaryData, setSummaryData] = useState(null)
+  const [loadingSummary, setLoadingSummary] = useState(false)
 
   const LIMIT = 8
 
@@ -489,17 +493,33 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
     }
   }, [productId, sort, filter])
 
+  const fetchSummary = useCallback(async () => {
+    try {
+      setLoadingSummary(true)
+      const res = await api.get(`reviews/product/${productId}/summary`)
+      if (res.data.success) {
+        setSummaryData(res.data.summary)
+      }
+    } catch (err) {
+      console.error('Failed to fetch review summary', err)
+    } finally {
+      setLoadingSummary(false)
+    }
+  }, [productId])
+
   useEffect(() => {
     setReviews([])
     setPage(1)
     fetchReviews(1)
-  }, [fetchReviews])
+    fetchSummary()
+  }, [fetchReviews, fetchSummary])
 
   const handleReviewSuccess = () => {
     setShowForm(false)
     setSuccessMsg('Your review was submitted and is pending moderation.')
     setTimeout(() => setSuccessMsg(''), 5000)
     fetchReviews(1)
+    fetchSummary()
   }
 
   const handleReviewDeleted = (id) => {
@@ -565,6 +585,72 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
             ))}
           </div>
 
+          {/* AI Review Summary */}
+          {(loadingSummary || (summaryData && summaryData.count > 0)) && (
+            <div className="border border-atelier-lightgray p-5 bg-atelier-cream/30 space-y-4 rounded">
+              <div className="flex items-center justify-between border-b border-atelier-lightgray pb-2">
+                <h3 className="font-mono text-xs tracking-widest uppercase text-atelier-dark font-semibold flex items-center gap-1.5">
+                  <Star size={12} className="text-amber-500 fill-amber-500 animate-pulse" />
+                  AI Review Summary
+                </h3>
+                {loadingSummary && (
+                  <span className="text-[10px] font-mono text-atelier-gray animate-pulse">Analyzing...</span>
+                )}
+              </div>
+
+              {loadingSummary ? (
+                <div className="space-y-3 animate-pulse">
+                  <div className="h-4 bg-atelier-lightgray/20 rounded w-full" />
+                  <div className="h-4 bg-atelier-lightgray/20 rounded w-5/6" />
+                  <div className="h-8 bg-atelier-lightgray/20 rounded w-full" />
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-atelier-dark italic leading-relaxed font-serif">
+                    "{summaryData.summary}"
+                  </p>
+
+                  {summaryData.praised && summaryData.praised.length > 0 && (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-semibold flex items-center gap-1">
+                        👍 Most Praised:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {summaryData.praised.map((aspect, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[10px] font-mono bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-100"
+                          >
+                            {aspect}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {summaryData.complaints && summaryData.complaints.length > 0 && (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-semibold flex items-center gap-1">
+                        ⚠️ Common Complaints:
+                      </span>
+                      <ul className="list-disc pl-4 space-y-0.5 text-xs text-atelier-gray">
+                        {summaryData.complaints.map((item, idx) => (
+                          <li key={idx} className="font-sans leading-tight">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="text-[10px] font-mono text-atelier-gray pt-2 border-t border-atelier-lightgray/50">
+                    Based on {summaryData.count} verified customer review{summaryData.count !== 1 ? 's' : ''}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Success / error messages */}
           {successMsg && (
             <p className="bg-atelier-cream border border-atelier-accent/40 text-atelier-accent px-4 py-3 text-xs font-mono uppercase tracking-wider" role="status">
@@ -578,7 +664,7 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
               id="write-review-btn"
               type="button"
               onClick={() => {
-                if (!userInfo) { window.location.href = '/login'; return }
+                if (!user) { navigate(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`); return }
                 setShowForm(true)
               }}
               className="w-full btn-atelier-outline"

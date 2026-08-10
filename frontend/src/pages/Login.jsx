@@ -53,7 +53,9 @@ const Login = () => {
         if (data.user.role === 'admin') {
           navigate("/admin");
         } else {
-          navigate("/account");
+          const params = new URLSearchParams(window.location.search);
+          const redirect = params.get("redirect") || "/account";
+          navigate(redirect);
         }
       }, 100);
     } catch (err) {
