@@ -4,6 +4,7 @@ import upload from "../middleware/uploadMiddleware.js";
 import {
     createReview,
     getProductReviews,
+    getProductReviewSummary,
     editReview,
     deleteReview,
     markHelpful,
@@ -16,6 +17,7 @@ const router = express.Router();
 // ── Public: get paginated reviews for a product ───────────────────────────────
 // GET /api/reviews/product/:productId
 router.get("/product/:productId", getProductReviews);
+router.get("/product/:productId/summary", getProductReviewSummary);
 
 // ── Auth: create review (with optional image upload) ─────────────────────────
 // POST /api/reviews

@@ -3,6 +3,7 @@ import Product from "../models/Product.js";
 import { getIO } from "../config/socket.js";
 import { deleteCache, clearCachePattern } from "../utils/cache.js";
 import logger from "../utils/logger.js";
+import { generateReviewSummary } from "../services/reviewSummaryService.js";
 import {
     verifyPurchase,
     recalculateProductRating,
@@ -427,4 +428,25 @@ export const getReportedReviews = asyncHandler(async (req, res) => {
     reported.sort((a, b) => b.reportCount - a.reportCount);
 
     res.status(200).json({ success: true, reviews: reported, total: reported.length });
+});
+
+/*
+==================================================
+GET /api/reviews/product/:productId/summary
+Get AI/Local summary for product reviews
+==================================================
+*/
+export const getProductReviewSummary = asyncHandler(async (req, res) => {
+    const { productId } = req.params;
+    const product = await Product.findById(productId);
+    if (!product) {
+        res.status(404);
+        throw new Error("Product not found");
+    }
+
+    const summaryData = await generateReviewSummary(product.reviews);
+    res.status(200).json({
+        success: true,
+        summary: summaryData
+    });
 });
