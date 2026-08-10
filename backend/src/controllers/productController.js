@@ -532,19 +532,31 @@ export const updateReviewStatus = asyncHandler(async (req, res) => {
 // REPLY TO REVIEW (ADMIN)
 export const replyToReview = asyncHandler(async (req, res) => {
     const { reply } = req.body;
+    console.log("DEBUG replyToReview - params:", req.params);
+    console.log("DEBUG replyToReview - body:", req.body);
 
-    const product = await Product.findById(req.params.id);
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            console.log("DEBUG replyToReview - Product not found for ID:", req.params.id);
+            res.status(404);
+            throw new Error("Product not found");
+        }
 
-    if (product) {
+        console.log("DEBUG replyToReview - Found product:", product.name);
         const review = product.reviews.id(req.params.reviewId);
         if (!review) {
+            console.log("DEBUG replyToReview - Review not found for ID:", req.params.reviewId);
             res.status(404);
             throw new Error("Review not found");
         }
 
+        console.log("DEBUG replyToReview - Found review by:", review.name, "current reply:", review.reply);
         review.reply = reply;
 
+        console.log("DEBUG replyToReview - Saving product...");
         await product.save();
+        console.log("DEBUG replyToReview - Product saved successfully!");
 
         // CLEAR CACHE
         await clearCachePattern("all_products*");
@@ -561,8 +573,9 @@ export const replyToReview = asyncHandler(async (req, res) => {
             message: "Reply added to review",
             review,
         });
-    } else {
-        res.status(404);
-        throw new Error("Product not found");
+    } catch (err) {
+        console.error("DEBUG replyToReview - Error occurred:", err);
+        res.status(res.statusCode === 200 ? 500 : res.statusCode);
+        throw err;
     }
 });
