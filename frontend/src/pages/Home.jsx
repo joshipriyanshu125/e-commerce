@@ -330,10 +330,10 @@ const Home = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
               <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-accent block mb-1">
-                AI Personalised Edit
+                Picked for your style
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl text-atelier-dark font-semibold">
-                Your Style Match
+                Your AI Style Edit
               </h2>
             </div>
             <div className="font-mono text-xs uppercase tracking-widest text-atelier-gray max-w-md">

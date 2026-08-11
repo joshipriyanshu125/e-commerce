@@ -50,6 +50,8 @@ const userSchema = new mongoose.Schema(
             styles: { type: [String], default: [] },
             preferredColors: { type: [String], default: [] },
             favoriteCategories: { type: [String], default: [] },
+            preferredFit: { type: [String], default: [] },
+            occasions: { type: [String], default: [] },
             priceRange: { type: String, default: "" },
             generatedAt: { type: Date },
         },

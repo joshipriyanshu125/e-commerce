@@ -193,7 +193,7 @@ SAVE AI STYLE PROFILE
 ====================================
 */
 export const saveStyleProfile = asyncHandler(async (req, res) => {
-    const { styles, preferredColors, favoriteCategories, priceRange } = req.body;
+    const { styles, preferredColors, favoriteCategories, preferredFit, occasions, priceRange } = req.body;
 
     const user = await User.findById(req.user._id);
     if (!user) {
@@ -205,6 +205,8 @@ export const saveStyleProfile = asyncHandler(async (req, res) => {
         styles: styles || [],
         preferredColors: preferredColors || [],
         favoriteCategories: favoriteCategories || [],
+        preferredFit: preferredFit || [],
+        occasions: occasions || [],
         priceRange: priceRange || "",
         generatedAt: new Date(),
     };

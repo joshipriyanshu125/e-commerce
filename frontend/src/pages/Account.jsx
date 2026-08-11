@@ -5,12 +5,14 @@ import { logout } from '../features/auth/authSlice'
 import { User, Package, MapPin, LogOut, CheckCircle2, ChevronRight, Undo2, BellRing, Trash2, Star, Bell } from 'lucide-react'
 import axios from '../services/axiosInstance'
 import NotificationSettings from '../components/account/NotificationSettings'
+import StyleOnboarding from '../components/onboarding/StyleOnboarding'
 
 const Account = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { user, isAuthenticated } = useSelector(state => state.auth)
   const [activeTab, setActiveTab] = useState('profile')
+  const [isEditingStyle, setIsEditingStyle] = useState(false)
 
   // Addresses state
   const [addresses, setAddresses] = useState([])
@@ -271,6 +273,20 @@ const handleLogout = () => {
           >
             <Bell size={14} />
             <span>Notifications</span>
+          </button>
+
+          <div className="hidden md:block my-3 border-t border-atelier-lightgray/40 w-full" />
+
+          <button
+            onClick={() => setActiveTab('mystyle')}
+            className={`flex items-center space-x-2.5 py-2 px-3 font-mono text-sm tracking-widest uppercase text-left whitespace-nowrap transition-colors ${
+              activeTab === 'mystyle'
+                ? 'text-atelier-dark border-b-2 md:border-b-0 md:border-l-2 border-atelier-dark font-semibold'
+                : 'text-atelier-gray hover:text-atelier-dark'
+            }`}
+          >
+            <span className="text-xs">✦</span>
+            <span>My Style</span>
           </button>
 
         </div>
@@ -595,8 +611,108 @@ const handleLogout = () => {
             </div>
           )}
 
+          {/* 6. My Style Tab */}
+          {activeTab === 'mystyle' && (
+            <div className="space-y-6 animate-fade-in max-w-xl">
+              <h3 className="font-mono text-sm tracking-widest uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-3 mb-4">
+                Your AI Style Profile
+              </h3>
+
+              {user.styleProfile && user.onboardingCompleted ? (
+                <div className="space-y-6">
+                  <div className="border border-atelier-lightgray/60 bg-atelier-cream/30 p-8 space-y-6">
+                    <div className="text-center font-mono text-[10px] tracking-[0.2em] uppercase text-atelier-accent">
+                      ✦ Profile Active ✦
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <span className="block font-mono text-[10px] tracking-widest uppercase text-atelier-gray">Style Vibe</span>
+                        <span className="font-serif text-lg text-atelier-dark font-medium capitalize">
+                          {user.styleProfile.styles?.join(' · ') || 'None selected'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="block font-mono text-[10px] tracking-widest uppercase text-atelier-gray">Color Palette</span>
+                        <span className="font-serif text-lg text-atelier-dark font-medium capitalize">
+                          {user.styleProfile.preferredColors?.join(' · ') || 'None selected'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="block font-mono text-[10px] tracking-widest uppercase text-atelier-gray">Go-to Categories</span>
+                        <span className="font-serif text-lg text-atelier-dark font-medium capitalize">
+                          {user.styleProfile.favoriteCategories?.join(' · ') || 'None selected'}
+                        </span>
+                      </div>
+
+                      {user.styleProfile.preferredFit && user.styleProfile.preferredFit.length > 0 && (
+                        <div>
+                          <span className="block font-mono text-[10px] tracking-widest uppercase text-atelier-gray">Preferred Fit</span>
+                          <span className="font-serif text-lg text-atelier-dark font-medium capitalize">
+                            {user.styleProfile.preferredFit.join(' · ')}
+                          </span>
+                        </div>
+                      )}
+
+                      {user.styleProfile.occasions && user.styleProfile.occasions.length > 0 && (
+                        <div>
+                          <span className="block font-mono text-[10px] tracking-widest uppercase text-atelier-gray">Dressing For</span>
+                          <span className="font-serif text-lg text-atelier-dark font-medium capitalize">
+                            {user.styleProfile.occasions.join(' · ')}
+                          </span>
+                        </div>
+                      )}
+
+                      <div>
+                        <span className="block font-mono text-[10px] tracking-widest uppercase text-atelier-gray">Budget Range</span>
+                        <span className="font-serif text-lg text-atelier-dark font-medium font-semibold">
+                          {user.styleProfile.priceRange || 'None selected'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsEditingStyle(true)}
+                    className="w-full py-4 bg-atelier-dark text-white font-mono text-xs tracking-widest uppercase hover:opacity-90 transition-opacity"
+                  >
+                    ✦ Retake Style Quiz
+                  </button>
+                </div>
+              ) : (
+                <div className="border border-atelier-lightgray/60 bg-atelier-cream/30 p-10 text-center space-y-6">
+                  <div className="w-12 h-12 rounded-full bg-atelier-dark/5 flex items-center justify-center mx-auto text-lg">
+                    ✦
+                  </div>
+                  <div>
+                    <h4 className="font-serif text-xl text-atelier-dark mb-2">Let's get to know your style.</h4>
+                    <p className="text-xs text-atelier-gray font-mono max-w-sm mx-auto leading-relaxed">
+                      Complete our signature quiz to define your aesthetic, color palette, and preferred fits. We'll curate your shopping experience.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsEditingStyle(true)}
+                    className="px-8 py-4 bg-atelier-dark text-white text-xs font-mono uppercase tracking-widest hover:opacity-90 transition-opacity"
+                  >
+                    ✦ Start Style Quiz
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
+
+      {isEditingStyle && (
+        <StyleOnboarding
+          initialValues={user.styleProfile}
+          onComplete={() => setIsEditingStyle(false)}
+          onSkip={() => setIsEditingStyle(false)}
+        />
+      )}
 
     </div>
   )
