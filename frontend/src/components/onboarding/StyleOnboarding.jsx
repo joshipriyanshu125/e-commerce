@@ -107,6 +107,7 @@ const StyleOnboarding = ({ onComplete, onSkip, initialValues }) => {
     return false
   }
 
+  const handleClose = () => { if (onSkip) onSkip(); else navigate('/') }
   const handleNext = () => { if (step < STEPS.length - 1) setStep(s => s + 1) }
   const handleBack = () => { if (step > 0) setStep(s => s - 1) }
 
@@ -134,8 +135,11 @@ const StyleOnboarding = ({ onComplete, onSkip, initialValues }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#111111]/90 backdrop-blur-sm animate-fade-in px-4">
-      <div className="relative w-full max-w-xl bg-[#F5F2EB] shadow-2xl overflow-hidden">
+    <div
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-[#111111]/90 backdrop-blur-sm animate-fade-in px-4"
+      onClick={handleClose}
+    >
+      <div className="relative w-full max-w-xl bg-[#F5F2EB] shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
 
         {/* Top progress rail */}
         <div className="flex h-[2px] w-full bg-[#E5E2DA]">
@@ -150,16 +154,20 @@ const StyleOnboarding = ({ onComplete, onSkip, initialValues }) => {
 
         <div className="px-10 pt-10 pb-8">
 
-          {/* Step label + skip */}
+          {/* Step label + close */}
           <div className="flex items-center justify-between mb-8">
             <span className="font-mono text-[10px] tracking-[0.25em] uppercase text-[#9B9B9B]">
               Step {meta.step} / 06
             </span>
             <button
-              onClick={onSkip || (() => navigate('/'))}
-              className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#9B9B9B] hover:text-[#111111] transition-colors"
+              onClick={handleClose}
+              aria-label="Close"
+              className="flex items-center justify-center w-7 h-7 border border-[#E5E2DA] text-[#9B9B9B] hover:border-[#111111] hover:text-[#111111] transition-colors"
             >
-              Skip →
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
             </button>
           </div>
 
