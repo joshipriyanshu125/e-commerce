@@ -186,3 +186,36 @@ export const adminResetPassword = asyncHandler(async (req, res) => {
     await user.save();
     res.status(200).json({ success: true, message: "Password reset successfully" });
 });
+
+/*
+====================================
+SAVE AI STYLE PROFILE
+====================================
+*/
+export const saveStyleProfile = asyncHandler(async (req, res) => {
+    const { styles, preferredColors, favoriteCategories, priceRange } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+
+    user.styleProfile = {
+        styles: styles || [],
+        preferredColors: preferredColors || [],
+        favoriteCategories: favoriteCategories || [],
+        priceRange: priceRange || "",
+        generatedAt: new Date(),
+    };
+    user.onboardingCompleted = true;
+
+    await user.save();
+
+    res.status(200).json({
+        success: true,
+        message: "Style profile saved successfully",
+        styleProfile: user.styleProfile,
+        onboardingCompleted: user.onboardingCompleted,
+    });
+});

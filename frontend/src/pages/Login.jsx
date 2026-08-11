@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../features/auth/authSlice";
 import api from "../services/axiosInstance";
+import StyleOnboarding from "../components/onboarding/StyleOnboarding";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -12,6 +13,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -52,6 +54,9 @@ const Login = () => {
       setTimeout(() => {
         if (data.user.role === 'admin') {
           navigate("/admin");
+        } else if (!data.user.onboardingCompleted) {
+          // New or existing user who hasn't set up style profile
+          setShowOnboarding(true);
         } else {
           const params = new URLSearchParams(window.location.search);
           const redirect = params.get("redirect") || "/account";
@@ -73,6 +78,21 @@ const Login = () => {
   };
 
   return (
+    <>
+      {showOnboarding && (
+        <StyleOnboarding
+          onComplete={() => {
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get("redirect") || "/";
+            navigate(redirect);
+          }}
+          onSkip={() => {
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get("redirect") || "/";
+            navigate(redirect);
+          }}
+        />
+      )}
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-16 animate-fade-in font-sans">
       <div className="w-full max-w-sm space-y-10 text-center">
         {/* Logo and welcome header */}
@@ -191,6 +211,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

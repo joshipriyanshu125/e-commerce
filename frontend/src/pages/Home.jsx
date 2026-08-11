@@ -15,11 +15,83 @@ const Home = () => {
   const typeParam = searchParams.get('type') // 'fashion'
   
   const { filteredProducts, allProducts = [], apiLoading, selectedType, selectedCategory, sortOption } = useSelector(state => state.products)
+  const { user, isAuthenticated } = useSelector(state => state.auth || {})
 
   // Fetch real products from backend on mount
   useEffect(() => {
     dispatch(fetchAPIProducts())
   }, [])
+
+  // Personalized recommendations based on AI Fashion Profile
+  const recommendedProducts = React.useMemo(() => {
+    if (!isAuthenticated || !user || !user.styleProfile || !user.onboardingCompleted) {
+      return []
+    }
+    const profile = user.styleProfile
+    const styles = Array.isArray(profile.styles) ? profile.styles.map(s => s.toLowerCase()) : []
+    const preferredColors = Array.isArray(profile.preferredColors) ? profile.preferredColors.map(c => c.toLowerCase()) : []
+    const favoriteCategories = Array.isArray(profile.favoriteCategories) ? profile.favoriteCategories.map(c => c.toLowerCase()) : []
+    const priceRange = profile.priceRange
+
+    // Parse price range e.g. "₹1000-₹2500"
+    let minPrice = 0
+    let maxPrice = Infinity
+    if (priceRange) {
+      const match = priceRange.match(/\d+/g)
+      if (match) {
+        minPrice = parseInt(match[0], 10)
+        maxPrice = match[1] ? parseInt(match[1], 10) : Infinity
+      }
+    }
+
+    const scored = allProducts.map(product => {
+      let score = 0
+
+      // Match styles with tags, name, or description
+      const tags = Array.isArray(product.tags) ? product.tags.map(t => t.toLowerCase()) : []
+      const prodName = (product.name || '').toLowerCase()
+      const prodDesc = (product.description || '').toLowerCase()
+      const prodCat = (product.category || '').toLowerCase()
+
+      styles.forEach(s => {
+        if (tags.includes(s) || prodName.includes(s) || prodDesc.includes(s)) {
+          score += 3
+        }
+      })
+
+      // Match preferredColors with colors
+      if (Array.isArray(product.colors)) {
+        product.colors.forEach(c => {
+          const colorName = (typeof c === 'string' ? c : c.name || '').toLowerCase()
+          if (preferredColors.includes(colorName)) {
+            score += 2
+          }
+        })
+      }
+
+      // Match favoriteCategories with category or tags
+      favoriteCategories.forEach(cat => {
+        if (prodCat.includes(cat) || tags.includes(cat) || prodName.includes(cat)) {
+          score += 3
+        }
+      })
+
+      // Match price range (convert if product price is in USD vs INR range)
+      const checkPrice = product.price < 500 ? product.price * 83 : product.price
+      if (checkPrice >= minPrice && checkPrice <= maxPrice) {
+        score += 4
+      }
+
+      return { product, score }
+    })
+
+    // Filter products with score > 0, sort by score desc, and take top 4
+    return scored
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.product)
+      .slice(0, 4)
+  }, [allProducts, user, isAuthenticated])
 
   // Synchronize URL parameters with Redux state
   useEffect(() => {
@@ -251,6 +323,31 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* AI Personalized Recommendations Section */}
+      {recommendedProducts.length > 0 && (
+        <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-b border-atelier-lightgray/60 bg-atelier-cream/20 animate-fade-in">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+            <div>
+              <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-accent block mb-1">
+                AI Personalised Edit
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl text-atelier-dark font-semibold">
+                Your Style Match
+              </h2>
+            </div>
+            <div className="font-mono text-xs uppercase tracking-widest text-atelier-gray max-w-md">
+              Curated styling for your {user.styleProfile.styles.join(' & ')} aesthetic with {user.styleProfile.preferredColors.join(', ')} colors.
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-12 gap-x-6">
+            {recommendedProducts.map((product) => (
+              <ProductCard key={product.id || product._id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 3. Currently Coveted Slider/Grid */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-b border-atelier-lightgray/60">

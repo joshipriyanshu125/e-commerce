@@ -11,6 +11,7 @@ import {
     getUserOrders,
     getUserAddresses,
     adminResetPassword,
+    saveStyleProfile,
 } from "../controllers/userController.js";
 
 import {
@@ -67,5 +68,7 @@ router.get("/:id/addresses", protect, admin, getUserAddresses);
 // Reset password (admin)
 router.put("/:id/reset-password", protect, admin, adminResetPassword);
 
+// Save AI Style Profile
+router.put("/style-profile", protect, saveStyleProfile);
 
 export default router;

@@ -40,6 +40,19 @@ const userSchema = new mongoose.Schema(
                 ref: "Product",
             },
         ],
+
+        // ── AI Fashion Profile ────────────────────────────────────────────────
+        onboardingCompleted: {
+            type: Boolean,
+            default: false,
+        },
+        styleProfile: {
+            styles: { type: [String], default: [] },
+            preferredColors: { type: [String], default: [] },
+            favoriteCategories: { type: [String], default: [] },
+            priceRange: { type: String, default: "" },
+            generatedAt: { type: Date },
+        },
     },
     {
         timestamps: true,

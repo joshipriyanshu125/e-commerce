@@ -63,6 +63,14 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+
+    updateStyleProfile: (state, action) => {
+      if (state.user) {
+        state.user.styleProfile = action.payload.styleProfile;
+        state.user.onboardingCompleted = true;
+        localStorage.setItem("user", JSON.stringify(state.user));
+      }
+    },
   },
 });
 
@@ -73,6 +81,7 @@ export const {
   setLoading,
   setError,
   clearError,
+  updateStyleProfile,
 } = authSlice.actions;
 
 export default authSlice.reducer;

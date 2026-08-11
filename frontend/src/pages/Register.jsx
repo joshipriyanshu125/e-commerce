@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { registerSuccess } from "../features/auth/authSlice";
 import api from "../services/axiosInstance";
+import StyleOnboarding from "../components/onboarding/StyleOnboarding";
 
 const Register = () => {
   const dispatch = useDispatch();
@@ -14,6 +15,7 @@ const Register = () => {
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,9 +50,9 @@ const Register = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Small delay to ensure state is updated before navigating
+      // Show onboarding instead of navigating directly
       setTimeout(() => {
-        navigate("/account");
+        setShowOnboarding(true);
       }, 100);
     } catch (err) {
       setError(
@@ -63,6 +65,13 @@ const Register = () => {
   };
 
   return (
+    <>
+      {showOnboarding && (
+        <StyleOnboarding
+          onComplete={() => navigate('/')}
+          onSkip={() => navigate('/')}
+        />
+      )}
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-16 animate-fade-in font-sans">
       <div className="w-full max-w-sm space-y-10 text-center">
         {/* Header */}
@@ -186,6 +195,7 @@ const Register = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
