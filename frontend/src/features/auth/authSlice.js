@@ -71,6 +71,13 @@ const authSlice = createSlice({
         localStorage.setItem("user", JSON.stringify(state.user));
       }
     },
+
+    updateMeasurements: (state, action) => {
+      if (state.user) {
+        state.user.measurements = action.payload.measurements;
+        localStorage.setItem("user", JSON.stringify(state.user));
+      }
+    },
   },
 });
 
@@ -82,6 +89,7 @@ export const {
   setError,
   clearError,
   updateStyleProfile,
+  updateMeasurements,
 } = authSlice.actions;
 
 export default authSlice.reducer;

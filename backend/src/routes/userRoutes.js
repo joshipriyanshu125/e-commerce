@@ -12,6 +12,8 @@ import {
     getUserAddresses,
     adminResetPassword,
     saveStyleProfile,
+    saveMeasurements,
+    getSizeRecommendation,
 } from "../controllers/userController.js";
 
 import {
@@ -70,5 +72,9 @@ router.put("/:id/reset-password", protect, admin, adminResetPassword);
 
 // Save AI Style Profile
 router.put("/style-profile", protect, saveStyleProfile);
+
+// AI Size Recommendation
+router.put("/measurements", protect, saveMeasurements);
+router.get("/size-recommendation", protect, getSizeRecommendation);
 
 export default router;

@@ -5,6 +5,7 @@ import { selectProductById, fetchAPIProducts } from '../features/products/produc
 import { addToCart } from '../features/cart/cartSlice'
 import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react'
 import ReviewSection from '../components/product/ReviewSection'
+import SizeRecommender from '../components/product/SizeRecommender'
 
 const ProductDetails = () => {
   const { id } = useParams()
@@ -417,6 +418,20 @@ const ProductDetails = () => {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* ── AI Size Recommendation ───────────────────────────────────────── */}
+          {allSizes.length > 0 && (
+            <SizeRecommender
+              availableSizes={allSizes}
+              onRecommend={(rec) => {
+                // Auto-highlight the recommended size if it exists
+                if (allSizes.map(s => s.toUpperCase()).includes(rec.toUpperCase())) {
+                  const match = allSizes.find(s => s.toUpperCase() === rec.toUpperCase())
+                  if (match) setSelectedSize(match)
+                }
+              }}
+            />
           )}
 
           {/* Quantity + Add to Bag */}

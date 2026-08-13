@@ -221,3 +221,95 @@ export const saveStyleProfile = asyncHandler(async (req, res) => {
         onboardingCompleted: user.onboardingCompleted,
     });
 });
+
+/*
+====================================
+SAVE BODY MEASUREMENTS
+====================================
+*/
+export const saveMeasurements = asyncHandler(async (req, res) => {
+    const { height, weight, usualSize, preferredFit, bodyType } = req.body;
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+
+    user.measurements = {
+        height:       height       ? Number(height)  : user.measurements?.height  || null,
+        weight:       weight       ? Number(weight)  : user.measurements?.weight  || null,
+        usualSize:    usualSize    || user.measurements?.usualSize    || "",
+        preferredFit: preferredFit || user.measurements?.preferredFit || "",
+        bodyType:     bodyType     || user.measurements?.bodyType     || "",
+        updatedAt: new Date(),
+    };
+
+    await user.save();
+
+    res.status(200).json({
+        success: true,
+        message: "Measurements saved successfully",
+        measurements: user.measurements,
+    });
+});
+
+/*
+====================================
+GET AI SIZE RECOMMENDATION
+====================================
+Logic: BMI-based sizing + fit adjustment + usual-size anchor.
+Returns a recommended size and a plain-English rationale.
+====================================
+*/
+export const getSizeRecommendation = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).select("measurements");
+    if (!user) {
+        res.status(404);
+        throw new Error("User not found");
+    }
+
+    const m = user.measurements || {};
+    if (!m.height || !m.weight || !m.usualSize) {
+        return res.status(200).json({ success: true, recommendation: null, message: "Incomplete measurements" });
+    }
+
+    const ORDER = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+    const bmi = m.weight / ((m.height / 100) ** 2);
+
+    // Base size from BMI
+    let baseIndex;
+    if (bmi < 17.5)      baseIndex = 0; // XS
+    else if (bmi < 19)   baseIndex = 1; // S
+    else if (bmi < 22)   baseIndex = 2; // M
+    else if (bmi < 25)   baseIndex = 3; // L
+    else if (bmi < 29)   baseIndex = 4; // XL
+    else if (bmi < 33)   baseIndex = 5; // XXL
+    else                 baseIndex = 6; // XXXL
+
+    // Anchor toward usual size (average BMI-base and stated size)
+    const usualIndex = ORDER.indexOf(m.usualSize.toUpperCase());
+    let idx = usualIndex !== -1 ? Math.round((baseIndex + usualIndex) / 2) : baseIndex;
+
+    // Fit adjustment
+    const fit = (m.preferredFit || "").toLowerCase();
+    if (fit === "oversized" && idx < ORDER.length - 1) idx += 1;
+    if (fit === "slim"      && idx > 0)                idx -= 1;
+
+    idx = Math.max(0, Math.min(ORDER.length - 1, idx));
+    const recommended = ORDER[idx];
+
+    // Build reason string
+    const reasons = [`your measurements (${m.height} cm, ${m.weight} kg)`];
+    if (usualIndex !== -1 && usualIndex !== baseIndex) reasons.push(`your usual size ${m.usualSize}`);
+    if (fit === "oversized" || fit === "slim") reasons.push(`a ${fit} fit preference`);
+
+    const message = `We recommend ${recommended} based on ${reasons.join(", ")}.`;
+
+    res.status(200).json({
+        success: true,
+        recommendation: recommended,
+        message,
+        bmi: Math.round(bmi * 10) / 10,
+    });
+});

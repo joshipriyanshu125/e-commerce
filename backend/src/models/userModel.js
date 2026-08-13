@@ -55,6 +55,16 @@ const userSchema = new mongoose.Schema(
             priceRange: { type: String, default: "" },
             generatedAt: { type: Date },
         },
+
+        // ── AI Size Profile ───────────────────────────────────────────────────
+        measurements: {
+            height:       { type: Number, default: null },   // cm
+            weight:       { type: Number, default: null },   // kg
+            usualSize:    { type: String, default: "" },     // XS/S/M/L/XL/XXL
+            preferredFit: { type: String, default: "" },     // slim/regular/relaxed/oversized
+            bodyType:     { type: String, default: "" },     // slim/average/athletic/plus
+            updatedAt:    { type: Date },
+        },
     },
     {
         timestamps: true,
