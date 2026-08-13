@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
+import AIAnalyticsChat from '../../components/admin/AIAnalyticsChat'
 import {
   DollarSign, ShoppingBag, Users, Package,
   ArrowUpRight, RefreshCw, TrendingUp, TrendingDown,
@@ -593,6 +594,9 @@ const AdminDashboard = () => {
         </ChartPanel>
 
       </div>
+
+      {/* ── AI Analytics Assistant (floating widget) ── */}
+      <AIAnalyticsChat analytics={analytics} />
     </AdminLayout>
   )
 }
