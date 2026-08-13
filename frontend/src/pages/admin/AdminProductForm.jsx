@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 import api from '../../services/axiosInstance'
-import { ArrowLeft, Upload, X, Plus, Loader2, ImageOff } from 'lucide-react'
+import { ArrowLeft, Upload, X, Plus, Loader2, ImageOff, Sparkles, Wand2, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react'
 
 import { fetchCategoriesAdmin, flattenTreeForSelect } from '../../utils/categories'
 
@@ -37,6 +37,15 @@ const AdminProductForm = () => {
   const [colorInput, setColorInput] = useState('')
 
   const fileInputRef = useRef()
+
+  // ── AI Description Generator state ────────────────────────────────
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiInputs, setAiInputs] = useState({ product: '', material: '', fit: '', color: '', additionalDetails: '' })
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState(null)        // { title, description, generatedBy }
+  const [aiError, setAiError] = useState('')
+  const [aiEditing, setAiEditing] = useState(false)     // inline edit mode
+  const [aiDraft, setAiDraft] = useState({ title: '', description: '' })
 
   // Fetch categories and existing product for edit
   useEffect(() => {
@@ -79,6 +88,52 @@ const AdminProductForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  // ── AI Helpers ────────────────────────────────────────────────────
+  const handleAiInputChange = (e) => {
+    const { name, value } = e.target
+    setAiInputs(prev => ({ ...prev, [name]: value }))
+  }
+
+  const generateDescription = async () => {
+    if (!aiInputs.product.trim()) {
+      setAiError('Please enter a product name to generate a description.')
+      return
+    }
+    try {
+      setAiLoading(true)
+      setAiError('')
+      setAiResult(null)
+      setAiEditing(false)
+      const res = await api.post('ai/generate-description', {
+        product: aiInputs.product,
+        material: aiInputs.material,
+        fit: aiInputs.fit,
+        color: aiInputs.color,
+        additionalDetails: aiInputs.additionalDetails,
+      })
+      const { title, description } = res.data
+      setAiResult(res.data)
+      setAiDraft({ title, description })
+    } catch (err) {
+      setAiError(err.response?.data?.message || 'Failed to generate description. Please try again.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const applyAiToForm = () => {
+    const src = aiEditing ? aiDraft : aiResult
+    if (!src) return
+    setForm(prev => ({
+      ...prev,
+      name: src.title || prev.name,
+      description: src.description || prev.description,
+    }))
+    setAiResult(null)
+    setAiEditing(false)
+    setAiOpen(false)
   }
 
   const handleImageChange = (e) => {
@@ -359,6 +414,177 @@ const AdminProductForm = () => {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* AI Description Generator Card */}
+            <div className="bg-[#13131a] rounded-xl border border-amber-500/20 p-5 space-y-4">
+              {/* Header — click to toggle */}
+              <button
+                type="button"
+                onClick={() => setAiOpen(o => !o)}
+                className="w-full flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+                    <Sparkles size={14} className="text-amber-400" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-sm font-semibold text-white">AI Description Generator</h3>
+                    <p className="text-xs text-white/30 mt-0.5">Generate → Edit → Apply to form</p>
+                  </div>
+                </div>
+                <span className="text-white/30 group-hover:text-white/60 transition-colors">
+                  {aiOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </span>
+              </button>
+
+              {aiOpen && (
+                <div className="space-y-4">
+                  {/* Info notice */}
+                  <div className="flex items-start gap-2 bg-amber-500/8 border border-amber-500/15 rounded-lg px-3 py-2.5">
+                    <Sparkles size={13} className="text-amber-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-amber-300/70 leading-relaxed">
+                      AI-generated content is <strong className="text-amber-300">never published automatically</strong>. Review, edit if needed, then click <strong className="text-amber-300">Apply to Form</strong>.
+                    </p>
+                  </div>
+
+                  {/* Input grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="block text-xs text-white/40 uppercase tracking-widest mb-1.5">Product *</label>
+                      <input
+                        name="product"
+                        value={aiInputs.product}
+                        onChange={handleAiInputChange}
+                        placeholder="e.g. Oversized Black Hoodie"
+                        className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 uppercase tracking-widest mb-1.5">Material</label>
+                      <input
+                        name="material"
+                        value={aiInputs.material}
+                        onChange={handleAiInputChange}
+                        placeholder="e.g. Cotton fleece"
+                        className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 uppercase tracking-widest mb-1.5">Fit</label>
+                      <input
+                        name="fit"
+                        value={aiInputs.fit}
+                        onChange={handleAiInputChange}
+                        placeholder="e.g. Oversized"
+                        className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 uppercase tracking-widest mb-1.5">Color</label>
+                      <input
+                        name="color"
+                        value={aiInputs.color}
+                        onChange={handleAiInputChange}
+                        placeholder="e.g. Black"
+                        className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 uppercase tracking-widest mb-1.5">Extra details</label>
+                      <input
+                        name="additionalDetails"
+                        value={aiInputs.additionalDetails}
+                        onChange={handleAiInputChange}
+                        placeholder="e.g. kangaroo pocket, ribbed cuffs"
+                        className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Error */}
+                  {aiError && (
+                    <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{aiError}</p>
+                  )}
+
+                  {/* Generate button */}
+                  <button
+                    type="button"
+                    onClick={generateDescription}
+                    disabled={aiLoading}
+                    className="w-full py-2.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {aiLoading
+                      ? <><Loader2 size={15} className="animate-spin" /> Generating…</>
+                      : <><Wand2 size={15} /> Generate Description</>}
+                  </button>
+
+                  {/* Result panel */}
+                  {aiResult && (
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-xs text-amber-400">
+                          <CheckCircle2 size={13} />
+                          {aiResult.generatedBy === 'ai' ? 'AI Generated' : 'Template Generated'}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setAiEditing(e => !e); setAiDraft({ title: aiResult.title, description: aiResult.description }) }}
+                          className="text-xs text-white/40 hover:text-white transition-colors"
+                        >
+                          {aiEditing ? 'Cancel edit' : 'Edit'}
+                        </button>
+                      </div>
+
+                      {aiEditing ? (
+                        <div className="space-y-2">
+                          <div>
+                            <label className="block text-xs text-white/30 mb-1">Title</label>
+                            <input
+                              value={aiDraft.title}
+                              onChange={e => setAiDraft(d => ({ ...d, title: e.target.value }))}
+                              className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500/50"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-white/30 mb-1">Description</label>
+                            <textarea
+                              value={aiDraft.description}
+                              onChange={e => setAiDraft(d => ({ ...d, description: e.target.value }))}
+                              rows={4}
+                              className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-amber-500/50"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <p className="text-sm font-semibold text-white">{aiResult.title}</p>
+                          <p className="text-sm text-white/60 leading-relaxed">{aiResult.description}</p>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={applyAiToForm}
+                          className="flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <CheckCircle2 size={14} /> Apply to Form
+                        </button>
+                        <button
+                          type="button"
+                          onClick={generateDescription}
+                          disabled={aiLoading}
+                          className="px-3 py-2 rounded-lg border border-white/10 text-white/40 hover:text-white hover:bg-white/5 text-sm transition-all disabled:opacity-50"
+                          title="Regenerate"
+                        >
+                          {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Images Card */}
