@@ -30,7 +30,7 @@ export function getAIClient() {
                 apiKey: geminiKey,
                 baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
             }),
-            model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+            model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
             provider: "gemini",
         };
     }
@@ -60,7 +60,7 @@ export function getAIClient() {
                 "X-Title": "Atelier E-Commerce AI",
             },
         }),
-        model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+        model: process.env.OPENROUTER_MODEL || "google/gemini-2.0-flash-001",
         provider: "openrouter",
     };
 }
