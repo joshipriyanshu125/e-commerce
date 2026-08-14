@@ -2,6 +2,8 @@ import express from "express";
 import { protect, admin } from "../middleware/authMiddleware.js";
 import { generateProductDescription } from "../controllers/aiController.js";
 import { analyzeStoreData, generateDailyInsights } from "../controllers/aiAnalyticsController.js";
+import { visualFashionSearch } from "../controllers/visualSearchController.js";
+import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -28,6 +30,13 @@ router.post(
     protect,
     admin,
     generateDailyInsights
+);
+
+// POST /api/ai/visual-search  — Public / Customer feature
+router.post(
+    "/visual-search",
+    upload.single("image"),
+    visualFashionSearch
 );
 
 export default router;
