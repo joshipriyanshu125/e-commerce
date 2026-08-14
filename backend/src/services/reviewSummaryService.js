@@ -1,4 +1,4 @@
-import { OpenAI } from "openai";
+import { getAIClient } from "../utils/aiClient.js";
 import logger from "../utils/logger.js";
 
 // Helper: Smart local rule-based synthesizer fallback
@@ -87,24 +87,13 @@ export const generateReviewSummary = async (reviews) => {
         };
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-        logger.info("OPENROUTER_API_KEY not found. Using local review summary generator.");
+    const ai = getAIClient();
+    if (!ai) {
+        logger.info("No AI API key found. Using local review summary generator.");
         return generateLocalSummary(approved);
     }
 
     try {
-        const openai = new OpenAI({
-            apiKey: apiKey,
-            baseURL: "https://openrouter.ai/api/v1",
-            defaultHeaders: {
-                "HTTP-Referer": "http://localhost:3000",
-                "X-Title": "Atelier E-Commerce",
-            }
-        });
-
-        const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
-
         const reviewsText = approved.map(r => `Rating: ${r.rating} stars - Title: ${r.title} - Comment: ${r.comment}`).join("\n\n");
 
         const prompt = `You are an AI reviews assistant for an e-commerce platform. Summarize the following reviews for a product.
@@ -121,8 +110,8 @@ Do not include any markdown backticks, explanations, or text other than the JSON
 Reviews:
 ${reviewsText}`;
 
-        const response = await openai.chat.completions.create({
-            model: model,
+        const response = await ai.client.chat.completions.create({
+            model: ai.model,
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" }
         });
