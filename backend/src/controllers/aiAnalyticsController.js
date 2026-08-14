@@ -1,4 +1,4 @@
-import { OpenAI } from "openai";
+import { getAIClient } from "../utils/aiClient.js";
 import logger from "../utils/logger.js";
 import { buildAnalyticsSnapshot } from "./adminAnalyticsController.js";
 
@@ -35,14 +35,14 @@ export const analyzeStoreData = async (req, res) => {
             });
         }
 
-        const apiKey = process.env.OPENROUTER_API_KEY;
+        const ai = getAIClient();
 
         // ── No API key → graceful fallback ─────────────────────────────────
-        if (!apiKey) {
-            logger.info("OPENROUTER_API_KEY not configured — AI analytics unavailable.");
+        if (!ai) {
+            logger.info("No AI API Key configured — AI analytics unavailable.");
             return res.status(200).json({
                 success: true,
-                answer: "⚠️ The AI assistant is not configured yet. Please add your **OPENROUTER_API_KEY** to the backend `.env` file and restart the server. You can get a free key at [openrouter.ai](https://openrouter.ai).",
+                answer: "⚠️ The AI assistant is not configured yet. Please add your **OPENROUTER_API_KEY**, **GEMINI_API_KEY**, or **OPENAI_API_KEY** to the backend `.env` file and restart the server.",
                 generatedBy: "fallback",
             });
         }
@@ -93,19 +93,8 @@ Answer the admin's question based strictly on this data.`;
         ];
 
         // ── Call LLM via OpenRouter ─────────────────────────────────────────
-        const openai = new OpenAI({
-            apiKey,
-            baseURL: "https://openrouter.ai/api/v1",
-            defaultHeaders: {
-                "HTTP-Referer": "http://localhost:3000",
-                "X-Title": "Atelier Admin Analytics AI",
-            },
-        });
-
-        const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
-
-        const response = await openai.chat.completions.create({
-            model,
+        const response = await ai.client.chat.completions.create({
+            model: ai.model,
             messages,
             temperature: 0.3, // Lower temperature for factual analytics responses
             max_tokens: 800,
@@ -120,7 +109,7 @@ Answer the admin's question based strictly on this data.`;
             });
         }
 
-        logger.info(`AI analytics query answered [model: ${model}]: "${question.slice(0, 60)}..."`);
+        logger.info(`AI analytics query answered [model: ${ai.model}]: "${question.slice(0, 60)}..."`);
 
         return res.status(200).json({
             success: true,
@@ -156,7 +145,7 @@ export const generateDailyInsights = async (req, res) => {
         const { _dashboard, ...aiSnapshot } = snapshot;
         const insights = snapshot.businessInsights;
 
-        const apiKey = process.env.OPENROUTER_API_KEY;
+        const ai = getAIClient();
 
         const generateRuleBasedBrief = () => {
             const lines = [];
@@ -172,7 +161,7 @@ export const generateDailyInsights = async (req, res) => {
             return lines.join("\n\n");
         };
 
-        if (!apiKey) {
+        if (!ai) {
             return res.status(200).json({
                 success: true,
                 briefing: generateRuleBasedBrief(),
@@ -198,19 +187,8 @@ FORMAT INSTRUCTIONS:
 - Keep tone professional, energetic, and concise. Use bold for key numbers and product names.
 - Do not use markdown headers. Start directly with bullet points or key callouts.`;
 
-        const openai = new OpenAI({
-            apiKey,
-            baseURL: "https://openrouter.ai/api/v1",
-            defaultHeaders: {
-                "HTTP-Referer": "http://localhost:3000",
-                "X-Title": "Atelier Admin Analytics AI",
-            },
-        });
-
-        const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
-
-        const response = await openai.chat.completions.create({
-            model,
+        const response = await ai.client.chat.completions.create({
+            model: ai.model,
             messages: [{ role: "user", content: systemPrompt }],
             temperature: 0.4,
             max_tokens: 500,
@@ -223,7 +201,7 @@ FORMAT INSTRUCTIONS:
             briefing,
             insights,
             generatedBy: "ai",
-            model,
+            model: ai.model,
         });
     } catch (error) {
         logger.error({ message: "Daily insights generation failed", error: error.message });

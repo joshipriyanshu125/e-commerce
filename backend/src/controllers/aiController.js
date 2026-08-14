@@ -1,4 +1,4 @@
-import { OpenAI } from "openai";
+import { getAIClient } from "../utils/aiClient.js";
 import logger from "../utils/logger.js";
 
 /*
@@ -19,11 +19,11 @@ export const generateProductDescription = async (req, res) => {
             });
         }
 
-        const apiKey = process.env.OPENROUTER_API_KEY;
+        const ai = getAIClient();
 
         // ─── Fallback: No API key → return a template-based description ───
-        if (!apiKey) {
-            logger.info("OPENROUTER_API_KEY not found. Using template description generator.");
+        if (!ai) {
+            logger.info("No AI API key found. Using template description generator.");
 
             const title = product.trim();
             const materialText = material ? `${material} ` : "";
@@ -43,18 +43,6 @@ export const generateProductDescription = async (req, res) => {
                 generatedBy: "template",
             });
         }
-
-        // ─── AI Path ───────────────────────────────────────────────────────
-        const openai = new OpenAI({
-            apiKey,
-            baseURL: "https://openrouter.ai/api/v1",
-            defaultHeaders: {
-                "HTTP-Referer": "http://localhost:3000",
-                "X-Title": "Atelier E-Commerce Admin",
-            },
-        });
-
-        const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
 
         const detailsLine = [
             material && `Material: ${material}`,
@@ -81,8 +69,8 @@ Requirements:
 
 Keep the description under 80 words. Do NOT mention the brand name. Do NOT make up specs not listed above.`;
 
-        const response = await openai.chat.completions.create({
-            model,
+        const response = await ai.client.chat.completions.create({
+            model: ai.model,
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" },
         });

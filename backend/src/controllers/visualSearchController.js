@@ -1,4 +1,4 @@
-import { OpenAI } from "openai";
+import { getAIClient } from "../utils/aiClient.js";
 import Product from "../models/Product.js";
 import logger from "../utils/logger.js";
 
@@ -60,7 +60,7 @@ export const visualFashionSearch = async (req, res) => {
             });
         }
 
-        const apiKey = process.env.OPENROUTER_API_KEY;
+        const ai = getAIClient();
         let detectedTraits = {
             primaryCategory: "Hoodie",
             subCategory: "Oversized Hoodie",
@@ -72,19 +72,8 @@ export const visualFashionSearch = async (req, res) => {
         };
 
         // ── Vision Feature Extraction via Multimodal AI ──────────────────────
-        if (apiKey) {
+        if (ai) {
             try {
-                const openai = new OpenAI({
-                    apiKey,
-                    baseURL: "https://openrouter.ai/api/v1",
-                    defaultHeaders: {
-                        "HTTP-Referer": "http://localhost:3000",
-                        "X-Title": "Atelier Visual Search AI",
-                    },
-                });
-
-                const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
-
                 const systemPrompt = `You are a high-precision computer vision model for fashion e-commerce.
 Analyze the provided clothing/fashion image and extract its visual attributes into clean JSON format.
 
@@ -103,8 +92,8 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown code blocks.`;
 
                 const imageUrlContent = imageBase64 || req.body.imageUrl;
 
-                const response = await openai.chat.completions.create({
-                    model,
+                const response = await ai.client.chat.completions.create({
+                    model: ai.model,
                     messages: [
                         {
                             role: "user",
