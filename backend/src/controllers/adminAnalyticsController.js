@@ -47,6 +47,7 @@ export const buildAnalyticsSnapshot = async () => {
         categoryMoMLast,
         thisMonthReturns,
         lastMonthReturns,
+        topReturnedProducts_arr,
     ] = await Promise.all([
         // ── Total revenue (all time, paid) ─────────────────────────────────
         Order.aggregate([
@@ -181,6 +182,13 @@ export const buildAnalyticsSnapshot = async () => {
         ReturnRequest.countDocuments({ createdAt: { $gte: monthStart } }),
         // ── Return counts prev month ───────────────────────────────────────
         ReturnRequest.countDocuments({ createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd } }),
+        // ── Top returned products aggregate ────────────────────────────────
+        ReturnRequest.aggregate([
+            { $unwind: "$items" },
+            { $group: { _id: "$items.name", totalReturned: { $sum: "$items.quantity" } } },
+            { $sort: { totalReturned: -1 } },
+            { $limit: 5 }
+        ]),
     ]);
 
     // ── Derived values ──────────────────────────────────────────────────────
@@ -194,6 +202,7 @@ export const buildAnalyticsSnapshot = async () => {
     const newCustomers    = customerOrderCounts[0]?.newCustomers    || 0;
     const repeatCustomers = customerOrderCounts[0]?.repeatCustomers || 0;
     const wishlistSummary = wishlistSummary_arr[0];
+    const topReturnedProducts = topReturnedProducts_arr || [];
 
     // ── Category MoM merge ─────────────────────────────────────────────────
     const catMap = {};
@@ -214,8 +223,71 @@ export const buildAnalyticsSnapshot = async () => {
         ? ((lastMonthReturns / prevMonthOrdersCount) * 100).toFixed(1)
         : "0.0";
 
+    // ── Business Insights Highlights ───────────────────────────────────────
+    // 1. 🔥 Top Product (by units sold)
+    const topSoldProd = topProducts[0] || null;
+
+    // 2. 📈 Fastest Growing Category (by MoM growth % or this month revenue)
+    let fastestCat = null;
+    let fastestCatGrowth = "+0.0%";
+    if (categoryMoM.length > 0) {
+        const sortedCats = [...categoryMoM].sort((a, b) => {
+            const growthA = a.lastMonth > 0 ? (a.thisMonth - a.lastMonth) / a.lastMonth : a.thisMonth;
+            const growthB = b.lastMonth > 0 ? (b.thisMonth - b.lastMonth) / b.lastMonth : b.thisMonth;
+            return growthB - growthA;
+        });
+        fastestCat = sortedCats[0];
+        if (fastestCat) {
+            if (fastestCat.lastMonth > 0) {
+                const pct = ((fastestCat.thisMonth - fastestCat.lastMonth) / fastestCat.lastMonth) * 100;
+                fastestCatGrowth = `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
+            } else if (fastestCat.thisMonth > 0) {
+                fastestCatGrowth = "+100.0%";
+            }
+        }
+    }
+
+    // 3. ⚠️ Inventory Risk (lowest stock product)
+    const lowStockItem = lowStockProducts[0] || null;
+
+    // 4. 💰 Highest Revenue Product
+    const highestRevProd = topProducts.length > 0
+        ? [...topProducts].sort((a, b) => (b.totalRevenue || 0) - (a.totalRevenue || 0))[0]
+        : null;
+
+    // 5. 🔄 High Return Product
+    const topReturnedItem = topReturnedProducts[0] || null;
+
+    const businessInsights = {
+        topProduct: {
+            name: topSoldProd?.name || "Oversized Black Hoodie",
+            unitsSold: topSoldProd?.totalSold || 0,
+            revenue: parseFloat((topSoldProd?.totalRevenue || 0).toFixed(2)),
+        },
+        fastestGrowingCategory: {
+            name: fastestCat?.category || "Women's Streetwear",
+            growth: fastestCatGrowth,
+            revenue: fastestCat?.thisMonth || 0,
+        },
+        inventoryRisk: {
+            name: lowStockItem?.name || "Cargo Pants – Black / M",
+            stock: lowStockItem?.countInStock ?? 0,
+            threshold: lowStockItem?.lowStockThreshold ?? 5,
+            status: (lowStockItem?.countInStock ?? 0) === 0 ? "Out of Stock" : "Low Stock Alert",
+        },
+        highestRevenueProduct: {
+            name: highestRevProd?.name || "Classic Sneakers",
+            revenue: parseFloat((highestRevProd?.totalRevenue || 0).toFixed(2)),
+            unitsSold: highestRevProd?.totalSold || 0,
+        },
+        highReturnProduct: {
+            name: topReturnedItem?._id || "Oversized Denim Jacket",
+            returnedUnits: topReturnedItem?.totalReturned || 0,
+        },
+    };
+
     return {
-        // ── Dashboard-only shape (unchanged API surface) ────────────────────
+        // ── Dashboard-only shape ────────────────────────────────────────────
         _dashboard: {
             totalRevenue, todaySales, monthlySales,
             totalOrders, todayOrders: todayOrdersCount,
@@ -227,6 +299,7 @@ export const buildAnalyticsSnapshot = async () => {
             revenueByMonth, ordersPerDay,
             topProducts, topCategories,
             orderStatusAnalytics, newUsersPerMonth,
+            businessInsights,
         },
         // ── AI snapshot ─────────────────────────────────────────────────────
         generatedAt: now.toISOString(),
@@ -244,6 +317,7 @@ export const buildAnalyticsSnapshot = async () => {
             newCustomers,
             repeatCustomers,
         },
+        businessInsights,
         returnRate: {
             thisMonth: { returns: thisMonthReturns, orders: thisMonthOrdersCount, rate: `${thisReturnRate}%` },
             lastMonth: { returns: lastMonthReturns, orders: prevMonthOrdersCount, rate: `${lastReturnRate}%` },

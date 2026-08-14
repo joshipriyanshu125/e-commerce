@@ -139,3 +139,98 @@ Answer the admin's question based strictly on this data.`;
         });
     }
 };
+
+/*
+==============================================================================
+  POST /api/ai/daily-insights
+  Auth : admin only
+
+  Generates an AI Executive Briefing ("What should I know today?") summarizing
+  top selling products, fastest growing category, inventory risk, highest
+  revenue item, and high return items with actionable recommendations.
+==============================================================================
+*/
+export const generateDailyInsights = async (req, res) => {
+    try {
+        const snapshot = await buildAnalyticsSnapshot();
+        const { _dashboard, ...aiSnapshot } = snapshot;
+        const insights = snapshot.businessInsights;
+
+        const apiKey = process.env.OPENROUTER_API_KEY;
+
+        const generateRuleBasedBrief = () => {
+            const lines = [];
+            lines.push(`🔥 **Top Sales Performer**: **${insights.topProduct.name}** led unit volume with **${insights.topProduct.unitsSold} units** sold ($${insights.topProduct.revenue.toLocaleString()}).`);
+            lines.push(`📈 **Category Acceleration**: **${insights.fastestGrowingCategory.name}** is your fastest-growing category with **${insights.fastestGrowingCategory.growth}** MoM growth.`);
+            if (insights.inventoryRisk.name) {
+                lines.push(`⚠️ **Inventory Alert**: **${insights.inventoryRisk.name}** is at **${insights.inventoryRisk.status}** (${insights.inventoryRisk.stock} units left). Immediate restock recommended.`);
+            }
+            lines.push(`💰 **Revenue Leader**: **${insights.highestRevenueProduct.name}** generated **$${insights.highestRevenueProduct.revenue.toLocaleString()}** in revenue.`);
+            if (insights.highReturnProduct.name) {
+                lines.push(`🔄 **Return Monitoring**: **${insights.highReturnProduct.name}** recorded **${insights.highReturnProduct.returnedUnits} return requests**. Inspect sizing and product details.`);
+            }
+            return lines.join("\n\n");
+        };
+
+        if (!apiKey) {
+            return res.status(200).json({
+                success: true,
+                briefing: generateRuleBasedBrief(),
+                insights,
+                generatedBy: "system",
+            });
+        }
+
+        const systemPrompt = `You are a strategic AI E-commerce Executive Advisor analyzing real-time store metrics.
+Synthesize a punchy "What should I know today?" Executive Briefing for the admin dashboard.
+
+STORE INSIGHTS DATA:
+- Top Product: ${JSON.stringify(insights.topProduct)}
+- Fastest Growing Category: ${JSON.stringify(insights.fastestGrowingCategory)}
+- Inventory Risk: ${JSON.stringify(insights.inventoryRisk)}
+- Highest Revenue Product: ${JSON.stringify(insights.highestRevenueProduct)}
+- High Return Product: ${JSON.stringify(insights.highReturnProduct)}
+- Monthly Revenue: $${snapshot.summary.thisMonthRevenue} (MoM Change: ${snapshot.summary.revenueChangePercent ?? 0}%)
+- Total Orders This Month: ${snapshot.summary.thisMonthOrders}
+
+FORMAT INSTRUCTIONS:
+- Create 3-4 bullet points highlighting key performance metrics, inventory alerts, and actionable recommendations.
+- Keep tone professional, energetic, and concise. Use bold for key numbers and product names.
+- Do not use markdown headers. Start directly with bullet points or key callouts.`;
+
+        const openai = new OpenAI({
+            apiKey,
+            baseURL: "https://openrouter.ai/api/v1",
+            defaultHeaders: {
+                "HTTP-Referer": "http://localhost:3000",
+                "X-Title": "Atelier Admin Analytics AI",
+            },
+        });
+
+        const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
+
+        const response = await openai.chat.completions.create({
+            model,
+            messages: [{ role: "user", content: systemPrompt }],
+            temperature: 0.4,
+            max_tokens: 500,
+        });
+
+        const briefing = response.choices[0]?.message?.content?.trim() || generateRuleBasedBrief();
+
+        return res.status(200).json({
+            success: true,
+            briefing,
+            insights,
+            generatedBy: "ai",
+            model,
+        });
+    } catch (error) {
+        logger.error({ message: "Daily insights generation failed", error: error.message });
+        return res.status(500).json({
+            success: false,
+            message: "Failed to generate daily business insights.",
+        });
+    }
+};
+

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import AIAnalyticsChat from '../../components/admin/AIAnalyticsChat'
+import AISalesInsightsCard from '../../components/admin/AISalesInsightsCard'
 import {
   DollarSign, ShoppingBag, Users, Package,
   ArrowUpRight, RefreshCw, TrendingUp, TrendingDown,
@@ -328,6 +329,9 @@ const AdminDashboard = () => {
             {error}
           </div>
         )}
+
+        {/* ── AI Sales & Business Insights ── */}
+        <AISalesInsightsCard analytics={analytics} />
 
         {/* ── Summary Cards ── */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
