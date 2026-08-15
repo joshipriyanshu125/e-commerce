@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { useGoogleLogin } from "@react-oauth/google";
 import { loginSuccess } from "../features/auth/authSlice";
 import api from "../services/axiosInstance";
 import StyleOnboarding from "../components/onboarding/StyleOnboarding";
@@ -73,8 +74,54 @@ const Login = () => {
     }
   };
 
+  const handleGoogleSuccess = async (tokenResponse) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const { data } = await api.post("auth/google", {
+        accessToken: tokenResponse.access_token,
+      });
+
+      dispatch(
+        loginSuccess({
+          user: data.user,
+          token: data.token,
+        })
+      );
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      setTimeout(() => {
+        if (data.user.role === "admin") {
+          navigate("/admin");
+        } else if (!data.user.onboardingCompleted) {
+          setShowOnboarding(true);
+        } else {
+          const params = new URLSearchParams(window.location.search);
+          const redirect = params.get("redirect") || "/account";
+          navigate(redirect);
+        }
+      }, 100);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Google sign-in failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => setError("Google sign-in was cancelled or failed."),
+  });
+
   const handleGoogleSignIn = () => {
-    setError("Google Sign-In is not implemented yet.");
+    setError("");
+    googleLogin();
   };
 
   return (

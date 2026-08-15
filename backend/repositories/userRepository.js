@@ -54,6 +54,15 @@ const deleteUserById = async (id) => {
 
 /*
 ==================================================
+FIND USER BY GOOGLE ID
+==================================================
+*/
+const findUserByGoogleId = async (googleId) => {
+    return await User.findOne({ googleId });
+};
+
+/*
+==================================================
 GET ALL USERS
 ==================================================
 */
@@ -64,6 +73,7 @@ const getAllUsers = async () => {
 export {
     findUserByEmail,
     findUserById,
+    findUserByGoogleId,
     createUser,
     updateUserById,
     deleteUserById,

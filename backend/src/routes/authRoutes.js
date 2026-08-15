@@ -2,6 +2,7 @@ import express from "express";
 import {
     registerUser,
     loginUser,
+    googleAuth,
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -43,5 +44,8 @@ router.post("/register", registerUser);
 
 // Login User
 router.post("/login", loginUser);
+
+// Google OAuth
+router.post("/google", googleAuth);
 
 export default router;

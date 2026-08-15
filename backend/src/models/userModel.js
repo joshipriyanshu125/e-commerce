@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema(
 
         password: {
             type: String,
-            required: true,
+            required: function () {
+                return !this.googleId && this.authProvider === "local";
+            },
             minlength: 6,
         },
 
@@ -27,6 +29,23 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: ["user", "admin"],
             default: "user",
+        },
+
+        googleId: {
+            type: String,
+            default: null,
+            sparse: true,
+        },
+
+        avatar: {
+            type: String,
+            default: "",
+        },
+
+        authProvider: {
+            type: String,
+            enum: ["local", "google"],
+            default: "local",
         },
 
         isBlocked: {
@@ -77,7 +96,7 @@ HASH PASSWORD BEFORE SAVING
 ==================================================
 */
 userSchema.pre("save", async function (next) {
-    if (!this.isModified("password")) {
+    if (!this.password || !this.isModified("password")) {
         return next();
     }
 

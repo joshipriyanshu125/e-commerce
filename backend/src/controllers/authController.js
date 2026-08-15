@@ -3,6 +3,7 @@ import asyncHandler from "../middleware/asyncHandler.js";
 import {
     registerUserService,
     loginUserService,
+    googleAuthService,
 } from "../services/authService.js";
 
 /*
@@ -27,6 +28,8 @@ const registerUser = asyncHandler(async (req, res) => {
             name: mongoUser.name,
             email: mongoUser.email,
             role: mongoUser.role,
+            avatar: mongoUser.avatar,
+            onboardingCompleted: mongoUser.onboardingCompleted,
         },
         token,
     });
@@ -58,6 +61,36 @@ const loginUser = asyncHandler(async (req, res) => {
             name: mongoUser.name,
             email: mongoUser.email,
             role: mongoUser.role,
+            avatar: mongoUser.avatar,
+            onboardingCompleted: mongoUser.onboardingCompleted,
+        },
+        token,
+    });
+});
+
+/*
+====================================
+GOOGLE OAUTH LOGIN / SIGNUP
+====================================
+*/
+const googleAuth = asyncHandler(async (req, res) => {
+    const { credential, accessToken } = req.body;
+
+    const { user: mongoUser, token } = await googleAuthService({
+        credential,
+        accessToken,
+    });
+
+    res.status(200).json({
+        success: true,
+        message: "Google authentication successful",
+        user: {
+            _id: mongoUser._id,
+            name: mongoUser.name,
+            email: mongoUser.email,
+            role: mongoUser.role,
+            avatar: mongoUser.avatar,
+            onboardingCompleted: mongoUser.onboardingCompleted,
         },
         token,
     });
@@ -66,4 +99,5 @@ const loginUser = asyncHandler(async (req, res) => {
 export {
     registerUser,
     loginUser,
+    googleAuth,
 };
