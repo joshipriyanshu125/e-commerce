@@ -585,16 +585,21 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
             ))}
           </div>
 
-          {/* AI Review Summary */}
+          {/* Customer review highlights */}
           {(loadingSummary || (summaryData && summaryData.count > 0)) && (
-            <div className="border border-atelier-lightgray p-5 bg-atelier-cream/30 space-y-4 rounded">
-              <div className="flex items-center justify-between border-b border-atelier-lightgray pb-2">
-                <h3 className="font-mono text-xs tracking-widest uppercase text-atelier-dark font-semibold flex items-center gap-1.5">
-                  <Star size={12} className="text-amber-500 fill-amber-500 animate-pulse" />
-                  AI Review Summary
-                </h3>
+            <div className="border border-atelier-lightgray bg-white/40 p-5 sm:p-6 space-y-5 rounded">
+              <div className="flex items-start justify-between gap-4 border-b border-atelier-lightgray pb-3">
+                <div>
+                  <h3 className="font-serif text-lg text-atelier-dark font-medium flex items-center gap-2">
+                    <Star size={16} className="text-amber-500 fill-amber-500" />
+                    What customers are saying
+                  </h3>
+                  <p className="mt-1 text-xs text-atelier-gray">
+                    A quick look at themes from verified reviews.
+                  </p>
+                </div>
                 {loadingSummary && (
-                  <span className="text-[10px] font-mono text-atelier-gray animate-pulse">Analyzing...</span>
+                  <span className="shrink-0 text-xs text-atelier-gray animate-pulse">Loading...</span>
                 )}
               </div>
 
@@ -606,20 +611,20 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
                 </div>
               ) : (
                 <>
-                  <p className="text-xs text-atelier-dark italic leading-relaxed font-serif">
-                    "{summaryData.summary}"
+                  <p className="text-sm sm:text-base text-atelier-dark leading-7 font-sans">
+                    {summaryData.summary}
                   </p>
 
                   {summaryData.praised && summaryData.praised.length > 0 && (
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-semibold flex items-center gap-1">
-                        👍 Most Praised:
+                      <span className="text-xs font-mono uppercase tracking-wider text-emerald-700 font-semibold flex items-center gap-1">
+                        Most mentioned
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {summaryData.praised.map((aspect, idx) => (
                           <span
                             key={idx}
-                            className="text-[10px] font-mono bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-100"
+                            className="text-xs font-mono bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-100"
                           >
                             {aspect}
                           </span>
@@ -630,12 +635,12 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
 
                   {summaryData.complaints && summaryData.complaints.length > 0 && (
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-semibold flex items-center gap-1">
-                        ⚠️ Common Complaints:
+                      <span className="text-xs font-mono uppercase tracking-wider text-amber-700 font-semibold flex items-center gap-1">
+                        Worth knowing
                       </span>
-                      <ul className="list-disc pl-4 space-y-0.5 text-xs text-atelier-gray">
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-atelier-gray">
                         {summaryData.complaints.map((item, idx) => (
-                          <li key={idx} className="font-sans leading-tight">
+                          <li key={idx} className="font-sans leading-5">
                             {item}
                           </li>
                         ))}
@@ -643,7 +648,7 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
                     </div>
                   )}
 
-                  <div className="text-[10px] font-mono text-atelier-gray pt-2 border-t border-atelier-lightgray/50">
+                  <div className="text-xs text-atelier-gray pt-3 border-t border-atelier-lightgray/50">
                     Based on {summaryData.count} verified customer review{summaryData.count !== 1 ? 's' : ''}
                   </div>
                 </>
