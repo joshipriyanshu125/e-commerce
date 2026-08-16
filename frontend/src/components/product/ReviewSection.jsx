@@ -590,8 +590,7 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
             <div className="border border-atelier-lightgray bg-white/40 p-5 sm:p-6 space-y-5 rounded">
               <div className="flex items-start justify-between gap-4 border-b border-atelier-lightgray pb-3">
                 <div>
-                  <h3 className="font-serif text-lg text-atelier-dark font-medium flex items-center gap-2">
-                    <Star size={16} className="text-amber-500 fill-amber-500" />
+                  <h3 className="font-serif text-lg text-atelier-dark font-medium">
                     What customers are saying
                   </h3>
                   <p className="mt-1 text-xs text-atelier-gray">
@@ -611,7 +610,7 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
                 </div>
               ) : (
                 <>
-                  <p className="text-sm sm:text-base text-atelier-dark leading-7 font-sans">
+                  <p className="text-sm sm:text-base text-atelier-gray font-light leading-relaxed font-sans">
                     {summaryData.summary}
                   </p>
 
