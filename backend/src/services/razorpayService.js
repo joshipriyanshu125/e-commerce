@@ -2,11 +2,22 @@ import axios from "axios";
 import crypto from "crypto";
 
 const getRazorpayConfig = () => {
-    const { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_CURRENCY = "INR" } = process.env;
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-        throw new Error("Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to the backend environment.");
+    const {
+        RAZORPAY_KEY_ID,
+        RAZORPAY_KEY_SECRET,
+        // Support the misspelling that was previously used in the local environment.
+        // New deployments must use the correctly spelled RAZORPAY_* variables.
+        RAZERPAY_KEY_ID,
+        RAZERPAY_KEY_SECRET,
+        RAZORPAY_CURRENCY = "INR",
+    } = process.env;
+    const keyId = RAZORPAY_KEY_ID || RAZERPAY_KEY_ID;
+    const keySecret = RAZORPAY_KEY_SECRET || RAZERPAY_KEY_SECRET;
+
+    if (!keyId || !keySecret) {
+        throw new Error("Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to backend/.env, then restart the backend.");
     }
-    return { keyId: RAZORPAY_KEY_ID, keySecret: RAZORPAY_KEY_SECRET, currency: RAZORPAY_CURRENCY };
+    return { keyId, keySecret, currency: RAZORPAY_CURRENCY };
 };
 
 const createRazorpayOrder = async ({ amount, receipt }) => {
