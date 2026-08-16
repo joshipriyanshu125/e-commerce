@@ -41,6 +41,8 @@ import newsletterRoutes from "./routes/newsletterRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import inventoryRoutes from "./routes/inventoryRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import razorpayRoutes from "./routes/razorpayRoutes.js";
+import { handleWebhook } from "./controllers/razorpayController.js";
 
 import { startCouponExpiryJob } from "./jobs/couponExpiryJob.js";
 import { startEmailRetryJob } from "./jobs/emailRetryJob.js";
@@ -102,6 +104,9 @@ initSocket(server);
 BODY PARSER
 =========================================
 */
+// Razorpay signs the exact request payload, so this route must precede JSON parsing.
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), handleWebhook);
+
 app.use(express.json());
 
 app.use(
@@ -229,6 +234,7 @@ app.use("/api/newsletter", newsletterRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin/inventory", inventoryRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/payments", razorpayRoutes);
 
 /*
 =========================================

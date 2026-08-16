@@ -4,11 +4,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { clearCart } from '../features/cart/cartSlice'
 import { CheckCircle, ArrowLeft, CreditCard, Shield, Lock, MapPin, Plus, CheckCircle2 } from 'lucide-react'
 import axios from '../services/axiosInstance'
+import { loadRazorpay } from '../utils/razorpay'
 
 const Checkout = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  
+
   const { items, discountAmount, couponCode } = useSelector(state => state.cart)
   const { user } = useSelector(state => state.auth)
 
@@ -25,12 +26,12 @@ const Checkout = () => {
   const [city, setCity] = useState('')
   const [zip, setZip] = useState('')
   const [phone, setPhone] = useState('')
-  
+  // Retained while the legacy card form remains disabled below; Razorpay receives payment details directly.
   const [cardName, setCardName] = useState(user?.name || '')
   const [cardNumber, setCardNumber] = useState('')
   const [cardExpiry, setCardExpiry] = useState('')
   const [cardCvc, setCardCvc] = useState('')
-
+  
   // Checkout status
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
@@ -86,22 +87,9 @@ const Checkout = () => {
     setUseNewAddress(true)
   }
 
-  const handleCardNumberChange = (e) => {
-    let value = e.target.value.replace(/\D/g, '').slice(0, 16);
-    setCardNumber(value.replace(/(\d{4})(?=\d)/g, '$1 '));
-  };
-
-  const handleCardExpiryChange = (e) => {
-    let value = e.target.value.replace(/\D/g, '').slice(0, 4);
-    if (value.length >= 3) {
-      value = `${value.slice(0, 2)}/${value.slice(2)}`;
-    }
-    setCardExpiry(value);
-  };
-
-  const handleCardCvcChange = (e) => {
-    setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4));
-  };
+  const handleCardNumberChange = (e) => setCardNumber(e.target.value)
+  const handleCardExpiryChange = (e) => setCardExpiry(e.target.value)
+  const handleCardCvcChange = (e) => setCardCvc(e.target.value)
 
   if (items.length === 0 && !orderSuccess) {
     return (
@@ -140,15 +128,10 @@ const Checkout = () => {
         savedAddressId = addrRes.data._id || addrRes.data.id;
       }
 
-      // 2. Prepare Order Payload
+      // 2. The server prices products from the catalogue; never trust browser totals.
       const orderPayload = {
         orderItems: items.map(item => ({
           product: item.product._id || item.product.id,
-          name: item.product.name,
-          image: typeof item.product.images?.[0] === 'string'
-            ? item.product.images?.[0]
-            : item.product.images?.[0]?.url || '',
-          price: item.product.price,
           quantity: item.quantity,
           size: item.size || 'N/A',
           color: item.color?.name || item.color || 'N/A'
@@ -161,23 +144,37 @@ const Checkout = () => {
           country: 'N/A',
           phone: phone,
         },
-        itemsPrice: subtotal,
-        shippingPrice: shipping,
-        taxPrice: 0,
-        totalPrice: finalTotal,
         addressId: savedAddressId
       };
 
-      // 3. Create Order
-      const orderRes = await axios.post('orders', orderPayload);
-      
-      // Complete mock payment process visual delay
-      setTimeout(() => {
-        setGeneratedOrderId(orderRes.data.order._id || orderRes.data.order.id);
-        setIsProcessing(false);
-        setOrderSuccess(true);
-        dispatch(clearCart());
-      }, 1800);
+      // 3. Create a Razorpay order on our server, then open its hosted checkout.
+      const paymentRes = await axios.post('payments/orders', orderPayload);
+      const { order, razorpayOrder, keyId } = paymentRes.data;
+      await loadRazorpay();
+      const checkout = new window.Razorpay({
+        key: keyId,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: 'Atelier',
+        description: `Order ${order.id}`,
+        order_id: razorpayOrder.id,
+        prefill: { name: `${firstName} ${lastName}`.trim(), email, contact: phone },
+        theme: { color: '#1f2937' },
+        modal: { ondismiss: () => setIsProcessing(false) },
+        handler: async (response) => {
+          try {
+            await axios.post('payments/verify', { orderId: order.id, ...response });
+            setGeneratedOrderId(order.id);
+            setOrderSuccess(true);
+            dispatch(clearCart());
+          } catch (verifyError) {
+            alert(verifyError?.response?.data?.message || 'Payment could not be verified. Please contact support.');
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+      });
+      checkout.open();
       
     } catch (err) {
       console.error("Order creation failed", err);
@@ -467,6 +464,15 @@ const Checkout = () => {
               </div>
             </div>
 
+            <div className="bg-atelier-cream border border-atelier-lightgray p-6">
+              <p className="text-xs text-atelier-dark font-medium flex items-center gap-1.5">
+                <CreditCard size={14} className="text-atelier-gray" /> Razorpay secure checkout
+              </p>
+              <p className="mt-3 text-xs text-atelier-gray leading-relaxed">
+                Cards, UPI, netbanking and other available methods are securely collected by Razorpay after you place the order.
+              </p>
+            </div>
+            {false && (
             <div className="bg-atelier-cream border border-atelier-lightgray p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-atelier-dark font-medium flex items-center gap-1.5">
@@ -535,6 +541,7 @@ const Checkout = () => {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
 
@@ -567,7 +574,7 @@ const Checkout = () => {
                     </p>
                   </div>
                   <span className="font-mono text-xs text-atelier-dark font-medium">
-                    ${item.product.price * item.quantity}
+                    ₹{item.product.price * item.quantity}
                   </span>
                 </div>
               ))}
@@ -577,21 +584,21 @@ const Checkout = () => {
             <div className="space-y-2 text-xs font-mono tracking-wider text-atelier-gray border-t border-atelier-lightgray/40 pt-4 uppercase">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="text-atelier-dark font-medium">${subtotal}</span>
+                <span className="text-atelier-dark font-medium">₹{subtotal}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-atelier-accent">
                   <span>Discount</span>
-                  <span>-${discountAmount}</span>
+                <span>-₹{discountAmount}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span className="text-atelier-dark font-medium">{shipping === 0 ? 'FREE' : `$${shipping}`}</span>
+                <span className="text-atelier-dark font-medium">{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
               </div>
               <div className="flex justify-between border-t border-atelier-lightgray/40 pt-4 text-sm tracking-widest text-atelier-dark">
                 <span className="font-serif capitalize font-medium text-base">Grand Total</span>
-                <span className="font-medium">${finalTotal}</span>
+                <span className="font-medium">₹{finalTotal}</span>
               </div>
             </div>
 
@@ -601,12 +608,12 @@ const Checkout = () => {
                 type="submit"
                 className="w-full btn-atelier-dark py-4 text-center"
               >
-                Place Order (${finalTotal})
+                Pay securely (₹{finalTotal})
               </button>
               
               <div className="flex items-center justify-center space-x-2 text-xs font-mono tracking-widest text-atelier-gray uppercase">
                 <Shield size={12} />
-                <span>Secure Payments &bull; No actual billing</span>
+              <span>Secure payments powered by Razorpay</span>
               </div>
             </div>
           </div>
