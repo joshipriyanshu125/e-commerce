@@ -72,11 +72,28 @@ Keep the description under 80 words. Do NOT mention the brand name. Do NOT make 
         const response = await ai.client.chat.completions.create({
             model: ai.model,
             messages: [{ role: "user", content: prompt }],
-            response_format: { type: "json_object" },
         });
 
         const raw = response.choices[0].message.content.trim();
-        const parsed = JSON.parse(raw);
+
+        // Try parsing directly; if that fails, extract JSON from markdown fences
+        let parsed;
+        try {
+            parsed = JSON.parse(raw);
+        } catch {
+            const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (jsonMatch) {
+                parsed = JSON.parse(jsonMatch[1].trim());
+            } else {
+                // Last resort: find the first { ... } block
+                const braceMatch = raw.match(/\{[\s\S]*\}/);
+                if (braceMatch) {
+                    parsed = JSON.parse(braceMatch[0]);
+                } else {
+                    throw new Error("AI response did not contain valid JSON");
+                }
+            }
+        }
 
         return res.status(200).json({
             success: true,
@@ -88,11 +105,12 @@ Keep the description under 80 words. Do NOT mention the brand name. Do NOT make 
         logger.error({
             message: "AI product description generation failed",
             error: error.message,
+            stack: error.stack,
         });
 
         return res.status(500).json({
             success: false,
-            message: "Failed to generate description. Please try again.",
+            message: error.message || "Failed to generate description. Please try again.",
         });
     }
 };

@@ -113,11 +113,26 @@ ${reviewsText}`;
         const response = await ai.client.chat.completions.create({
             model: ai.model,
             messages: [{ role: "user", content: prompt }],
-            response_format: { type: "json_object" }
         });
 
         const resultText = response.choices[0].message.content.trim();
-        const parsed = JSON.parse(resultText);
+
+        let parsed;
+        try {
+            parsed = JSON.parse(resultText);
+        } catch {
+            const jsonMatch = resultText.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (jsonMatch) {
+                parsed = JSON.parse(jsonMatch[1].trim());
+            } else {
+                const braceMatch = resultText.match(/\{[\s\S]*\}/);
+                if (braceMatch) {
+                    parsed = JSON.parse(braceMatch[0]);
+                } else {
+                    throw new Error("AI response did not contain valid JSON");
+                }
+            }
+        }
 
         return {
             summary: parsed.summary || "Summary generation succeeded.",
