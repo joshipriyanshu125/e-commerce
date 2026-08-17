@@ -24,8 +24,9 @@ export function getAIClient() {
                 "X-Title": "Atelier E-Commerce AI",
             },
         }),
-        model: process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
+        model: process.env.OPENROUTER_MODEL || "openai/gpt-oss-20b:free",
         provider: "openrouter",
     };
 }
+
 

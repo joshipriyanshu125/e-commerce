@@ -104,7 +104,7 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown code blocks.`;
                         },
                     ],
                     temperature: 0.2,
-                    max_tokens: 400,
+                    max_tokens: 300,
                 });
 
                 const rawContent = response.choices[0]?.message?.content?.trim();

@@ -72,6 +72,7 @@ Keep the description under 80 words. Do NOT mention the brand name. Do NOT make 
         const response = await ai.client.chat.completions.create({
             model: ai.model,
             messages: [{ role: "user", content: prompt }],
+            max_tokens: 300,
         });
 
         const raw = response.choices[0].message.content.trim();

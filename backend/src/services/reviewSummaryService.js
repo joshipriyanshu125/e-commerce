@@ -113,6 +113,7 @@ ${reviewsText}`;
         const response = await ai.client.chat.completions.create({
             model: ai.model,
             messages: [{ role: "user", content: prompt }],
+            max_tokens: 300,
         });
 
         const resultText = response.choices[0].message.content.trim();
