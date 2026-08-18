@@ -520,7 +520,7 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
 
   const handleReviewSuccess = () => {
     setShowForm(false)
-    setSuccessMsg('Your review was submitted and is pending moderation.')
+    setSuccessMsg('Your review has been posted successfully!')
     setTimeout(() => setSuccessMsg(''), 5000)
     fetchReviews(1)
     fetchSummary()

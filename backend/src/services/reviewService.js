@@ -72,9 +72,9 @@ export const verifyPurchase = async (userId, productId) => {
 };
 
 // ─── RECALCULATE PRODUCT RATING ───────────────────────────────────────────────
-// Operates only on Approved reviews
+// Operates on all active (non-hidden) reviews
 export const recalculateProductRating = (product) => {
-    const approved = product.reviews.filter((r) => r.status === "Approved");
+    const approved = product.reviews.filter((r) => !r.status || r.status !== "Hidden");
     product.numReviews = approved.length;
     product.rating =
         approved.length > 0
@@ -85,7 +85,7 @@ export const recalculateProductRating = (product) => {
 // ─── GET REVIEW RATING STATS ──────────────────────────────────────────────────
 // Returns {average, total, distribution: {1,2,3,4,5}}
 export const getReviewStats = (reviews = []) => {
-    const approved = reviews.filter((r) => r.status === "Approved");
+    const approved = reviews.filter((r) => !r.status || r.status !== "Hidden");
     const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     let sum = 0;
     for (const r of approved) {

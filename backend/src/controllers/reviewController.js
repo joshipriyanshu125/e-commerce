@@ -74,8 +74,8 @@ export const createReview = asyncHandler(async (req, res) => {
         comment: comment.trim(),
         images,
         isVerifiedPurchase,
-        // NEW reviews start as Pending for moderation
-        status: "Pending",
+        // Real-time reviews are published immediately (Approved by default)
+        status: "Approved",
     };
 
     product.reviews.push(review);
@@ -118,8 +118,8 @@ export const getProductReviews = asyncHandler(async (req, res) => {
         throw new Error("Product not found");
     }
 
-    // Only show Approved reviews publicly
-    const approved = product.reviews.filter((r) => r.status === "Approved");
+    // Show all active (non-hidden) reviews publicly
+    const approved = product.reviews.filter((r) => !r.status || r.status !== "Hidden");
 
     // Apply filter first, then sort
     const filtered = filterReviews(approved, filter);
@@ -319,9 +319,9 @@ export const markHelpful = asyncHandler(async (req, res) => {
         throw new Error("Review not found");
     }
 
-    if (review.status !== "Approved") {
+    if (review.status === "Hidden") {
         res.status(400);
-        throw new Error("Can only vote on approved reviews");
+        throw new Error("Cannot vote on hidden reviews");
     }
 
     const userId = req.user._id;

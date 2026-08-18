@@ -195,7 +195,7 @@ export const getProductById = asyncHandler(async (req, res) => {
 
     if (product) {
         const productObj = product.toObject();
-        productObj.reviews = (productObj.reviews || []).filter(r => r.status === "Approved");
+        productObj.reviews = (productObj.reviews || []).filter(r => !r.status || r.status !== "Hidden");
 
         res.status(200).json({
             success: true,

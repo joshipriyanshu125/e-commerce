@@ -75,7 +75,7 @@ const generateLocalSummary = (reviews) => {
 };
 
 export const generateReviewSummary = async (reviews) => {
-    const approved = reviews.filter(r => r.status === "Approved");
+    const approved = reviews.filter(r => !r.status || r.status !== "Hidden");
     const total = approved.length;
 
     if (total === 0) {

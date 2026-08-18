@@ -64,16 +64,22 @@ const ProductDetails = () => {
     )
   }
 
-  // ── Image normalization ──────────────────────────────────────────────────────
+  // ── Image normalization — preserve color tag ─────────────────────────────────
   const rawImages = selectedProduct.images || []
+  // Keep full objects so we can use the stored `color` field
   const allImages = rawImages
     .map(img => {
-      if (typeof img === 'string' && img.startsWith('http')) return img
-      if (typeof img === 'string' && img.startsWith('/')) return img
-      if (img && typeof img === 'object' && img.url) return img.url
+      if (typeof img === 'string') return { url: img, color: '' }
+      if (img && typeof img === 'object') {
+        const url = img.url || img.secure_url || ''
+        return { url, color: img.color || '' }
+      }
       return null
     })
-    .filter(Boolean)
+    .filter(img => img && img.url)
+
+  // Helper — extract the display URL from a normalized image object
+  const imgUrl = (img) => (typeof img === 'string' ? img : img?.url || '')
 
   // ── Color normalization ──────────────────────────────────────────────────────
   const colorHexMap = {
@@ -92,7 +98,6 @@ const ProductDetails = () => {
   })
 
   // ── Color-specific Image Filtering ────────────────────────────────────────────
-  // Filters gallery images so viewing a specific color shows ONLY photos of that color
   const getImagesForColor = (colorObj, colorIndex) => {
     if (!allImages || allImages.length === 0) return []
     if (colors.length <= 1) return allImages
@@ -101,22 +106,40 @@ const ProductDetails = () => {
       ? colorObj.toLowerCase().trim()
       : (colorObj?.name || '').toLowerCase().trim()
 
-    // 1. Keyword search in image URLs (e.g. 'grey', 'gray', 'navy', 'blue')
+    const colorBase = colorName.replace(/\s*\d+$/, '').trim()
+
+    // 1. Direct tag match (exact or base color match, e.g. "Jade Black 2" vs "Jade Black")
+    const taggedMatches = allImages.filter(img => {
+      const tag = (img.color || '').toLowerCase().trim()
+      if (!tag) return false
+      const tagBase = tag.replace(/\s*\d+$/, '').trim()
+      return tag === colorName || tagBase === colorBase || tag.includes(colorBase) || colorName.includes(tag)
+    })
+    if (taggedMatches.length > 0) return taggedMatches
+
+    // 2. Untagged fallback if some images are tagged but none matched this color
+    const anyTagged = allImages.some(img => (img.color || '').trim() !== '')
+    if (anyTagged) {
+      const untagged = allImages.filter(img => !(img.color || '').trim())
+      if (untagged.length > 0) return untagged
+    }
+
+    // 3. Legacy: keyword search in URL
     if (colorName) {
       const keywordMatches = allImages.filter(img => {
-        const urlLower = String(img).toLowerCase()
-        if (colorName === 'grey' || colorName === 'gray') {
+        const urlLower = imgUrl(img).toLowerCase()
+        if (colorBase === 'grey' || colorBase === 'gray') {
           return urlLower.includes('grey') || urlLower.includes('gray')
         }
-        if (colorName === 'navy' || colorName === 'blue') {
+        if (colorBase === 'navy' || colorBase === 'blue') {
           return urlLower.includes('navy') || urlLower.includes('blue')
         }
-        return urlLower.includes(colorName)
+        return urlLower.includes(colorBase)
       })
       if (keywordMatches.length > 0) return keywordMatches
     }
 
-    // 2. Proportional slice per color variant if no URL keyword matches
+    // 4. Proportional slice per color variant
     if (colors.length > 0) {
       const countPerColor = Math.ceil(allImages.length / colors.length)
       const startIdx = colorIndex * countPerColor
@@ -137,8 +160,9 @@ const ProductDetails = () => {
     return n.toLowerCase().trim() === activeColorName.toLowerCase().trim()
   })
 
-  // Active filtered images for the selected color variant
+  // Active filtered images for the selected color variant (array of { url, color } objects)
   const images = getImagesForColor(activeColorObj, activeColorIdx >= 0 ? activeColorIdx : 0)
+
 
   // ── Size normalization ───────────────────────────────────────────────────────
   const expandSizes = (sizeArr) => {
@@ -234,7 +258,7 @@ const ProductDetails = () => {
             {activeImage ? (
               <img
                 key={`${activeColorName}-${activeImageIdx}`}
-                src={activeImage}
+                src={imgUrl(activeImage)}
                 alt={selectedProduct.name}
                 className={`h-full w-full object-contain transition-all duration-300 ${
                   isSliding
@@ -296,33 +320,35 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Thumbnail strip — shown for single-color products with multiple angle images */}
-          {images.length > 1 && colors.length <= 1 && (
-            <div
-              ref={thumbnailRef}
-              className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-thin"
-              style={{ scrollbarWidth: 'none' }}
-            >
-              {images.map((img, idx) => (
-                <button
-                  type="button"
-                  key={idx}
-                  onClick={() => goToImage(idx, idx > activeImageIdx ? 'next' : 'prev')}
-                  className={`flex-shrink-0 h-16 w-16 sm:h-20 sm:w-20 bg-atelier-cream border-2 overflow-hidden rounded-md transition-all duration-200 ${
-                    activeImageIdx === idx
-                      ? 'border-atelier-dark shadow-md scale-105'
-                      : 'border-transparent hover:border-atelier-gray/50'
-                  }`}
-                  aria-label={`Image ${idx + 1}`}
-                >
-                  <img
-                    src={img}
-                    alt=""
-                    className="h-full w-full object-contain"
-                    onError={(e) => { e.target.style.display = 'none' }}
-                  />
-                </button>
-              ))}
+          {/* Thumbnail strip — shown whenever a product has multiple images, positioned below main image with clean margin */}
+          {images.length > 1 && (
+            <div className="mt-6 pt-2">
+              <div
+                ref={thumbnailRef}
+                className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin"
+                style={{ scrollbarWidth: 'none' }}
+              >
+                {images.map((img, idx) => (
+                  <button
+                    type="button"
+                    key={idx}
+                    onClick={() => goToImage(idx, idx > activeImageIdx ? 'next' : 'prev')}
+                    className={`flex-shrink-0 h-16 w-16 sm:h-20 sm:w-20 bg-white border-2 overflow-hidden rounded-xl transition-all duration-200 cursor-pointer ${
+                      activeImageIdx === idx
+                        ? 'border-black ring-2 ring-black/15 shadow-sm scale-105'
+                        : 'border-gray-200 hover:border-gray-400 opacity-80 hover:opacity-100'
+                    }`}
+                    aria-label={`Image ${idx + 1}`}
+                  >
+                    <img
+                      src={imgUrl(img)}
+                      alt=""
+                      className="h-full w-full object-contain p-1"
+                      onError={(e) => { e.target.style.opacity = '0' }}
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -376,20 +402,24 @@ const ProductDetails = () => {
           {/* ── Flipkart-Style Color Variant Selector (Shown ONLY when product has multiple colors) ── */}
           {colors.length > 1 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-sans font-medium text-atelier-dark">
-                Selected Color:{' '}
-                <span className="text-atelier-gray font-normal capitalize">
-                  {activeColorName || 'Select a color'}
+              <h3 className="text-sm font-sans font-medium text-atelier-dark flex items-center justify-between">
+                <span>
+                  Selected Color:{' '}
+                  <span className="text-atelier-gray font-normal capitalize">
+                    {activeColorName || 'Select a color'}
+                  </span>
                 </span>
               </h3>
               <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
                 {colors.map((color, idx) => {
                   const colorName = typeof color === 'string' ? color : color.name
+                  const colorHex = typeof color === 'object' ? color.hex : (colorHexMap[colorName.toLowerCase().trim()] || '#888888')
                   const isSelected = activeColorName.toLowerCase().trim() === colorName.toLowerCase().trim()
 
                   // Thumbnail preview image specifically for this color
                   const colorSpecificImages = getImagesForColor(color, idx)
-                  const colorThumb = colorSpecificImages[0] || allImages[0]
+                  const colorThumbObj = colorSpecificImages[0] || allImages[idx] || allImages[0]
+                  const colorThumbUrl = imgUrl(colorThumbObj)
 
                   return (
                     <button
@@ -406,25 +436,32 @@ const ProductDetails = () => {
                           : 'border-atelier-lightgray/60 hover:border-atelier-dark/60'
                       }`}
                     >
-                      {/* Image preview box matching SS2 rounded rectangle */}
-                      <div className="h-16 w-14 sm:h-18 sm:w-16 rounded-lg overflow-hidden bg-atelier-cream border border-atelier-lightgray/40 flex items-center justify-center relative">
-                        {colorThumb ? (
+                      {/* Image preview box matching Flipkart / modern e-commerce variant swatch */}
+                      <div className="h-16 w-14 sm:h-18 sm:w-16 rounded-lg overflow-hidden bg-gray-50 border border-gray-200 flex items-center justify-center relative">
+                        {colorThumbUrl ? (
                           <img
-                            src={colorThumb}
+                            src={colorThumbUrl}
                             alt={colorName}
                             className="h-full w-full object-contain p-1"
-                            onError={e => { e.target.style.display = 'none' }}
+                            onError={e => {
+                              // If image fails to load, replace with color swatch div
+                              e.target.style.display = 'none'
+                              if (e.target.nextSibling) e.target.nextSibling.style.display = 'block'
+                            }}
                           />
-                        ) : (
-                          <div
-                            className="h-full w-full rounded-md"
-                            style={{ backgroundColor: typeof color === 'object' ? color.hex : '#888' }}
-                          />
-                        )}
+                        ) : null}
+                        {/* Fallback color swatch div if no image or image load fails */}
+                        <div
+                          className="h-full w-full"
+                          style={{
+                            backgroundColor: colorHex,
+                            display: colorThumbUrl ? 'none' : 'block',
+                          }}
+                        />
                         {/* Selected indicator overlay */}
                         {isSelected && (
-                          <div className="absolute inset-0 bg-black/10 rounded-lg flex items-center justify-center">
-                            <span className="h-5 w-5 rounded-full bg-atelier-dark text-white flex items-center justify-center text-[10px] shadow-sm font-bold">
+                          <div className="absolute inset-0 bg-black/15 rounded-lg flex items-center justify-center">
+                            <span className="h-5 w-5 rounded-full bg-black text-white flex items-center justify-center text-[10px] shadow-sm font-bold">
                               ✓
                             </span>
                           </div>
