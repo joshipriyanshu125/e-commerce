@@ -64,7 +64,7 @@ const ProductDetails = () => {
 
   // ── Image normalization ──────────────────────────────────────────────────────
   const rawImages = selectedProduct.images || []
-  const images = rawImages
+  const allImages = rawImages
     .map(img => {
       if (typeof img === 'string' && img.startsWith('http')) return img
       if (typeof img === 'string' && img.startsWith('/')) return img
@@ -89,15 +89,19 @@ const ProductDetails = () => {
     return { name: c.name || 'Color', hex: c.hex || '#888888' }
   })
 
-  // ── Color to Image index mapping ─────────────────────────────────────────────
-  const getColorImageIdx = (colorObj, colorIndex) => {
+  // ── Color-specific Image Filtering ────────────────────────────────────────────
+  // Filters gallery images so viewing a specific color shows ONLY photos of that color
+  const getImagesForColor = (colorObj, colorIndex) => {
+    if (!allImages || allImages.length === 0) return []
+    if (colors.length <= 1) return allImages
+
     const colorName = typeof colorObj === 'string'
       ? colorObj.toLowerCase().trim()
       : (colorObj?.name || '').toLowerCase().trim()
 
-    // 1. Match image URL strings if they contain color keywords
-    if (colorName && images.length > 0) {
-      const matchIdx = images.findIndex(img => {
+    // 1. Keyword search in image URLs (e.g. 'grey', 'gray', 'navy', 'blue')
+    if (colorName) {
+      const keywordMatches = allImages.filter(img => {
         const urlLower = String(img).toLowerCase()
         if (colorName === 'grey' || colorName === 'gray') {
           return urlLower.includes('grey') || urlLower.includes('gray')
@@ -107,17 +111,32 @@ const ProductDetails = () => {
         }
         return urlLower.includes(colorName)
       })
-      if (matchIdx !== -1) return matchIdx
+      if (keywordMatches.length > 0) return keywordMatches
     }
 
-    // 2. Map color index proportionally across image gallery
-    if (colors.length > 0 && images.length > 0) {
-      const step = images.length / colors.length
-      return Math.min(Math.floor(colorIndex * step), images.length - 1)
+    // 2. Proportional slice per color variant if no URL keyword matches
+    if (colors.length > 0) {
+      const countPerColor = Math.ceil(allImages.length / colors.length)
+      const startIdx = colorIndex * countPerColor
+      const colorSlice = allImages.slice(startIdx, startIdx + countPerColor)
+      if (colorSlice.length > 0) return colorSlice
     }
 
-    return 0
+    return allImages
   }
+
+  // Active color name & index
+  const activeColorObj = selectedColor || (colors.length > 0 ? colors[0] : null)
+  const activeColorName = activeColorObj
+    ? (typeof activeColorObj === 'string' ? activeColorObj : activeColorObj.name)
+    : ''
+  const activeColorIdx = colors.findIndex(c => {
+    const n = typeof c === 'string' ? c : c.name
+    return n.toLowerCase().trim() === activeColorName.toLowerCase().trim()
+  })
+
+  // Active filtered images for the selected color variant
+  const images = getImagesForColor(activeColorObj, activeColorIdx >= 0 ? activeColorIdx : 0)
 
   // ── Size normalization ───────────────────────────────────────────────────────
   const expandSizes = (sizeArr) => {
@@ -197,13 +216,13 @@ const ProductDetails = () => {
     }, 600)
   }
 
-  const activeImage = images.length > 0 ? images[activeImageIdx] : null
+  const activeImage = images.length > 0 ? images[Math.min(activeImageIdx, images.length - 1)] : null
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in font-sans">
 
       {/* Main product column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start pb-20">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start pb-6">
 
         {/* ── Left Column: Image Gallery ────────────────────────────────────── */}
         <div className="lg:col-span-7 space-y-4">
@@ -212,7 +231,7 @@ const ProductDetails = () => {
           <div className="aspect-square bg-atelier-cream border border-atelier-lightgray/30 overflow-hidden relative rounded-xl group">
             {activeImage ? (
               <img
-                key={activeImageIdx}
+                key={`${activeColorName}-${activeImageIdx}`}
                 src={activeImage}
                 alt={selectedProduct.name}
                 className={`h-full w-full object-contain transition-all duration-300 ${
@@ -236,7 +255,7 @@ const ProductDetails = () => {
               </div>
             )}
 
-            {/* Prev / Next arrows — only shown when multiple images */}
+            {/* Prev / Next arrows — only shown when multiple images for active color */}
             {images.length > 1 && (
               <>
                 <button
@@ -275,8 +294,8 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Thumbnail strip — only shown if product does NOT have color variant cards */}
-          {images.length > 1 && colors.length === 0 && (
+          {/* Thumbnail strip — shown for single-color products with multiple angle images */}
+          {images.length > 1 && colors.length <= 1 && (
             <div
               ref={thumbnailRef}
               className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-thin"
@@ -307,7 +326,7 @@ const ProductDetails = () => {
         </div>
 
         {/* ── Right Column: Info ────────────────────────────────────────────── */}
-        <div className="lg:col-span-5 space-y-8">
+        <div className="lg:col-span-5 space-y-5">
 
           {/* Header */}
           <div className="space-y-3">
@@ -352,28 +371,23 @@ const ProductDetails = () => {
             {selectedProduct.description}
           </p>
 
-          {/* ── Flipkart-Style Color Variant Selector (SS2 Reference) ───────────────────────── */}
-          {colors.length > 0 && (
+          {/* ── Flipkart-Style Color Variant Selector (Shown ONLY when product has multiple colors) ── */}
+          {colors.length > 1 && (
             <div className="space-y-3">
               <h3 className="text-sm font-sans font-medium text-atelier-dark">
                 Selected Color:{' '}
                 <span className="text-atelier-gray font-normal capitalize">
-                  {selectedColor
-                    ? (typeof selectedColor === 'string' ? selectedColor : selectedColor.name)
-                    : (typeof colors[0] === 'string' ? colors[0] : colors[0]?.name || 'Default')}
+                  {activeColorName || 'Select a color'}
                 </span>
               </h3>
               <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
                 {colors.map((color, idx) => {
                   const colorName = typeof color === 'string' ? color : color.name
-                  const activeColorName = selectedColor
-                    ? (typeof selectedColor === 'string' ? selectedColor : selectedColor.name)
-                    : (typeof colors[0] === 'string' ? colors[0] : colors[0]?.name)
-                  const isSelected = activeColorName === colorName
+                  const isSelected = activeColorName.toLowerCase().trim() === colorName.toLowerCase().trim()
 
-                  // Determine matching image for this color
-                  const targetImgIdx = getColorImageIdx(color, idx)
-                  const colorThumb = images[targetImgIdx] || images[0]
+                  // Thumbnail preview image specifically for this color
+                  const colorSpecificImages = getImagesForColor(color, idx)
+                  const colorThumb = colorSpecificImages[0] || allImages[0]
 
                   return (
                     <button
@@ -381,7 +395,7 @@ const ProductDetails = () => {
                       type="button"
                       onClick={() => {
                         setSelectedColor(color)
-                        goToImage(targetImgIdx, targetImgIdx > activeImageIdx ? 'next' : 'prev')
+                        setActiveImageIdx(0)
                       }}
                       title={colorName}
                       className={`relative flex flex-col items-center p-1.5 bg-white border-2 rounded-xl transition-all duration-200 shrink-0 group ${
@@ -542,9 +556,9 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Reviews Section — Single instance mounted with unique product ID */}
+      {/* Reviews Section — Strict single instance */}
       <ReviewSection
-        key={id}
+        key={`reviews-${id}`}
         productId={id}
         productRating={selectedProduct.rating}
         productNumReviews={selectedProduct.numReviews}
