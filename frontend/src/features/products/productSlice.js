@@ -168,6 +168,7 @@ const productSlice = createSlice({
       .addCase(fetchProductById.pending, (state) => {
         state.apiLoading = true
         state.apiError = null
+        state.selectedProduct = null
       })
       .addCase(fetchProductById.fulfilled, (state, action) => {
         state.apiLoading = false

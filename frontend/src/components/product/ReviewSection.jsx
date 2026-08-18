@@ -509,10 +509,14 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
 
   useEffect(() => {
     setReviews([])
+    setStats({ average: productRating || 0, total: productNumReviews || 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } })
+    setSummaryData(null)
     setPage(1)
-    fetchReviews(1)
-    fetchSummary()
-  }, [fetchReviews, fetchSummary])
+    if (productId) {
+      fetchReviews(1)
+      fetchSummary()
+    }
+  }, [productId, fetchReviews, fetchSummary, productRating, productNumReviews])
 
   const handleReviewSuccess = () => {
     setShowForm(false)

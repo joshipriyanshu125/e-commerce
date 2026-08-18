@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { selectProductById, fetchAPIProducts, fetchProductById } from '../features/products/productSlice'
+import { fetchProductById } from '../features/products/productSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react'
 import ReviewSection from '../components/product/ReviewSection'
@@ -34,12 +34,6 @@ const ProductDetails = () => {
   }, [id, dispatch])
 
   useEffect(() => {
-    if (!selectedProduct && !apiLoading) {
-      dispatch(fetchProductById(id))
-    }
-  }, [selectedProduct, apiLoading, id, dispatch])
-
-  useEffect(() => {
     if (selectedProduct) {
       const colors = selectedProduct.colors || []
       if (colors.length === 1) setSelectedColor(colors[0])
@@ -54,11 +48,14 @@ const ProductDetails = () => {
     }
   }, [selectedProduct])
 
-  if (!selectedProduct) {
+  // Show loading skeleton / missing notice if product is not yet loaded or doesn't match ID
+  const isCorrectProduct = selectedProduct && (selectedProduct._id === id || selectedProduct.id === id)
+  if (!isCorrectProduct) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center font-sans">
+      <div className="max-w-7xl mx-auto px-4 py-24 text-center font-sans">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-atelier-dark border-t-transparent mb-4" />
         <p className="font-serif text-xl text-atelier-gray italic">
-          {apiLoading ? 'Loading product...' : 'Product not found.'}
+          {apiLoading ? 'Loading product details...' : 'Product not found.'}
         </p>
         <Link to="/" className="btn-atelier-outline mt-6 inline-block">Back to Shop</Link>
       </div>
@@ -91,6 +88,36 @@ const ProductDetails = () => {
     }
     return { name: c.name || 'Color', hex: c.hex || '#888888' }
   })
+
+  // ── Color to Image index mapping ─────────────────────────────────────────────
+  const getColorImageIdx = (colorObj, colorIndex) => {
+    const colorName = typeof colorObj === 'string'
+      ? colorObj.toLowerCase().trim()
+      : (colorObj?.name || '').toLowerCase().trim()
+
+    // 1. Match image URL strings if they contain color keywords
+    if (colorName && images.length > 0) {
+      const matchIdx = images.findIndex(img => {
+        const urlLower = String(img).toLowerCase()
+        if (colorName === 'grey' || colorName === 'gray') {
+          return urlLower.includes('grey') || urlLower.includes('gray')
+        }
+        if (colorName === 'navy' || colorName === 'blue') {
+          return urlLower.includes('navy') || urlLower.includes('blue')
+        }
+        return urlLower.includes(colorName)
+      })
+      if (matchIdx !== -1) return matchIdx
+    }
+
+    // 2. Map color index proportionally across image gallery
+    if (colors.length > 0 && images.length > 0) {
+      const step = images.length / colors.length
+      return Math.min(Math.floor(colorIndex * step), images.length - 1)
+    }
+
+    return 0
+  }
 
   // ── Size normalization ───────────────────────────────────────────────────────
   const expandSizes = (sizeArr) => {
@@ -305,7 +332,7 @@ const ProductDetails = () => {
                 ))}
               </div>
               <span className="text-xs text-atelier-dark font-mono font-medium">{selectedProduct.rating}</span>
-              <span className="text-xs text-atelier-gray">({(selectedProduct.reviews || []).length} reviews)</span>
+              <span className="text-xs text-atelier-gray">({selectedProduct.numReviews || 0} reviews)</span>
             </div>
 
             {/* Price */}
@@ -344,8 +371,9 @@ const ProductDetails = () => {
                     : (typeof colors[0] === 'string' ? colors[0] : colors[0]?.name)
                   const isSelected = activeColorName === colorName
 
-                  // Use corresponding image for this color if available, or hero image
-                  const colorThumb = images[idx] || images[0]
+                  // Determine matching image for this color
+                  const targetImgIdx = getColorImageIdx(color, idx)
+                  const colorThumb = images[targetImgIdx] || images[0]
 
                   return (
                     <button
@@ -353,9 +381,7 @@ const ProductDetails = () => {
                       type="button"
                       onClick={() => {
                         setSelectedColor(color)
-                        if (idx < images.length) {
-                          goToImage(idx, idx > activeImageIdx ? 'next' : 'prev')
-                        }
+                        goToImage(targetImgIdx, targetImgIdx > activeImageIdx ? 'next' : 'prev')
                       }}
                       title={colorName}
                       className={`relative flex flex-col items-center p-1.5 bg-white border-2 rounded-xl transition-all duration-200 shrink-0 group ${
@@ -516,7 +542,7 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Reviews Section — uses new ReviewSection component with key={id} for forced re-fetching */}
+      {/* Reviews Section — Single instance mounted with unique product ID */}
       <ReviewSection
         key={id}
         productId={id}
