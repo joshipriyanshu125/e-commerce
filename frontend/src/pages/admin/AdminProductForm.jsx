@@ -38,6 +38,7 @@ const AdminProductForm = () => {
   const [colorInput, setColorInput] = useState('')
 
   const fileInputRef = useRef()
+  const colorFileRefs = useRef({}) // keyed by color name for per-color upload inputs
 
   // ── AI Description Generator state ────────────────────────────────
   const [aiOpen, setAiOpen] = useState(false)
@@ -140,7 +141,10 @@ const AdminProductForm = () => {
     setAiOpen(false)
   }
 
-  const handleImageChange = (e) => {
+  const hasMultipleColors = form.colors.length > 1
+
+  // Generic image handler (single-color / no-color mode)
+  const handleImageChange = (e, color = '') => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     const invalid = files.find(file => !file.type.startsWith('image/'))
@@ -149,12 +153,24 @@ const AdminProductForm = () => {
       e.target.value = ''
       return
     }
-    if (images.length + files.length > 5) {
-      setError('You can upload a maximum of five images per product.')
-      e.target.value = ''
-      return
+    // In multi-color mode, count images for this color specifically
+    if (hasMultipleColors && color) {
+      const current = images.filter(img => img.color === color).length
+      const existing = existingImages.filter(img => img.color === color).length
+      if (current + existing + files.length > 5) {
+        setError(`Max 5 images allowed for "${color}".`)
+        e.target.value = ''
+        return
+      }
+    } else {
+      const totalCurrent = images.length + existingImages.length
+      if (totalCurrent + files.length > 5) {
+        setError('You can upload a maximum of 5 images per product.')
+        e.target.value = ''
+        return
+      }
     }
-    const newImages = files.map(file => ({ file, preview: URL.createObjectURL(file) }))
+    const newImages = files.map(file => ({ file, preview: URL.createObjectURL(file), color }))
     setImages(prev => [...prev, ...newImages])
     e.target.value = ''
   }
@@ -168,6 +184,11 @@ const AdminProductForm = () => {
 
   const removeExistingImage = (idx) => {
     setExistingImages(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  // Update color tag of an existing image
+  const updateExistingImageColor = (idx, color) => {
+    setExistingImages(prev => prev.map((img, i) => i === idx ? { ...img, color } : img))
   }
 
   // Tag helpers
@@ -231,8 +252,17 @@ const AdminProductForm = () => {
       formData.append('status', form.status)
       formData.append('tags', JSON.stringify(pendingTags))
       formData.append('sizes', JSON.stringify(pendingSizes))
+      // Submit per-color image metadata
       formData.append('colors', JSON.stringify(pendingColors))
-      if (isEdit) formData.append('retainedImageIds', JSON.stringify(existingImages.map(image => image.public_id)))
+      // imageColors: array in same order as appended image files
+      const imageColors = images.map(img => img.color || '')
+      formData.append('imageColors', JSON.stringify(imageColors))
+      if (isEdit) {
+        formData.append('retainedImageIds', JSON.stringify(existingImages.map(image => image.public_id)))
+        // tell backend what color each retained image has (in case admin reassigned)
+        const retainedImageColors = existingImages.map(img => ({ public_id: img.public_id, color: img.color || '' }))
+        formData.append('retainedImageColors', JSON.stringify(retainedImageColors))
+      }
       images.forEach(img => formData.append('images', img.file))
 
       if (isEdit) {
@@ -595,61 +625,182 @@ const AdminProductForm = () => {
             <div className="bg-[#13131a] rounded-xl border border-white/5 p-5 space-y-4">
               <h3 className="text-sm font-semibold text-white/60 uppercase tracking-widest">Product Images</h3>
 
-              {/* Existing images (edit mode) */}
-              {existingImages.length > 0 && (
-                <div>
-                  <p className="text-xs text-white/30 mb-2">Current images</p>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                    {existingImages.map((img, idx) => (
-                      <div key={img.public_id} className="relative group aspect-square rounded-lg overflow-hidden bg-white/5">
-                        <img src={img.url} alt="" className="w-full h-full object-cover" />
-                        <button
-                          type="button" onClick={() => removeExistingImage(idx)}
-                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                        >
-                          <X size={18} className="text-white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {hasMultipleColors ? (
+                /* ── PER-COLOR MODE ─────────────────────────────────── */
+                <div className="space-y-6">
+                  <p className="text-xs text-amber-400/70">Upload up to <strong>5 photos per color</strong>. Each color gets its own gallery.</p>
+                  {form.colors.map(color => {
+                    const colorNewImgs = images.filter(img => img.color === color)
+                    const colorExistImgs = existingImages.filter(img => img.color === color)
+                    const totalForColor = colorNewImgs.length + colorExistImgs.length
+                    const canAddMore = totalForColor < 5
 
-              {/* New images preview */}
-              {images.length > 0 && (
-                <div>
-                  <p className="text-xs text-white/30 mb-2">New images to upload</p>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                    {images.map((img, idx) => (
-                      <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-white/5">
-                        <img src={img.preview} alt="" className="w-full h-full object-cover" />
-                        <button
-                          type="button" onClick={() => removeNewImage(idx)}
-                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                        >
-                          <X size={18} className="text-white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    return (
+                      <div key={color} className="border border-white/10 rounded-xl p-4 space-y-3">
+                        {/* Color header */}
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full border border-white/20" style={{ background: color.toLowerCase() }} />
+                          <p className="text-sm font-semibold text-white">{color}</p>
+                          <span className="ml-auto text-xs text-white/30">{totalForColor}/5 photos</span>
+                        </div>
 
-              {/* Upload zone */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current.click()}
-                className="w-full border-2 border-dashed border-white/10 hover:border-amber-500/40 rounded-xl py-8 flex flex-col items-center gap-2 text-white/30 hover:text-white/50 transition-all"
-              >
-                <Upload size={22} />
-                <span className="text-sm">Click to upload images</span>
-                <span className="text-xs">PNG, JPG, WEBP up to 5 files</span>
-              </button>
-              <input
-                ref={fileInputRef} type="file" multiple accept="image/*"
-                onChange={handleImageChange} className="hidden"
-              />
+                        {/* Existing images for this color */}
+                        {colorExistImgs.length > 0 && (
+                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                            {colorExistImgs.map(img => {
+                              const idx = existingImages.findIndex(e => e.public_id === img.public_id)
+                              return (
+                                <div key={img.public_id} className="relative group aspect-square rounded-lg overflow-hidden bg-white/5">
+                                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                                  <button
+                                    type="button" onClick={() => removeExistingImage(idx)}
+                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                  ><X size={16} className="text-white" /></button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+
+                        {/* New images for this color */}
+                        {colorNewImgs.length > 0 && (
+                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                            {colorNewImgs.map(img => {
+                              const idx = images.findIndex(i => i === img)
+                              return (
+                                <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-white/5">
+                                  <img src={img.preview} alt="" className="w-full h-full object-cover" />
+                                  <button
+                                    type="button" onClick={() => removeNewImage(idx)}
+                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                  ><X size={16} className="text-white" /></button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+
+                        {/* Upload zone for this color */}
+                        {canAddMore && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!colorFileRefs.current[color]) return
+                                colorFileRefs.current[color].click()
+                              }}
+                              className="w-full border-2 border-dashed border-white/10 hover:border-amber-500/40 rounded-xl py-5 flex flex-col items-center gap-1 text-white/30 hover:text-white/50 transition-all"
+                            >
+                              <Upload size={18} />
+                              <span className="text-xs">Add photos for {color} ({5 - totalForColor} left)</span>
+                            </button>
+                            <input
+                              type="file" multiple accept="image/*" className="hidden"
+                              ref={el => { colorFileRefs.current[color] = el }}
+                              onChange={e => handleImageChange(e, color)}
+                            />
+                          </>
+                        )}
+
+                        {!canAddMore && (
+                          <p className="text-xs text-amber-500/60 text-center py-2">✓ Max 5 photos reached for {color}</p>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  {/* Also show unassigned existing images so admin can manage them */}
+                  {existingImages.filter(img => !img.color || !form.colors.includes(img.color)).length > 0 && (
+                    <div className="border border-white/10 rounded-xl p-4 space-y-3">
+                      <p className="text-xs text-white/40 font-semibold uppercase tracking-wider">Unassigned Images</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        {existingImages.filter(img => !img.color || !form.colors.includes(img.color)).map(img => {
+                          const idx = existingImages.findIndex(e => e.public_id === img.public_id)
+                          return (
+                            <div key={img.public_id} className="space-y-1">
+                              <div className="relative group aspect-square rounded-lg overflow-hidden bg-white/5">
+                                <img src={img.url} alt="" className="w-full h-full object-cover" />
+                                <button
+                                  type="button" onClick={() => removeExistingImage(idx)}
+                                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                ><X size={16} className="text-white" /></button>
+                              </div>
+                              <select
+                                value={img.color || ''}
+                                onChange={e => updateExistingImageColor(idx, e.target.value)}
+                                className="w-full text-xs bg-white/5 border border-white/10 rounded px-1 py-0.5 text-white/60"
+                              >
+                                <option value="">Assign color…</option>
+                                {form.colors.map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* ── SINGLE / NO COLOR MODE ─────────────────────────── */
+                <>
+                  {/* Existing images (edit mode) */}
+                  {existingImages.length > 0 && (
+                    <div>
+                      <p className="text-xs text-white/30 mb-2">Current images</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                        {existingImages.map((img, idx) => (
+                          <div key={img.public_id} className="relative group aspect-square rounded-lg overflow-hidden bg-white/5">
+                            <img src={img.url} alt="" className="w-full h-full object-cover" />
+                            <button
+                              type="button" onClick={() => removeExistingImage(idx)}
+                              className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                            >
+                              <X size={18} className="text-white" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* New images preview */}
+                  {images.length > 0 && (
+                    <div>
+                      <p className="text-xs text-white/30 mb-2">New images to upload</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                        {images.map((img, idx) => (
+                          <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-white/5">
+                            <img src={img.preview} alt="" className="w-full h-full object-cover" />
+                            <button
+                              type="button" onClick={() => removeNewImage(idx)}
+                              className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                            >
+                              <X size={18} className="text-white" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload zone */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current.click()}
+                    className="w-full border-2 border-dashed border-white/10 hover:border-amber-500/40 rounded-xl py-8 flex flex-col items-center gap-2 text-white/30 hover:text-white/50 transition-all"
+                  >
+                    <Upload size={22} />
+                    <span className="text-sm">Click to upload images</span>
+                    <span className="text-xs">PNG, JPG, WEBP up to 5 files</span>
+                  </button>
+                  <input
+                    ref={fileInputRef} type="file" multiple accept="image/*"
+                    onChange={handleImageChange} className="hidden"
+                  />
+                </>
+              )}
             </div>
+
           </div>
 
           {/* RIGHT COLUMN — Meta */}

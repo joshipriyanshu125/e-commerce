@@ -66,6 +66,8 @@ export const createProduct = asyncHandler(async (req, res) => {
     const tags = req.body.tags ? (Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags)) : [];
     const sizes = req.body.sizes ? (Array.isArray(req.body.sizes) ? req.body.sizes : JSON.parse(req.body.sizes)) : [];
     const colors = req.body.colors ? (Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors)) : [];
+    // imageColors is an array mapping each file index to a color name (or empty string)
+    const imageColors = req.body.imageColors ? (Array.isArray(req.body.imageColors) ? req.body.imageColors : JSON.parse(req.body.imageColors)) : [];
 
     if (!req.files?.length) {
         res.status(400);
@@ -75,21 +77,14 @@ export const createProduct = asyncHandler(async (req, res) => {
     const images = [];
 
     // UPLOAD IMAGES TO CLOUDINARY
-    if (req.files.length > 0) {
-
-        for (const file of req.files) {
-
-            const result = await streamUpload(
-                file.buffer
-            );
-
-            images.push({
-                public_id: result.public_id,
-                url: result.secure_url,
-            });
-
-        }
-
+    for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const result = await streamUpload(file.buffer);
+        images.push({
+            public_id: result.public_id,
+            url: result.secure_url,
+            color: imageColors[i] || "",
+        });
     }
 
     const product = new Product({
@@ -249,32 +244,34 @@ export const updateProduct = asyncHandler(async (req, res) => {
             product.images = product.images.filter(image => retainedImageIds.includes(image.public_id));
         }
 
+        // Update colors on retained images if admin reassigns them
+        if (req.body.retainedImageColors !== undefined) {
+            const retainedImageColors = Array.isArray(req.body.retainedImageColors)
+                ? req.body.retainedImageColors
+                : JSON.parse(req.body.retainedImageColors);
+            // retainedImageColors is [{public_id, color}]
+            retainedImageColors.forEach(({ public_id, color }) => {
+                const img = product.images.find(i => i.public_id === public_id);
+                if (img) img.color = color || "";
+            });
+        }
 
-        // Append new images to the existing gallery. Replacing images here would
-        // unexpectedly delete every existing Cloudinary asset when an admin adds one.
+        // imageColors is an array mapping each new file index to a color name
+        const newImageColors = req.body.imageColors ? (Array.isArray(req.body.imageColors) ? req.body.imageColors : JSON.parse(req.body.imageColors)) : [];
+
+        // Append new images to the existing gallery.
         if (req.files && req.files.length > 0) {
-            if (product.images.length + req.files.length > 5) {
-                res.status(400);
-                throw new Error("A product can have a maximum of five images.");
-            }
-
-            const images = [];
-
-            for (const file of req.files) {
-
-                const result = await streamUpload(
-                    file.buffer
-                );
-
-                images.push({
+            const newImages = [];
+            for (let i = 0; i < req.files.length; i++) {
+                const file = req.files[i];
+                const result = await streamUpload(file.buffer);
+                newImages.push({
                     public_id: result.public_id,
                     url: result.secure_url,
+                    color: newImageColors[i] || "",
                 });
-
             }
-
-            product.images.push(...images);
-
+            product.images.push(...newImages);
         }
 
         const updatedProduct = await product.save();
