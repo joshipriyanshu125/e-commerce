@@ -589,9 +589,9 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
             ))}
           </div>
 
-          {/* Customer review highlights */}
-          {(loadingSummary || (summaryData && summaryData.count > 0)) && (
-            <div className="border border-atelier-lightgray bg-white/40 p-5 sm:p-6 space-y-5 rounded">
+          {/* Customer review highlights — rendered instantly once summary data exists */}
+          {summaryData && summaryData.count > 0 && (
+            <div className="border border-atelier-lightgray bg-white/40 p-5 sm:p-6 space-y-5 rounded animate-fade-in">
               <div className="flex items-start justify-between gap-4 border-b border-atelier-lightgray pb-3">
                 <div>
                   <h3 className="font-serif text-lg text-atelier-dark font-medium">
@@ -601,61 +601,48 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
                     A quick look at themes from verified reviews.
                   </p>
                 </div>
-                {loadingSummary && (
-                  <span className="shrink-0 text-xs text-atelier-gray animate-pulse">Loading...</span>
-                )}
               </div>
 
-              {loadingSummary ? (
-                <div className="space-y-3 animate-pulse">
-                  <div className="h-4 bg-atelier-lightgray/20 rounded w-full" />
-                  <div className="h-4 bg-atelier-lightgray/20 rounded w-5/6" />
-                  <div className="h-8 bg-atelier-lightgray/20 rounded w-full" />
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm sm:text-base text-atelier-gray font-light leading-relaxed font-sans">
-                    {summaryData.summary}
-                  </p>
+              <p className="text-sm sm:text-base text-atelier-gray font-light leading-relaxed font-sans">
+                {summaryData.summary}
+              </p>
 
-                  {summaryData.praised && summaryData.praised.length > 0 && (
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-mono uppercase tracking-wider text-emerald-700 font-semibold flex items-center gap-1">
-                        Most mentioned
+              {summaryData.praised && summaryData.praised.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-mono uppercase tracking-wider text-emerald-700 font-semibold flex items-center gap-1">
+                    Most mentioned
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {summaryData.praised.map((aspect, idx) => (
+                      <span
+                        key={idx}
+                        className="text-xs font-mono bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-100"
+                      >
+                        {aspect}
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {summaryData.praised.map((aspect, idx) => (
-                          <span
-                            key={idx}
-                            className="text-xs font-mono bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-100"
-                          >
-                            {aspect}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {summaryData.complaints && summaryData.complaints.length > 0 && (
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-mono uppercase tracking-wider text-amber-700 font-semibold flex items-center gap-1">
-                        Worth knowing
-                      </span>
-                      <ul className="list-disc pl-5 space-y-1 text-sm text-atelier-gray">
-                        {summaryData.complaints.map((item, idx) => (
-                          <li key={idx} className="font-sans leading-5">
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <div className="text-xs text-atelier-gray pt-3 border-t border-atelier-lightgray/50">
-                    Based on {summaryData.count} verified customer review{summaryData.count !== 1 ? 's' : ''}
+                    ))}
                   </div>
-                </>
+                </div>
               )}
+
+              {summaryData.complaints && summaryData.complaints.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-mono uppercase tracking-wider text-amber-700 font-semibold flex items-center gap-1">
+                    Worth knowing
+                  </span>
+                  <ul className="list-disc pl-5 space-y-1 text-sm text-atelier-gray">
+                    {summaryData.complaints.map((item, idx) => (
+                      <li key={idx} className="font-sans leading-5">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="text-xs text-atelier-gray pt-3 border-t border-atelier-lightgray/50">
+                Based on {summaryData.count} verified customer review{summaryData.count !== 1 ? 's' : ''}
+              </div>
             </div>
           )}
 

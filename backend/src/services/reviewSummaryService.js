@@ -110,11 +110,18 @@ Do not include any markdown backticks, explanations, or text other than the JSON
 Reviews:
 ${reviewsText}`;
 
-        const response = await ai.client.chat.completions.create({
+        // 1.2s timeout promise to prevent network lag from blocking response
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("AI generation timeout (exceeded 1.2s)")), 1200)
+        );
+
+        const aiPromise = ai.client.chat.completions.create({
             model: ai.model,
             messages: [{ role: "user", content: prompt }],
             max_tokens: 300,
         });
+
+        const response = await Promise.race([aiPromise, timeoutPromise]);
 
         const resultText = response.choices[0].message.content.trim();
 

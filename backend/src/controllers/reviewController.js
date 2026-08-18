@@ -1,7 +1,7 @@
 import asyncHandler from "../middleware/asyncHandler.js";
 import Product from "../models/Product.js";
 import { getIO } from "../config/socket.js";
-import { deleteCache, clearCachePattern } from "../utils/cache.js";
+import { getCache, setCache, deleteCache, clearCachePattern } from "../utils/cache.js";
 import logger from "../utils/logger.js";
 import { generateReviewSummary } from "../services/reviewSummaryService.js";
 import {
@@ -84,6 +84,7 @@ export const createReview = asyncHandler(async (req, res) => {
 
     // Clear caches
     await deleteCache(`product_${productId}`);
+    await deleteCache(`review_summary_${productId}`);
     await clearCachePattern("all_products*");
 
     // Notify via socket
@@ -215,6 +216,7 @@ export const editReview = asyncHandler(async (req, res) => {
     await product.save();
 
     await deleteCache(`product_${productId}`);
+    await deleteCache(`review_summary_${productId}`);
     await clearCachePattern("all_products*");
 
     const io = getIO();
@@ -274,6 +276,7 @@ export const deleteReview = asyncHandler(async (req, res) => {
     await product.save();
 
     await deleteCache(`product_${productId}`);
+    await deleteCache(`review_summary_${productId}`);
     await clearCachePattern("all_products*");
 
     const io = getIO();
@@ -438,13 +441,29 @@ Get AI/Local summary for product reviews
 */
 export const getProductReviewSummary = asyncHandler(async (req, res) => {
     const { productId } = req.params;
-    const product = await Product.findById(productId);
+    const cacheKey = `review_summary_${productId}`;
+
+    // 1. Instant 2ms cache response if summary was generated previously
+    const cachedSummary = await getCache(cacheKey);
+    if (cachedSummary) {
+        return res.status(200).json({
+            success: true,
+            summary: cachedSummary,
+            cached: true,
+        });
+    }
+
+    const product = await Product.findById(productId).select("reviews").lean();
     if (!product) {
         res.status(404);
         throw new Error("Product not found");
     }
 
-    const summaryData = await generateReviewSummary(product.reviews);
+    const summaryData = await generateReviewSummary(product.reviews || []);
+
+    // 2. Cache summary for 24 hours (86400s)
+    await setCache(cacheKey, summaryData, 86400);
+
     res.status(200).json({
         success: true,
         summary: summaryData
