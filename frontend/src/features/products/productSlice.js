@@ -74,6 +74,18 @@ export const fetchAPIProducts = createAsyncThunk(
   }
 )
 
+export const fetchProductById = createAsyncThunk(
+  'products/fetchProductById',
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${API_URL}/products/${id}`)
+      return res.data.product
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message)
+    }
+  }
+)
+
 export const createProductReview = createAsyncThunk(
   'products/createProductReview',
   async ({ productId, review }, { rejectWithValue, dispatch }) => {
@@ -150,6 +162,27 @@ const productSlice = createSlice({
         state.filteredProducts = applyFiltersAndSort({ ...state, products: normalized, allProducts: normalized })
       })
       .addCase(fetchAPIProducts.rejected, (state, action) => {
+        state.apiLoading = false
+        state.apiError = action.payload
+      })
+      .addCase(fetchProductById.pending, (state) => {
+        state.apiLoading = true
+        state.apiError = null
+      })
+      .addCase(fetchProductById.fulfilled, (state, action) => {
+        state.apiLoading = false
+        if (action.payload) {
+          const normalized = normalizeDBProduct(action.payload)
+          state.selectedProduct = normalized
+          const existingIdx = state.products.findIndex(p => p.id === normalized.id || p._id === normalized._id)
+          if (existingIdx >= 0) {
+            state.products[existingIdx] = normalized
+          } else {
+            state.products.push(normalized)
+          }
+        }
+      })
+      .addCase(fetchProductById.rejected, (state, action) => {
         state.apiLoading = false
         state.apiError = action.payload
       })

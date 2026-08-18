@@ -88,7 +88,13 @@ const SimilarProducts = ({ productId, currentProduct }) => {
       let img = null
       if (Array.isArray(p.images) && p.images.length > 0) {
         const first = p.images[0]
-        img = typeof first === 'string' ? first : first.url
+        img = typeof first === 'string' ? first : (first && first.url ? first.url : null)
+      } else if (typeof p.image === 'string') {
+        img = p.image
+      }
+
+      if (!img) {
+        img = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
       }
 
       return {
@@ -139,6 +145,8 @@ const SimilarProducts = ({ productId, currentProduct }) => {
     d.setDate(d.getDate() + 3)
     return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
   }
+
+  const fallbackSrc = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
 
   return (
     <div className="py-10 border-t border-atelier-lightgray/50 font-sans">
@@ -194,20 +202,15 @@ const SimilarProducts = ({ productId, currentProduct }) => {
             >
               {/* Product Image Container */}
               <div className="relative aspect-[4/5] bg-atelier-cream/60 overflow-hidden">
-                {product.image ? (
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="h-full w-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
-                    onError={e => {
-                      e.target.style.display = 'none'
-                    }}
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-atelier-gray/40 text-xs font-mono uppercase">
-                    No image
-                  </div>
-                )}
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="h-full w-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+                  onError={e => {
+                    e.target.onerror = null
+                    e.target.src = fallbackSrc
+                  }}
+                />
 
                 {/* AD Badge if sponsored */}
                 {product.isAd && (

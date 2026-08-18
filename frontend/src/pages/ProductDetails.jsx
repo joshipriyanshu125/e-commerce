@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { selectProductById, fetchAPIProducts } from '../features/products/productSlice'
+import { selectProductById, fetchAPIProducts, fetchProductById } from '../features/products/productSlice'
 import { addToCart } from '../features/cart/cartSlice'
 import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react'
 import ReviewSection from '../components/product/ReviewSection'
@@ -26,10 +26,8 @@ const ProductDetails = () => {
   const thumbnailRef = useRef(null)
 
   useEffect(() => {
-    // React Router preserves scroll position between routes by default. A newly
-    // opened product should always begin at its product header, not the prior page's offset.
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-    dispatch(selectProductById(id))
+    dispatch(fetchProductById(id))
     setSelectedSize('')
     setQuantity(1)
     setActiveImageIdx(0)
@@ -37,9 +35,7 @@ const ProductDetails = () => {
 
   useEffect(() => {
     if (!selectedProduct && !apiLoading) {
-      dispatch(fetchAPIProducts()).then(() => {
-        dispatch(selectProductById(id))
-      })
+      dispatch(fetchProductById(id))
     }
   }, [selectedProduct, apiLoading, id, dispatch])
 
@@ -47,20 +43,20 @@ const ProductDetails = () => {
     if (selectedProduct) {
       const colors = selectedProduct.colors || []
       if (colors.length === 1) setSelectedColor(colors[0])
-      else setSelectedColor(null) // Reset if multiple, force selection
+      else setSelectedColor(null)
 
       const sizes = selectedProduct.sizes || []
       if (sizes.length === 1 && typeof sizes[0] === 'string' && !sizes[0].includes('-')) {
         setSelectedSize(sizes[0])
       } else {
-        setSelectedSize(null) // Force selection
+        setSelectedSize(null)
       }
     }
   }, [selectedProduct])
 
   if (!selectedProduct) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center font-sans">
         <p className="font-serif text-xl text-atelier-gray italic">
           {apiLoading ? 'Loading product...' : 'Product not found.'}
         </p>
@@ -70,19 +66,17 @@ const ProductDetails = () => {
   }
 
   // ── Image normalization ──────────────────────────────────────────────────────
-  // DB images are stored as [{public_id, url}] objects.
-  // productSlice already maps them to plain strings, but do a safety pass too.
   const rawImages = selectedProduct.images || []
   const images = rawImages
     .map(img => {
       if (typeof img === 'string' && img.startsWith('http')) return img
+      if (typeof img === 'string' && img.startsWith('/')) return img
       if (img && typeof img === 'object' && img.url) return img.url
       return null
     })
     .filter(Boolean)
 
   // ── Color normalization ──────────────────────────────────────────────────────
-  // Colors may come as plain strings (from DB) or {name, hex} objects
   const colorHexMap = {
     black: '#1C1C1C', white: '#F5F5F5', red: '#DC2626', blue: '#2563EB',
     green: '#16A34A', yellow: '#EAB308', orange: '#EA580C', purple: '#9333EA',
@@ -99,13 +93,10 @@ const ProductDetails = () => {
   })
 
   // ── Size normalization ───────────────────────────────────────────────────────
-  // Sizes may be stored as individual values ["7","8","9"] or as ranges ["7-11"]
-  // Expand range strings so each size gets its own button
   const expandSizes = (sizeArr) => {
     const result = []
     for (const s of sizeArr) {
       if (typeof s === 'string' && /^\d+\.?\d*-\d+\.?\d*$/.test(s.trim())) {
-        // It's a range like "7-11"
         const parts = s.split('-')
         const start = parseFloat(parts[0])
         const end = parseFloat(parts[1])
@@ -130,8 +121,7 @@ const ProductDetails = () => {
       setActiveImageIdx(idx)
       setIsSliding(false)
     }, 280)
-    // Keep movement inside the horizontal thumbnail rail. Element.scrollIntoView
-    // can also scroll the main document, which made image navigation jump the page.
+
     if (thumbnailRef.current) {
       const rail = thumbnailRef.current
       const thumb = rail.children[idx]
@@ -179,9 +169,6 @@ const ProductDetails = () => {
       setIsAddingToBag(false)
     }, 600)
   }
-
-
-
 
   const activeImage = images.length > 0 ? images[activeImageIdx] : null
 
@@ -338,42 +325,73 @@ const ProductDetails = () => {
             {selectedProduct.description}
           </p>
 
-          {/* ── Color Selector ──────────────────────────────────────────────── */}
-          {colors.length > 0 && selectedColor && (
+          {/* ── Flipkart-Style Color Variant Selector (SS2 Reference) ───────────────────────── */}
+          {colors.length > 0 && (
             <div className="space-y-3">
-              <h3 className="font-mono text-sm tracking-widest uppercase text-atelier-gray">
-                Color: <span className="text-atelier-dark font-medium capitalize">
-                  {typeof selectedColor === 'string' ? selectedColor : selectedColor.name}
+              <h3 className="text-sm font-sans font-medium text-atelier-dark">
+                Selected Color:{' '}
+                <span className="text-atelier-gray font-normal capitalize">
+                  {selectedColor
+                    ? (typeof selectedColor === 'string' ? selectedColor : selectedColor.name)
+                    : (typeof colors[0] === 'string' ? colors[0] : colors[0]?.name || 'Default')}
                 </span>
               </h3>
-              <div className="flex items-center flex-wrap gap-2">
-                {colors.map((color) => {
-                  const isSelected = (typeof selectedColor === 'string'
-                    ? selectedColor === color.name
-                    : selectedColor.name === color.name)
+              <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
+                {colors.map((color, idx) => {
+                  const colorName = typeof color === 'string' ? color : color.name
+                  const activeColorName = selectedColor
+                    ? (typeof selectedColor === 'string' ? selectedColor : selectedColor.name)
+                    : (typeof colors[0] === 'string' ? colors[0] : colors[0]?.name)
+                  const isSelected = activeColorName === colorName
+
+                  // Use corresponding image for this color if available, or hero image
+                  const colorThumb = images[idx] || images[0]
+
                   return (
                     <button
-                      key={color.name}
-                      onClick={() => setSelectedColor(color)}
-                      title={color.name}
-                      className={`relative h-8 w-8 rounded-full border-2 transition-all duration-200 ${
+                      key={colorName}
+                      type="button"
+                      onClick={() => {
+                        setSelectedColor(color)
+                        if (idx < images.length) {
+                          goToImage(idx, idx > activeImageIdx ? 'next' : 'prev')
+                        }
+                      }}
+                      title={colorName}
+                      className={`relative flex flex-col items-center p-1.5 bg-white border-2 rounded-xl transition-all duration-200 shrink-0 group ${
                         isSelected
-                          ? 'border-atelier-dark scale-110 shadow-md ring-2 ring-white ring-offset-1 ring-offset-atelier-dark/20'
-                          : 'border-transparent hover:scale-105 hover:border-atelier-gray/40'
+                          ? 'border-black ring-2 ring-black/10 shadow-sm scale-105'
+                          : 'border-atelier-lightgray/60 hover:border-atelier-dark/60'
                       }`}
-                      style={{ backgroundColor: color.hex }}
                     >
-                      {/* White/light colors get a subtle border so they're visible */}
-                      {(color.hex === '#F5F5F5' || color.hex === '#FFFFFF' || color.hex === '#F5F0E8' || color.hex === '#F0ECE3' || color.hex === '#EAE6DD') && (
-                        <span className="absolute inset-0 rounded-full border border-atelier-lightgray/60" />
-                      )}
-                      {isSelected && (
-                        <span className="absolute inset-0 rounded-full flex items-center justify-center">
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 6l3 3 5-5" stroke={color.hex === '#F5F5F5' || color.hex === '#FFFFFF' ? '#333' : '#fff'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </span>
-                      )}
+                      {/* Image preview box matching SS2 rounded rectangle */}
+                      <div className="h-16 w-14 sm:h-18 sm:w-16 rounded-lg overflow-hidden bg-atelier-cream border border-atelier-lightgray/40 flex items-center justify-center relative">
+                        {colorThumb ? (
+                          <img
+                            src={colorThumb}
+                            alt={colorName}
+                            className="h-full w-full object-contain p-1"
+                            onError={e => { e.target.style.display = 'none' }}
+                          />
+                        ) : (
+                          <div
+                            className="h-full w-full rounded-md"
+                            style={{ backgroundColor: typeof color === 'object' ? color.hex : '#888' }}
+                          />
+                        )}
+                        {/* Selected indicator overlay */}
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-black/10 rounded-lg flex items-center justify-center">
+                            <span className="h-5 w-5 rounded-full bg-atelier-dark text-white flex items-center justify-center text-[10px] shadow-sm font-bold">
+                              ✓
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Color Label */}
+                      <span className="text-[11px] font-mono tracking-wider text-atelier-dark capitalize truncate max-w-[4.5rem] mt-1">
+                        {colorName}
+                      </span>
                     </button>
                   )
                 })}
@@ -415,7 +433,6 @@ const ProductDetails = () => {
             <SizeRecommender
               availableSizes={allSizes}
               onRecommend={(rec) => {
-                // Auto-highlight the recommended size if it exists
                 if (allSizes.map(s => s.toUpperCase()).includes(rec.toUpperCase())) {
                   const match = allSizes.find(s => s.toUpperCase() === rec.toUpperCase())
                   if (match) setSelectedSize(match)
@@ -499,16 +516,18 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* Reviews Section — uses new ReviewSection component */}
+      {/* Reviews Section — uses new ReviewSection component with key={id} for forced re-fetching */}
       <ReviewSection
-        productId={selectedProduct._id || selectedProduct.id}
+        key={id}
+        productId={id}
         productRating={selectedProduct.rating}
         productNumReviews={selectedProduct.numReviews}
       />
 
       {/* Flipkart-Style Similar Products Carousel */}
       <SimilarProducts
-        productId={selectedProduct._id || selectedProduct.id}
+        key={id}
+        productId={id}
         currentProduct={selectedProduct}
       />
     </div>
