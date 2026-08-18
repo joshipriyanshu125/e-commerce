@@ -552,12 +552,6 @@ export const replyToReview = asyncHandler(async (req, res) => {
         }
 
         console.log("DEBUG replyToReview - Found review by:", review.name, "current reply:", review.reply);
-        review.reply = reply;
-
-        console.log("DEBUG replyToReview - Saving product...");
-        await product.save();
-        console.log("DEBUG replyToReview - Product saved successfully!");
-
         // CLEAR CACHE
         await clearCachePattern("all_products*");
         await deleteCache(`product_${req.params.id}`);
@@ -578,4 +572,86 @@ export const replyToReview = asyncHandler(async (req, res) => {
         res.status(res.statusCode === 200 ? 500 : res.statusCode);
         throw err;
     }
+});
+
+// GET SIMILAR PRODUCTS
+export const getSimilarProducts = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const targetProduct = await Product.findById(id).lean();
+
+    if (!targetProduct) {
+        res.status(404);
+        throw new Error("Product not found");
+    }
+
+    // Fetch active products excluding current product
+    const candidateProducts = await Product.find({
+        _id: { $ne: targetProduct._id },
+        status: { $ne: "Draft" },
+    }).lean();
+
+    if (!candidateProducts.length) {
+        return res.status(200).json({
+            success: true,
+            products: [],
+        });
+    }
+
+    const tCategory = (targetProduct.category || "").toLowerCase();
+    const tBrand = (targetProduct.brand || "").toLowerCase();
+    const tGender = (targetProduct.gender || "unisex").toLowerCase();
+    const tTags = (targetProduct.tags || []).map(t => String(t).toLowerCase());
+    const tPrice = Number(targetProduct.price) || 0;
+
+    const scored = candidateProducts.map(prod => {
+        let score = 0;
+
+        // 1. Category similarity (+40)
+        const pCategory = (prod.category || "").toLowerCase();
+        if (pCategory && tCategory) {
+            if (pCategory === tCategory) score += 40;
+            else if (pCategory.includes(tCategory) || tCategory.includes(pCategory)) score += 25;
+        }
+
+        // 2. Gender similarity (+20)
+        const pGender = (prod.gender || "unisex").toLowerCase();
+        if (pGender === tGender || pGender === "unisex" || tGender === "unisex") {
+            score += 20;
+        }
+
+        // 3. Brand similarity (+15)
+        const pBrand = (prod.brand || "").toLowerCase();
+        if (pBrand && tBrand && pBrand === tBrand) {
+            score += 15;
+        }
+
+        // 4. Tag / Color overlap (+15)
+        const pTags = (prod.tags || []).map(t => String(t).toLowerCase());
+        const tagMatches = pTags.filter(t => tTags.includes(t)).length;
+        if (tagMatches > 0) {
+            score += Math.min(15, tagMatches * 5);
+        }
+
+        // 5. Price proximity (+10)
+        const pPrice = Number(prod.price) || 0;
+        if (tPrice > 0 && pPrice > 0) {
+            const priceDiffRatio = Math.abs(pPrice - tPrice) / tPrice;
+            if (priceDiffRatio <= 0.2) score += 10;
+            else if (priceDiffRatio <= 0.4) score += 5;
+        }
+
+        return { product: prod, score };
+    });
+
+    // Sort descending by score, then by rating
+    scored.sort((a, b) => b.score - a.score || (b.product.rating || 0) - (a.product.rating || 0));
+
+    // Limit to top 12 products
+    const resultProducts = scored.slice(0, 12).map(item => item.product);
+
+    res.status(200).json({
+        success: true,
+        count: resultProducts.length,
+        products: resultProducts,
+    });
 });

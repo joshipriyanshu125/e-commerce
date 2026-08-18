@@ -6,6 +6,7 @@ import {
     createProduct,
     getProducts,
     getProductById,
+    getSimilarProducts,
     updateProduct,
     deleteProduct,
     createProductReview,
@@ -37,12 +38,20 @@ router.get(
     getProducts
 );
 
-
 router.get(
     "/reviews/all",
     protect,
     admin,
     getAllReviews
+);
+
+router.get(
+    "/:id/similar",
+    cacheMiddleware(
+        (req) => `similar_products_${req.params.id}`,
+        3600
+    ),
+    getSimilarProducts
 );
 
 router.get(
@@ -54,7 +63,6 @@ router.get(
     getProductById
 );
 
-
 router.post(
     "/",
     protect,
@@ -63,7 +71,6 @@ router.post(
     createProduct
 );
 
-
 router.put(
     "/:id",
     protect,
@@ -71,7 +78,6 @@ router.put(
     upload.array("images", 5),
     updateProduct
 );
-
 
 router.delete(
     "/:id",

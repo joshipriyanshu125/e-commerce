@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { clearCart } from '../features/cart/cartSlice'
-import { CheckCircle, ArrowLeft, CreditCard, Shield, Lock, MapPin, Plus, CheckCircle2 } from 'lucide-react'
+import { CheckCircle, ArrowLeft, CreditCard, Shield, Lock, MapPin, Plus, CheckCircle2, Banknote } from 'lucide-react'
 import axios from '../services/axiosInstance'
 import { loadRazorpay } from '../utils/razorpay'
 
@@ -17,6 +17,9 @@ const Checkout = () => {
   const [savedAddresses, setSavedAddresses] = useState([])
   const [selectedAddressId, setSelectedAddressId] = useState(null)
   const [useNewAddress, setUseNewAddress] = useState(false)
+
+  // Payment method selection ('ONLINE' | 'COD')
+  const [paymentMethod, setPaymentMethod] = useState('ONLINE')
 
   // Form inputs states
   const [email, setEmail] = useState(user?.email || '')
@@ -147,35 +150,50 @@ const Checkout = () => {
         addressId: savedAddressId
       };
 
-      // 3. Create a Razorpay order on our server, then open its hosted checkout.
-      const paymentRes = await axios.post('payments/orders', orderPayload);
-      const { order, razorpayOrder, keyId } = paymentRes.data;
-      await loadRazorpay();
-      const checkout = new window.Razorpay({
-        key: keyId,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        name: 'Atelier',
-        description: `Order ${order.id}`,
-        order_id: razorpayOrder.id,
-        prefill: { name: `${firstName} ${lastName}`.trim(), email, contact: phone },
-        theme: { color: '#1f2937' },
-        modal: { ondismiss: () => setIsProcessing(false) },
-        handler: async (response) => {
-          try {
-            await axios.post('payments/verify', { orderId: order.id, ...response });
-            setGeneratedOrderId(order.id);
-            setOrderSuccess(true);
-            dispatch(clearCart());
-          } catch (verifyError) {
-            alert(verifyError?.response?.data?.message || 'Payment could not be verified. Please contact support.');
-          } finally {
-            setIsProcessing(false);
-          }
-        },
-      });
-      checkout.open();
-      
+      if (paymentMethod === 'COD') {
+        const codPayload = {
+          ...orderPayload,
+          paymentInfo: {
+            method: 'COD',
+            paymentStatus: 'Pending',
+          },
+        };
+
+        const res = await axios.post('orders', codPayload);
+        const createdOrder = res.data.order;
+        setGeneratedOrderId(createdOrder._id || createdOrder.id);
+        setOrderSuccess(true);
+        dispatch(clearCart());
+        setIsProcessing(false);
+      } else {
+        const paymentRes = await axios.post('payments/orders', orderPayload);
+        const { order, razorpayOrder, keyId } = paymentRes.data;
+        await loadRazorpay();
+        const checkout = new window.Razorpay({
+          key: keyId,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          name: 'Atelier',
+          description: `Order ${order.id}`,
+          order_id: razorpayOrder.id,
+          prefill: { name: `${firstName} ${lastName}`.trim(), email, contact: phone },
+          theme: { color: '#1f2937' },
+          modal: { ondismiss: () => setIsProcessing(false) },
+          handler: async (response) => {
+            try {
+              await axios.post('payments/verify', { orderId: order.id, ...response });
+              setGeneratedOrderId(order.id);
+              setOrderSuccess(true);
+              dispatch(clearCart());
+            } catch (verifyError) {
+              alert(verifyError?.response?.data?.message || 'Payment could not be verified. Please contact support.');
+            } finally {
+              setIsProcessing(false);
+            }
+          },
+        });
+        checkout.open();
+      }
     } catch (err) {
       console.error("Order creation failed", err);
       setIsProcessing(false);
@@ -193,7 +211,7 @@ const Checkout = () => {
           
           <div className="space-y-3">
             <span className="font-mono text-xs sm:text-sm tracking-[0.25em] uppercase text-atelier-gray block">
-                Payment Successful
+                {paymentMethod === 'COD' ? 'Order Confirmed (Cash on Delivery)' : 'Payment Successful'}
               </span>
             <h1 className="font-serif text-3xl text-atelier-dark font-medium leading-tight">
               Thank you for your order.
@@ -464,13 +482,76 @@ const Checkout = () => {
               </div>
             </div>
 
-            <div className="bg-atelier-cream border border-atelier-lightgray p-6">
-              <p className="text-xs text-atelier-dark font-medium flex items-center gap-1.5">
-                <CreditCard size={14} className="text-atelier-gray" /> Razorpay secure checkout
-              </p>
-              <p className="mt-3 text-xs text-atelier-gray leading-relaxed">
-                Cards, UPI, netbanking and other available methods are securely collected by Razorpay after you place the order.
-              </p>
+            {/* Payment Option Selector */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Option 1: Online Payment */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('ONLINE')}
+                  className={`p-4 text-left border rounded-lg transition-all duration-200 flex flex-col justify-between space-y-3 ${
+                    paymentMethod === 'ONLINE'
+                      ? 'border-atelier-dark bg-atelier-cream ring-1 ring-atelier-dark shadow-sm'
+                      : 'border-atelier-lightgray/70 bg-white hover:border-atelier-dark/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-mono tracking-widest uppercase font-semibold text-atelier-dark flex items-center gap-2">
+                      <CreditCard size={16} className="text-atelier-dark" /> Online Payment
+                    </span>
+                    <span className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                      paymentMethod === 'ONLINE' ? 'border-atelier-dark bg-atelier-dark text-white' : 'border-atelier-lightgray'
+                    }`}>
+                      {paymentMethod === 'ONLINE' && <CheckCircle2 size={12} />}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-atelier-gray font-light">
+                    UPI, Credit/Debit Cards, NetBanking via Razorpay secure checkout.
+                  </p>
+                </button>
+
+                {/* Option 2: Cash on Delivery */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('COD')}
+                  className={`p-4 text-left border rounded-lg transition-all duration-200 flex flex-col justify-between space-y-3 ${
+                    paymentMethod === 'COD'
+                      ? 'border-atelier-dark bg-atelier-cream ring-1 ring-atelier-dark shadow-sm'
+                      : 'border-atelier-lightgray/70 bg-white hover:border-atelier-dark/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-xs font-mono tracking-widest uppercase font-semibold text-atelier-dark flex items-center gap-2">
+                      <Banknote size={16} className="text-emerald-700" /> Cash on Delivery
+                    </span>
+                    <span className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                      paymentMethod === 'COD' ? 'border-atelier-dark bg-atelier-dark text-white' : 'border-atelier-lightgray'
+                    }`}>
+                      {paymentMethod === 'COD' && <CheckCircle2 size={12} />}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-atelier-gray font-light">
+                    Pay in cash when your package is delivered to your address.
+                  </p>
+                </button>
+              </div>
+
+              {/* Selected Payment Method Description Box */}
+              {paymentMethod === 'ONLINE' ? (
+                <div className="bg-atelier-cream border border-atelier-lightgray/60 p-4 rounded-lg text-xs text-atelier-gray space-y-1 font-light">
+                  <p className="font-medium text-atelier-dark flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider">
+                    <Shield size={12} className="text-emerald-600" /> Encrypted Razorpay Gateway
+                  </p>
+                  <p>You will be redirected to the secure payment modal to authorize your payment.</p>
+                </div>
+              ) : (
+                <div className="bg-emerald-50/60 border border-emerald-200/80 p-4 rounded-lg text-xs text-emerald-900 space-y-1 font-light">
+                  <p className="font-semibold flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-emerald-800">
+                    <Banknote size={13} className="text-emerald-700" /> Cash on Delivery (COD) Selected
+                  </p>
+                  <p>No upfront digital payment required. Please keep exact cash amount ready upon delivery.</p>
+                </div>
+              )}
             </div>
             {false && (
             <div className="bg-atelier-cream border border-atelier-lightgray p-6 space-y-6">
@@ -608,12 +689,12 @@ const Checkout = () => {
                 type="submit"
                 className="w-full btn-atelier-dark py-4 text-center"
               >
-                Pay securely (₹{finalTotal})
+                {paymentMethod === 'COD' ? `Place Order with Cash on Delivery` : `Pay securely ($${finalTotal})`}
               </button>
               
               <div className="flex items-center justify-center space-x-2 text-xs font-mono tracking-widest text-atelier-gray uppercase">
                 <Shield size={12} />
-              <span>Secure payments powered by Razorpay</span>
+                <span>{paymentMethod === 'COD' ? 'Guaranteed & Tracked Shipping' : 'Secure payments powered by Razorpay'}</span>
               </div>
             </div>
           </div>

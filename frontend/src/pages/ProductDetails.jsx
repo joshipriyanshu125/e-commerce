@@ -6,6 +6,7 @@ import { addToCart } from '../features/cart/cartSlice'
 import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react'
 import ReviewSection from '../components/product/ReviewSection'
 import SizeRecommender from '../components/product/SizeRecommender'
+import SimilarProducts from '../components/product/SimilarProducts'
 
 const ProductDetails = () => {
   const { id } = useParams()
@@ -503,6 +504,12 @@ const ProductDetails = () => {
         productId={selectedProduct._id || selectedProduct.id}
         productRating={selectedProduct.rating}
         productNumReviews={selectedProduct.numReviews}
+      />
+
+      {/* Flipkart-Style Similar Products Carousel */}
+      <SimilarProducts
+        productId={selectedProduct._id || selectedProduct.id}
+        currentProduct={selectedProduct}
       />
     </div>
   )
