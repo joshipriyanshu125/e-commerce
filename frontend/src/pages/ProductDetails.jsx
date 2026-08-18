@@ -206,7 +206,7 @@ const ProductDetails = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start pb-20">
 
         {/* ── Left Column: Image Gallery ────────────────────────────────────── */}
-        <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-28 lg:self-start">
+        <div className="lg:col-span-7 space-y-4">
 
           {/* Main image with slider arrows */}
           <div className="aspect-square bg-atelier-cream border border-atelier-lightgray/30 overflow-hidden relative rounded-xl group">
@@ -275,8 +275,8 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Thumbnail strip — horizontal scrollable */}
-          {images.length > 1 && (
+          {/* Thumbnail strip — only shown if product does NOT have color variant cards */}
+          {images.length > 1 && colors.length === 0 && (
             <div
               ref={thumbnailRef}
               className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-thin"
