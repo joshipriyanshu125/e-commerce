@@ -497,7 +497,9 @@ const AdminCategoriesManager = () => {
                     >
                       <option value="">None (top level)</option>
                       {parentOptions.map((c) => (
-                        <option key={c._id} value={c._id}>{c.label || c.name}</option>
+                        <option key={c._id} value={c._id}>
+                          {c.parentName ? `${c.parentName} — ${c.name}` : c.name}
+                        </option>
                       ))}
                     </select>
                   </div>

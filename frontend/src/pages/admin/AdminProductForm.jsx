@@ -4,7 +4,7 @@ import AdminLayout from '../../components/admin/AdminLayout'
 import api from '../../services/axiosInstance'
 import { ArrowLeft, Upload, X, Plus, Loader2, ImageOff, Sparkles, Wand2, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react'
 
-import { fetchCategoriesAdmin, flattenTreeForSelect } from '../../utils/categories'
+import { fetchCategoriesAdmin, flattenTreeForSelect, groupCategoriesForSelect } from '../../utils/categories'
 
 const STATUS_OPTIONS = [
   { value: 'Active', label: 'Active', desc: 'Visible to customers' },
@@ -30,6 +30,7 @@ const AdminProductForm = () => {
   const [fetching, setFetching] = useState(true) // Always fetch initially for categories
   const [error, setError] = useState('')
   const [categories, setCategories] = useState([])
+  const [categoryGroups, setCategoryGroups] = useState([])
 
   // Tag / size / color input helpers
   const [tagInput, setTagInput] = useState('')
@@ -55,6 +56,9 @@ const AdminProductForm = () => {
         
         // Load categories
         const catRes = await fetchCategoriesAdmin()
+        const groups = groupCategoriesForSelect(catRes.tree)
+        setCategoryGroups(groups)
+
         const flatCats = catRes.flat.length ? catRes.flat : flattenTreeForSelect(catRes.tree)
         setCategories(flatCats)
 
@@ -678,10 +682,26 @@ const AdminProductForm = () => {
                 <label className="block text-xs text-white/40 uppercase tracking-widest mb-1.5">Category</label>
                 <select
                   name="category" value={form.category} onChange={handleChange}
-                  className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-amber-500/50"
+                  className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-amber-500/50 cursor-pointer"
                 >
                   <option value="">Select category</option>
-                  {categories.map(c => <option key={c._id} value={c.slug}>{c.label || c.name}</option>)}
+                  {categoryGroups.length > 0 ? (
+                    categoryGroups.map(group => (
+                      <optgroup key={group.label} label={group.label} className="bg-[#1a1a24] text-amber-400 font-semibold py-1">
+                        {group.options.map(c => (
+                          <option key={c._id || c.slug} value={c.slug} className="bg-[#0f0f14] text-white py-1">
+                            {c.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))
+                  ) : (
+                    categories.map(c => (
+                      <option key={c._id || c.slug} value={c.slug}>
+                        {c.label || c.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 

@@ -66,22 +66,80 @@ export const getCategoryLink = (slug, parentSlug = null) => {
   return `/shop/${slug}`
 }
 
-export const flattenTreeForSelect = (tree, depth = 0) => {
+export const flattenTreeForSelect = (tree, depth = 0, parentName = '') => {
   const items = []
+  if (!Array.isArray(tree)) return items
+
   tree.forEach((node) => {
+    const displayName = parentName ? `${parentName} — ${node.name}` : node.name
     items.push({
       _id: node._id,
       name: node.name,
       slug: node.slug,
       depth,
-      label: `${'— '.repeat(depth)}${node.name}`,
+      parentName,
+      label: depth > 0 ? `${displayName}` : node.name,
       navGroup: node.navGroup,
     })
     if (node.children?.length) {
-      items.push(...flattenTreeForSelect(node.children, depth + 1))
+      const nextParent = parentName ? `${parentName} — ${node.name}` : node.name
+      items.push(...flattenTreeForSelect(node.children, depth + 1, nextParent))
     }
   })
   return items
+}
+
+export const groupCategoriesForSelect = (tree) => {
+  if (!Array.isArray(tree) || tree.length === 0) return []
+
+  const groups = []
+
+  tree.forEach((topNode) => {
+    const parentName = topNode.name
+    const slugLower = (topNode.slug || '').toLowerCase()
+
+    let icon = '📁 '
+    if (slugLower === 'men') icon = '👨 '
+    else if (slugLower === 'women') icon = '👩 '
+    else if (topNode.navGroup === 'featured') icon = '⭐ '
+
+    const groupOptions = []
+
+    // Top-level category option
+    groupOptions.push({
+      _id: topNode._id,
+      name: topNode.name,
+      slug: topNode.slug,
+      label: `${topNode.name} (All ${topNode.name})`,
+    })
+
+    // Subcategories recursively
+    const collectChildren = (children, prefix) => {
+      children.forEach(child => {
+        const fullLabel = `${prefix} — ${child.name}`
+        groupOptions.push({
+          _id: child._id,
+          name: child.name,
+          slug: child.slug,
+          label: fullLabel,
+        })
+        if (child.children?.length) {
+          collectChildren(child.children, fullLabel)
+        }
+      })
+    }
+
+    if (topNode.children?.length) {
+      collectChildren(topNode.children, parentName)
+    }
+
+    groups.push({
+      label: `${icon}${parentName.toUpperCase()}`,
+      options: groupOptions,
+    })
+  })
+
+  return groups
 }
 
 export const findCategoryBySlug = (tree, slug) => {
