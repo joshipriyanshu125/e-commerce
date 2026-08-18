@@ -68,6 +68,10 @@ export const createProduct = asyncHandler(async (req, res) => {
     const colors = req.body.colors ? (Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors)) : [];
     // imageColors is an array mapping each file index to a color name (or empty string)
     const imageColors = req.body.imageColors ? (Array.isArray(req.body.imageColors) ? req.body.imageColors : JSON.parse(req.body.imageColors)) : [];
+    // Features, specifications, manufacturerInfo
+    const features = req.body.features ? (Array.isArray(req.body.features) ? req.body.features : JSON.parse(req.body.features)) : [];
+    const specifications = req.body.specifications ? (Array.isArray(req.body.specifications) ? req.body.specifications : JSON.parse(req.body.specifications)) : [];
+    const manufacturerInfo = req.body.manufacturerInfo ? (typeof req.body.manufacturerInfo === 'string' ? JSON.parse(req.body.manufacturerInfo) : req.body.manufacturerInfo) : {};
 
     if (!req.files?.length) {
         res.status(400);
@@ -99,6 +103,9 @@ export const createProduct = asyncHandler(async (req, res) => {
         tags,
         sizes,
         colors,
+        features,
+        specifications,
+        manufacturerInfo,
         status: status || "Active",
         images,
         user: req.user._id,
@@ -231,6 +238,16 @@ export const updateProduct = asyncHandler(async (req, res) => {
         }
         if (req.body.colors !== undefined) {
             product.colors = Array.isArray(req.body.colors) ? req.body.colors : JSON.parse(req.body.colors);
+        }
+        // Features, specifications, manufacturerInfo
+        if (req.body.features !== undefined) {
+            product.features = Array.isArray(req.body.features) ? req.body.features : JSON.parse(req.body.features);
+        }
+        if (req.body.specifications !== undefined) {
+            product.specifications = Array.isArray(req.body.specifications) ? req.body.specifications : JSON.parse(req.body.specifications);
+        }
+        if (req.body.manufacturerInfo !== undefined) {
+            product.manufacturerInfo = typeof req.body.manufacturerInfo === 'string' ? JSON.parse(req.body.manufacturerInfo) : req.body.manufacturerInfo;
         }
 
         // The edit form sends the assets that remain after an admin removes an

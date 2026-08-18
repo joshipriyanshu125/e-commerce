@@ -174,6 +174,27 @@ const productSchema = new mongoose.Schema(
             required: true,
             default: 0,
         },
+        // Feature highlights (shown as cards on the product page)
+        features: [
+            {
+                title: { type: String, default: "" },
+                description: { type: String, default: "" },
+                imageUrl: { type: String, default: "" },
+            },
+        ],
+        // Key-value specification pairs (Brand, Fit, Fabric, Rise, etc.)
+        specifications: [
+            {
+                key: { type: String, default: "" },
+                value: { type: String, default: "" },
+            },
+        ],
+        // Manufacturer / store info shown on the product page
+        manufacturerInfo: {
+            name: { type: String, default: "" },
+            address: { type: String, default: "" },
+            location: { type: String, default: "" },
+        },
         user: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,

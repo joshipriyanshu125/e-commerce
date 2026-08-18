@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { fetchProductById } from '../features/products/productSlice'
 import { addToCart } from '../features/cart/cartSlice'
-import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronRight, X, ChevronUp, ChevronDown } from 'lucide-react'
 import ReviewSection from '../components/product/ReviewSection'
 import SizeRecommender from '../components/product/SizeRecommender'
 import SimilarProducts from '../components/product/SimilarProducts'
@@ -21,8 +21,10 @@ const ProductDetails = () => {
   const [activeImageIdx, setActiveImageIdx] = useState(0)
   const [isSliding, setIsSliding] = useState(false)
   const [slideDir, setSlideDir] = useState('next')
-
   const [isAddingToBag, setIsAddingToBag] = useState(false)
+  const [allDetailsTab, setAllDetailsTab] = useState('features') // features | specs | description | manufacturer
+  const [featureModal, setFeatureModal] = useState(null) // { title, description, imageUrl } or null
+  const [detailsOpen, setDetailsOpen] = useState(true)
   const thumbnailRef = useRef(null)
 
   useEffect(() => {
@@ -526,35 +528,164 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Details accordion */}
-          <div className="divide-y divide-atelier-lightgray/40 border-b border-atelier-lightgray/40">
-            {selectedProduct.details && selectedProduct.details.length > 0 && (
-              <details className="group py-4 cursor-pointer focus:outline-none">
-                <summary className="flex items-center justify-between text-xs font-mono tracking-wider uppercase text-atelier-dark">
-                  <span>Details &amp; Specifications</span>
-                  <span className="text-atelier-gray group-open:rotate-180 transition-transform">&darr;</span>
-                </summary>
-                <ul className="list-disc list-inside mt-3 text-xs text-atelier-gray leading-relaxed font-light space-y-1.5 pl-2">
-                  {selectedProduct.details.map((spec, i) => (
-                    <li key={i}>{spec}</li>
-                  ))}
-                </ul>
-              </details>
-            )}
+          {/* ── ALL DETAILS — Flipkart-style tabbed section ───────────────────── */}
+          {(selectedProduct.features?.length > 0 || selectedProduct.specifications?.length > 0 || selectedProduct.manufacturerInfo?.name) && (
+            <div className="border border-atelier-lightgray/30 rounded-lg overflow-hidden">
+              {/* Collapsible header */}
+              <button
+                onClick={() => setDetailsOpen(o => !o)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-white hover:bg-gray-50 transition-colors"
+              >
+                <span className="text-sm font-semibold text-atelier-dark">All details</span>
+                {detailsOpen ? <ChevronUp size={16} className="text-atelier-gray" /> : <ChevronDown size={16} className="text-atelier-gray" />}
+              </button>
 
-            <details className="group py-4 cursor-pointer focus:outline-none">
-              <summary className="flex items-center justify-between text-xs font-mono tracking-wider uppercase text-atelier-dark">
-                <span>Shipping &amp; Returns</span>
-                <span className="text-atelier-gray group-open:rotate-180 transition-transform">&darr;</span>
-              </summary>
-              <div className="mt-3 text-xs text-atelier-gray leading-relaxed font-light pl-2 space-y-2">
-                <p>Enjoy complimentary standard shipping on all orders over $150. Delivery takes between 3-5 business days.</p>
-                <p>Items can be returned within 30 days of shipment in their original condition and packaging. Pre-paid shipping labels are provided.</p>
-              </div>
-            </details>
-          </div>
+              {detailsOpen && (
+                <div className="bg-white">
+                  {/* Tab bar */}
+                  <div className="flex overflow-x-auto border-b border-gray-100 scrollbar-hide">
+                    {[
+                      selectedProduct.features?.length > 0 && { key: 'features', label: 'Features' },
+                      selectedProduct.specifications?.length > 0 && { key: 'specs', label: 'Specifications' },
+                      { key: 'description', label: 'Description' },
+                      selectedProduct.manufacturerInfo?.name && { key: 'manufacturer', label: 'Manufacturer info' },
+                    ].filter(Boolean).map(tab => (
+                      <button
+                        key={tab.key}
+                        onClick={() => setAllDetailsTab(tab.key)}
+                        className={`flex-shrink-0 px-4 py-3 text-xs font-medium tracking-wide transition-all border-b-2 ${
+                          allDetailsTab === tab.key
+                            ? 'border-atelier-dark bg-atelier-dark text-white'
+                            : 'border-transparent text-atelier-gray hover:text-atelier-dark hover:border-gray-300'
+                        }`}
+                      >{tab.label}</button>
+                    ))}
+                  </div>
+
+                  {/* ── FEATURES TAB ──────────────────────────────────── */}
+                  {allDetailsTab === 'features' && selectedProduct.features?.length > 0 && (
+                    <div className="overflow-x-auto py-4 px-3">
+                      <div className="flex gap-3" style={{ minWidth: 'max-content' }}>
+                        {selectedProduct.features.map((feat, i) => (
+                          <div
+                            key={i}
+                            className="flex items-start gap-3 bg-gray-50 rounded-xl p-3 w-56 flex-shrink-0 border border-gray-100"
+                          >
+                            {feat.imageUrl && (
+                              <div className="w-14 h-14 rounded-full bg-[#b8c8d8] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                <img src={feat.imageUrl} alt={feat.title} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-atelier-dark mb-1 leading-tight">{feat.title}</p>
+                              <p className="text-xs text-atelier-gray leading-relaxed line-clamp-3">
+                                {feat.description.length > 80 ? feat.description.slice(0, 80) + '...' : feat.description}
+                                {feat.description.length > 80 && (
+                                  <button
+                                    onClick={() => setFeatureModal(feat)}
+                                    className="text-blue-600 hover:underline font-medium ml-0.5"
+                                  >more</button>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── SPECIFICATIONS TAB ────────────────────────────── */}
+                  {allDetailsTab === 'specs' && selectedProduct.specifications?.length > 0 && (
+                    <div className="px-4 py-4">
+                      <p className="text-xs font-bold text-atelier-dark mb-3">General</p>
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-0">
+                        {selectedProduct.specifications.map((spec, i) => (
+                          <div key={i} className="py-2.5 border-b border-gray-100">
+                            <p className="text-[10px] text-atelier-gray uppercase tracking-wide mb-0.5">{spec.key}</p>
+                            <p className="text-xs font-medium text-atelier-dark">{spec.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── DESCRIPTION TAB ───────────────────────────────── */}
+                  {allDetailsTab === 'description' && (
+                    <div className="px-4 py-4">
+                      <p className="text-xs text-atelier-gray leading-relaxed">{selectedProduct.description}</p>
+                    </div>
+                  )}
+
+                  {/* ── MANUFACTURER INFO TAB ─────────────────────────── */}
+                  {allDetailsTab === 'manufacturer' && selectedProduct.manufacturerInfo && (
+                    <div className="px-4 py-4 space-y-3">
+                      {selectedProduct.manufacturerInfo.name && (
+                        <div>
+                          <p className="text-[10px] text-atelier-gray uppercase tracking-wide mb-0.5">Store / Brand</p>
+                          <p className="text-xs font-medium text-atelier-dark">{selectedProduct.manufacturerInfo.name}</p>
+                        </div>
+                      )}
+                      {selectedProduct.manufacturerInfo.address && (
+                        <div>
+                          <p className="text-[10px] text-atelier-gray uppercase tracking-wide mb-0.5">Address</p>
+                          <p className="text-xs text-atelier-dark leading-relaxed">{selectedProduct.manufacturerInfo.address}</p>
+                        </div>
+                      )}
+                      {selectedProduct.manufacturerInfo.location && (
+                        <div>
+                          <p className="text-[10px] text-atelier-gray uppercase tracking-wide mb-0.5">Location</p>
+                          <p className="text-xs font-medium text-atelier-dark">📍 {selectedProduct.manufacturerInfo.location}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Shipping & Returns accordion (kept) */}
+          <details className="group border-b border-atelier-lightgray/40 py-4 cursor-pointer focus:outline-none">
+            <summary className="flex items-center justify-between text-xs font-mono tracking-wider uppercase text-atelier-dark">
+              <span>Shipping &amp; Returns</span>
+              <span className="text-atelier-gray group-open:rotate-180 transition-transform">&darr;</span>
+            </summary>
+            <div className="mt-3 text-xs text-atelier-gray leading-relaxed font-light pl-2 space-y-2">
+              <p>Enjoy complimentary standard shipping on all orders over $150. Delivery takes between 3-5 business days.</p>
+              <p>Items can be returned within 30 days of shipment in their original condition and packaging. Pre-paid shipping labels are provided.</p>
+            </div>
+          </details>
         </div>
       </div>
+
+      {/* ── FEATURE DETAIL MODAL ───────────────────────────────────────────── */}
+      {featureModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setFeatureModal(null)}
+        >
+          <div
+            className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-2">
+              <h3 className="text-base font-bold text-atelier-dark">{featureModal.title}</h3>
+              <button onClick={() => setFeatureModal(null)} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+                <X size={18} className="text-atelier-gray" />
+              </button>
+            </div>
+            {/* Feature image */}
+            {featureModal.imageUrl && (
+              <div className="mx-5 mb-4 rounded-xl overflow-hidden bg-gray-100">
+                <img src={featureModal.imageUrl} alt={featureModal.title} className="w-full h-52 object-cover" />
+              </div>
+            )}
+            {/* Full description */}
+            <p className="px-5 pb-6 text-sm text-atelier-gray leading-relaxed">{featureModal.description}</p>
+          </div>
+        </div>
+      )}
 
       {/* Reviews Section — Strict single instance */}
       <ReviewSection

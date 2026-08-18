@@ -16,6 +16,9 @@ const initialForm = {
   name: '', description: '', price: '', discountPrice: '',
   countInStock: '', category: '', brand: '',
   status: 'Active', tags: [], sizes: [], colors: [],
+  features: [],           // [{ title, description, imageUrl }]
+  specifications: [],     // [{ key, value }]
+  manufacturerInfo: { name: '', address: '', location: '' },
 }
 
 const AdminProductForm = () => {
@@ -36,6 +39,11 @@ const AdminProductForm = () => {
   const [tagInput, setTagInput] = useState('')
   const [sizeInput, setSizeInput] = useState('')
   const [colorInput, setColorInput] = useState('')
+
+  // Feature input helper
+  const [featureInput, setFeatureInput] = useState({ title: '', description: '', imageUrl: '' })
+  // Spec input helper
+  const [specInput, setSpecInput] = useState({ key: '', value: '' })
 
   const fileInputRef = useRef()
   const colorFileRefs = useRef({}) // keyed by color name for per-color upload inputs
@@ -78,6 +86,9 @@ const AdminProductForm = () => {
             tags: p.tags || [],
             sizes: p.sizes || [],
             colors: p.colors || [],
+            features: p.features || [],
+            specifications: p.specifications || [],
+            manufacturerInfo: p.manufacturerInfo || { name: '', address: '', location: '' },
           })
           setExistingImages(p.images || [])
         }
@@ -215,6 +226,37 @@ const AdminProductForm = () => {
   }
   const removeColor = (c) => setForm(prev => ({ ...prev, colors: prev.colors.filter(x => x !== c) }))
 
+  // Feature helpers
+  const addFeature = () => {
+    if (!featureInput.title.trim()) return
+    setForm(prev => ({ ...prev, features: [...prev.features, { ...featureInput }] }))
+    setFeatureInput({ title: '', description: '', imageUrl: '' })
+  }
+  const removeFeature = (i) => setForm(prev => ({ ...prev, features: prev.features.filter((_, idx) => idx !== i) }))
+  const updateFeature = (i, field, val) => setForm(prev => {
+    const updated = [...prev.features]
+    updated[i] = { ...updated[i], [field]: val }
+    return { ...prev, features: updated }
+  })
+
+  // Spec helpers
+  const addSpec = () => {
+    if (!specInput.key.trim() || !specInput.value.trim()) return
+    setForm(prev => ({ ...prev, specifications: [...prev.specifications, { ...specInput }] }))
+    setSpecInput({ key: '', value: '' })
+  }
+  const removeSpec = (i) => setForm(prev => ({ ...prev, specifications: prev.specifications.filter((_, idx) => idx !== i) }))
+  const updateSpec = (i, field, val) => setForm(prev => {
+    const updated = [...prev.specifications]
+    updated[i] = { ...updated[i], [field]: val }
+    return { ...prev, specifications: updated }
+  })
+
+  // ManufacturerInfo helper
+  const updateManufacturer = (field, val) => setForm(prev => ({
+    ...prev, manufacturerInfo: { ...prev.manufacturerInfo, [field]: val }
+  }))
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -257,6 +299,10 @@ const AdminProductForm = () => {
       // imageColors: array in same order as appended image files
       const imageColors = images.map(img => img.color || '')
       formData.append('imageColors', JSON.stringify(imageColors))
+      // Features, specs, manufacturer
+      formData.append('features', JSON.stringify(form.features))
+      formData.append('specifications', JSON.stringify(form.specifications))
+      formData.append('manufacturerInfo', JSON.stringify(form.manufacturerInfo))
       if (isEdit) {
         formData.append('retainedImageIds', JSON.stringify(existingImages.map(image => image.public_id)))
         // tell backend what color each retained image has (in case admin reassigned)
@@ -876,6 +922,138 @@ const AdminProductForm = () => {
             </div>
 
             {/* Submit */}
+
+            {/* ── FEATURES EDITOR ─────────────────────────────────── */}
+            <div className="bg-[#13131a] rounded-xl border border-white/5 p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-white/60 uppercase tracking-widest">Features</h3>
+              <p className="text-xs text-white/30">Add highlight features shown as cards on the product page (e.g. Comfortable Stretch, Faded Look).</p>
+
+              {/* Existing features */}
+              {form.features.map((feat, i) => (
+                <div key={i} className="bg-white/5 rounded-lg p-3 space-y-2 border border-white/10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-amber-400 font-semibold flex-1 truncate">{feat.title}</span>
+                    <button type="button" onClick={() => removeFeature(i)} className="text-white/30 hover:text-red-400 transition-colors"><X size={14} /></button>
+                  </div>
+                  <input
+                    value={feat.title} onChange={e => updateFeature(i, 'title', e.target.value)}
+                    placeholder="Feature title"
+                    className="w-full bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                  />
+                  <textarea
+                    value={feat.description} onChange={e => updateFeature(i, 'description', e.target.value)}
+                    placeholder="Feature description"
+                    rows={2}
+                    className="w-full bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50 resize-none"
+                  />
+                  <input
+                    value={feat.imageUrl} onChange={e => updateFeature(i, 'imageUrl', e.target.value)}
+                    placeholder="Icon image URL (optional)"
+                    className="w-full bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                  />
+                </div>
+              ))}
+
+              {/* Add new feature */}
+              <div className="border border-dashed border-white/10 rounded-lg p-3 space-y-2">
+                <input
+                  value={featureInput.title} onChange={e => setFeatureInput(p => ({ ...p, title: e.target.value }))}
+                  placeholder="Feature title *"
+                  className="w-full bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                />
+                <textarea
+                  value={featureInput.description} onChange={e => setFeatureInput(p => ({ ...p, description: e.target.value }))}
+                  placeholder="Feature description"
+                  rows={2}
+                  className="w-full bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50 resize-none"
+                />
+                <input
+                  value={featureInput.imageUrl} onChange={e => setFeatureInput(p => ({ ...p, imageUrl: e.target.value }))}
+                  placeholder="Icon image URL (optional)"
+                  className="w-full bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                />
+                <button
+                  type="button" onClick={addFeature}
+                  className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors mt-1"
+                >
+                  <Plus size={13} /> Add Feature
+                </button>
+              </div>
+            </div>
+
+            {/* ── SPECIFICATIONS EDITOR ────────────────────────────── */}
+            <div className="bg-[#13131a] rounded-xl border border-white/5 p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-white/60 uppercase tracking-widest">Specifications</h3>
+              <p className="text-xs text-white/30">Add key-value spec pairs shown in the Specifications tab (e.g. Fit → Regular, Fabric → Cotton Lycra).</p>
+
+              {/* Existing specs grid */}
+              {form.specifications.length > 0 && (
+                <div className="space-y-2">
+                  {form.specifications.map((spec, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        value={spec.key} onChange={e => updateSpec(i, 'key', e.target.value)}
+                        placeholder="Label"
+                        className="flex-1 bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                      />
+                      <input
+                        value={spec.value} onChange={e => updateSpec(i, 'value', e.target.value)}
+                        placeholder="Value"
+                        className="flex-1 bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                      />
+                      <button type="button" onClick={() => removeSpec(i)} className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0"><X size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add new spec row */}
+              <div className="flex items-center gap-2">
+                <input
+                  value={specInput.key} onChange={e => setSpecInput(p => ({ ...p, key: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSpec())}
+                  placeholder="e.g. Fit"
+                  className="flex-1 bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                />
+                <input
+                  value={specInput.value} onChange={e => setSpecInput(p => ({ ...p, value: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSpec())}
+                  placeholder="e.g. Regular"
+                  className="flex-1 bg-[#0f0f14] border border-white/10 text-white text-xs rounded-lg px-3 py-2 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                />
+                <button
+                  type="button" onClick={addSpec}
+                  className="p-2 rounded-lg bg-white/10 hover:bg-amber-500/20 text-white/50 hover:text-amber-400 transition-all flex-shrink-0"
+                ><Plus size={14} /></button>
+              </div>
+            </div>
+
+            {/* ── MANUFACTURER INFO EDITOR ─────────────────────────── */}
+            <div className="bg-[#13131a] rounded-xl border border-white/5 p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-white/60 uppercase tracking-widest">Manufacturer / Store Info</h3>
+              <p className="text-xs text-white/30">Shown in the "Manufacturer Info" tab on the product page.</p>
+              <div className="space-y-3">
+                <input
+                  value={form.manufacturerInfo.name} onChange={e => updateManufacturer('name', e.target.value)}
+                  placeholder="Store / Brand name"
+                  className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                />
+                <textarea
+                  value={form.manufacturerInfo.address} onChange={e => updateManufacturer('address', e.target.value)}
+                  placeholder="Full address"
+                  rows={2}
+                  className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 placeholder-white/20 focus:outline-none focus:border-amber-500/50 resize-none"
+                />
+                <input
+                  value={form.manufacturerInfo.location} onChange={e => updateManufacturer('location', e.target.value)}
+                  placeholder="City, State, Country"
+                  className="w-full bg-[#0f0f14] border border-white/10 text-white text-sm rounded-lg px-4 py-2.5 placeholder-white/20 focus:outline-none focus:border-amber-500/50"
+                />
+              </div>
+            </div>
+
+            {/* Submit */}
+
             <button
               type="submit" disabled={loading}
               className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2"
