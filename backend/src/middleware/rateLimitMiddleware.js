@@ -9,6 +9,8 @@ const apiLimiter = rateLimit({
 
     legacyHeaders: false,
 
+    validate: { xForwardedForHeader: false },
+
     message: {
         success: false,
         message: "Too many requests. Please try again later.",

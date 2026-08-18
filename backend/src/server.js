@@ -90,6 +90,9 @@ EXPRESS
 */
 const app = express();
 
+// Trust proxy setting for reverse proxies (Render, Cloudflare, Nginx)
+app.set("trust proxy", 1);
+
 const server = http.createServer(app);
 
 /*
