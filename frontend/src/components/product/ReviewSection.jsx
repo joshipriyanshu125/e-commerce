@@ -551,7 +551,7 @@ const ReviewSection = ({ productId, productRating, productNumReviews }) => {
   return (
     <section
       id="reviews"
-      className="border-t border-atelier-lightgray/60 pt-16 pb-20"
+      className="border-t border-atelier-lightgray/60 pt-6 pb-12"
       aria-labelledby="reviews-heading"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
