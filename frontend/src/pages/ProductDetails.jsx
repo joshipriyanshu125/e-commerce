@@ -23,7 +23,7 @@ const ProductDetails = () => {
   const [slideDir, setSlideDir] = useState('next')
   const [isAddingToBag, setIsAddingToBag] = useState(false)
   const [allDetailsTab, setAllDetailsTab] = useState('features') // features | specs | description | manufacturer
-  const [featureModal, setFeatureModal] = useState(null) // { title, description, imageUrl } or null
+  const [expandedFeatures, setExpandedFeatures] = useState({}) // { [index]: boolean }
   const [detailsOpen, setDetailsOpen] = useState(true)
   const thumbnailRef = useRef(null)
 
@@ -615,30 +615,53 @@ const ProductDetails = () => {
                   {allDetailsTab === 'features' && selectedProduct.features?.length > 0 && (
                     <div className="overflow-x-auto py-4 px-3">
                       <div className="flex gap-3" style={{ minWidth: 'max-content' }}>
-                        {selectedProduct.features.map((feat, i) => (
-                          <div
-                            key={i}
-                            className="flex items-start gap-3 bg-gray-50 rounded-xl p-3 w-56 flex-shrink-0 border border-gray-100"
-                          >
-                            {feat.imageUrl && (
-                              <div className="w-14 h-14 rounded-full bg-[#b8c8d8] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                <img src={feat.imageUrl} alt={feat.title} className="w-full h-full object-cover" />
+                        {selectedProduct.features.map((feat, i) => {
+                          const isExpanded = !!expandedFeatures[i]
+                          const isLong = feat.description && feat.description.length > 80
+
+                          return (
+                            <div
+                              key={i}
+                              className={`flex items-start gap-3 bg-gray-50 rounded-xl p-3 flex-shrink-0 border border-gray-100 transition-all duration-200 ${
+                                isExpanded ? 'w-80 shadow-sm bg-white' : 'w-56'
+                              }`}
+                            >
+                              {feat.imageUrl && (
+                                <div className="w-14 h-14 rounded-full bg-[#b8c8d8] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                  <img src={feat.imageUrl} alt={feat.title} className="w-full h-full object-cover" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-atelier-dark mb-1 leading-tight">{feat.title}</p>
+                                <p className="text-xs text-atelier-gray leading-relaxed">
+                                  {isExpanded ? (
+                                    <>
+                                      {feat.description}{' '}
+                                      <button
+                                        onClick={() => setExpandedFeatures(prev => ({ ...prev, [i]: false }))}
+                                        className="text-blue-600 hover:underline font-medium ml-1 inline-block"
+                                      >
+                                        less
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {isLong ? `${feat.description.slice(0, 80)}...` : feat.description}
+                                      {isLong && (
+                                        <button
+                                          onClick={() => setExpandedFeatures(prev => ({ ...prev, [i]: true }))}
+                                          className="text-blue-600 hover:underline font-medium ml-1 inline-block"
+                                        >
+                                          more
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </p>
                               </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-atelier-dark mb-1 leading-tight">{feat.title}</p>
-                              <p className="text-xs text-atelier-gray leading-relaxed line-clamp-3">
-                                {feat.description.length > 80 ? feat.description.slice(0, 80) + '...' : feat.description}
-                                {feat.description.length > 80 && (
-                                  <button
-                                    onClick={() => setFeatureModal(feat)}
-                                    className="text-blue-600 hover:underline font-medium ml-0.5"
-                                  >more</button>
-                                )}
-                              </p>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   )}
@@ -707,34 +730,7 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      {/* ── FEATURE DETAIL MODAL ───────────────────────────────────────────── */}
-      {featureModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={() => setFeatureModal(null)}
-        >
-          <div
-            className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-2">
-              <h3 className="text-base font-bold text-atelier-dark">{featureModal.title}</h3>
-              <button onClick={() => setFeatureModal(null)} className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
-                <X size={18} className="text-atelier-gray" />
-              </button>
-            </div>
-            {/* Feature image */}
-            {featureModal.imageUrl && (
-              <div className="mx-5 mb-4 rounded-xl overflow-hidden bg-gray-100">
-                <img src={featureModal.imageUrl} alt={featureModal.title} className="w-full h-52 object-cover" />
-              </div>
-            )}
-            {/* Full description */}
-            <p className="px-5 pb-6 text-sm text-atelier-gray leading-relaxed">{featureModal.description}</p>
-          </div>
-        </div>
-      )}
+
 
       {/* Reviews Section — Strict single instance */}
       <ReviewSection
