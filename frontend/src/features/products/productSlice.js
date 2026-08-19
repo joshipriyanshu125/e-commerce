@@ -5,7 +5,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 // Normalize a DB product to the shape the UI expects
 const normalizeDBProduct = (p) => {
-  const salePrice = p.discountPrice ? Number(p.discountPrice) : null
+  const salePrice = p.discountPrice !== undefined && p.discountPrice !== null && p.discountPrice !== ''
+    ? Number(p.discountPrice)
+    : null
   const basePrice = Number(p.price)
 
   return {
@@ -15,24 +17,27 @@ const normalizeDBProduct = (p) => {
     description: p.description || '',
     category: p.category || '',
     brand: p.brand || '',
+    gender: p.gender || 'unisex',
     type: 'fashion', // default so catalogue view works
     price: salePrice || basePrice,
+    discountPrice: p.discountPrice !== undefined ? p.discountPrice : null,
     originalPrice: salePrice ? basePrice : null,
     rating: p.rating || 0,
     numReviews: p.numReviews || 0,
-    countInStock: p.countInStock || 0,
+    countInStock: p.countInStock ?? 0,
     status: p.status,
     tags: p.tags || [],
+    features: Array.isArray(p.features) ? p.features : [],
+    specifications: Array.isArray(p.specifications) ? p.specifications : [],
+    manufacturerInfo: p.manufacturerInfo || { name: '', address: '', location: '' },
     // Colors: DB stores plain strings, UI expects [{name, hex}]
     colors: Array.isArray(p.colors) && p.colors.length > 0
       ? p.colors.map(c => typeof c === 'string' ? { name: c, hex: colorToHex(c) } : c)
       : [{ name: 'Default', hex: '#888888' }],
     // Sizes: plain strings from DB
     sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : [],
-    // Images: DB stores [{public_id, url}], UI expects [url string]
-    images: Array.isArray(p.images) && p.images.length > 0
-      ? p.images.map(img => (typeof img === 'string' ? img : img.url))
-      : [],
+    // Images: DB stores [{public_id, url, color}], preserve raw objects/strings
+    images: Array.isArray(p.images) && p.images.length > 0 ? p.images : [],
     // Details: use tags as details bullets if no details field
     details: p.tags && p.tags.length > 0
       ? p.tags.map(t => String(t))

@@ -300,81 +300,53 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
         // CLEAR REDIS CACHE
         await clearCachePattern("all_products*");
-
-        await deleteCache(
-            `product_${req.params.id}`
-        );
+        await clearCachePattern("similar_products*");
+        await deleteCache(`product_${req.params.id}`);
 
         res.status(200).json({
-
             success: true,
-
             message: "Product updated successfully",
-
             product: updatedProduct,
-
         });
-
     } else {
-
         res.status(404);
-
         throw new Error("Product not found");
-
     }
-
 });
 
 
 // DELETE PRODUCT
 export const deleteProduct = asyncHandler(async (req, res) => {
-
-    const product = await Product.findById(
-        req.params.id
-    );
+    const product = await Product.findById(req.params.id);
 
     if (product) {
-
         // DELETE IMAGES FROM CLOUDINARY
         for (const image of product.images) {
-
-            await cloudinary.uploader.destroy(
-                image.public_id
-            );
-
+            if (image.public_id) {
+                await cloudinary.uploader.destroy(image.public_id);
+            }
         }
 
         await product.deleteOne();
 
         // CLEAR REDIS CACHE
         await clearCachePattern("all_products*");
-
-        await deleteCache(
-            `product_${req.params.id}`
-        );
+        await clearCachePattern("similar_products*");
+        await deleteCache(`product_${req.params.id}`);
 
         res.status(200).json({
-
             success: true,
-
             message: "Product removed",
-
         });
-
     } else {
-
         res.status(404);
-
         throw new Error("Product not found");
-
     }
-
 });
 
 
 // CREATE PRODUCT REVIEW
 export const createProductReview = asyncHandler(async (req, res) => {
-    const { rating, comment } = req.body;
 
     const product = await Product.findById(req.params.id);
 

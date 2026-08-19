@@ -47,6 +47,18 @@ const ProductDetails = () => {
       } else {
         setSelectedSize(null)
       }
+
+      // Set active tab to first available detail tab
+      const available = [
+        selectedProduct.features?.length > 0 && 'features',
+        selectedProduct.specifications?.length > 0 && 'specs',
+        selectedProduct.description && 'description',
+        (selectedProduct.manufacturerInfo?.name || selectedProduct.manufacturerInfo?.address) && 'manufacturer',
+      ].filter(Boolean)
+
+      if (available.length > 0 && !available.includes(allDetailsTab)) {
+        setAllDetailsTab(available[0])
+      }
     }
   }, [selectedProduct])
 
@@ -566,7 +578,7 @@ const ProductDetails = () => {
           </div>
 
           {/* ── ALL DETAILS — Flipkart-style tabbed section ───────────────────── */}
-          {(selectedProduct.features?.length > 0 || selectedProduct.specifications?.length > 0 || selectedProduct.manufacturerInfo?.name) && (
+          {(selectedProduct.features?.length > 0 || selectedProduct.specifications?.length > 0 || selectedProduct.description || selectedProduct.manufacturerInfo?.name || selectedProduct.manufacturerInfo?.address) && (
             <div className="border border-atelier-lightgray/30 rounded-lg overflow-hidden">
               {/* Collapsible header */}
               <button
@@ -584,8 +596,8 @@ const ProductDetails = () => {
                     {[
                       selectedProduct.features?.length > 0 && { key: 'features', label: 'Features' },
                       selectedProduct.specifications?.length > 0 && { key: 'specs', label: 'Specifications' },
-                      { key: 'description', label: 'Description' },
-                      selectedProduct.manufacturerInfo?.name && { key: 'manufacturer', label: 'Manufacturer info' },
+                      selectedProduct.description && { key: 'description', label: 'Description' },
+                      (selectedProduct.manufacturerInfo?.name || selectedProduct.manufacturerInfo?.address) && { key: 'manufacturer', label: 'Manufacturer info' },
                     ].filter(Boolean).map(tab => (
                       <button
                         key={tab.key}

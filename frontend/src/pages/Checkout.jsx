@@ -639,7 +639,7 @@ const Checkout = () => {
                 <div key={index} className="py-4 first:pt-0 flex items-start space-x-3">
                   <div className="h-12 w-12 bg-atelier-lightgray flex-shrink-0 overflow-hidden rounded-md">
                     <img
-                      src={item.product.images[0] || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'}
+                      src={(typeof item.product.images?.[0] === 'string' ? item.product.images[0] : item.product.images?.[0]?.url) || 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'}
                       alt=""
                       className="h-full w-full object-cover"
                       onError={(e) => {
