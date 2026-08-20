@@ -158,7 +158,7 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
     children: [
       { name: 'Apparel & Clothing', slug: 'men-clothing' },
       { name: 'Footwear & Shoes', slug: 'men-shoes' },
-      { name: 'Accessories', slug: 'men-accessories' },
+      { name: 'New Arrivals', slug: 'men-new-arrivals' },
     ]
   }
   const women = menu.main?.find((c) => c.slug === 'women') || {
@@ -167,7 +167,7 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
     children: [
       { name: 'Apparel & Dresses', slug: 'women-clothing' },
       { name: 'Footwear & Shoes', slug: 'women-shoes' },
-      { name: 'Handbags & Accessories', slug: 'women-accessories' },
+      { name: 'Handbags & Totes', slug: 'women-bags' },
     ]
   }
   const featured = menu.featured || []

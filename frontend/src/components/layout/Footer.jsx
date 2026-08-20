@@ -23,7 +23,7 @@ const Footer = () => {
           <div className="space-y-4 max-w-sm">
             <h3 className="font-serif text-3xl text-atelier-dark tracking-wide">Atelier</h3>
             <p className="text-atelier-gray text-xs sm:text-sm leading-relaxed font-light">
-              Considered objects for a considered life. Fashion, accessories, and essentials chosen with care to outlast the season.
+              Considered objects for a considered life. Fashion, footwear, and essentials chosen with care to outlast the season.
             </p>
           </div>
 

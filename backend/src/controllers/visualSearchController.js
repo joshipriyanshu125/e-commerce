@@ -79,7 +79,7 @@ Analyze the provided clothing/fashion image and extract its visual attributes in
 
 JSON schema to return:
 {
-  "primaryCategory": "string (e.g. Hoodie, T-Shirt, Jacket, Sneakers, Pants, Shorts, Dress, Accessories)",
+  "primaryCategory": "string (e.g. Hoodie, T-Shirt, Jacket, Sneakers, Pants, Shorts, Dress)",
   "subCategory": "string (e.g. Oversized Hoodie, Cargo Pants, Denim Jacket, High-top Sneakers)",
   "dominantColors": ["array of color strings, e.g. black, white, navy, beige"],
   "stylePattern": "string (e.g. solid, graphic print, vintage wash, distressed, oversized, fitted)",

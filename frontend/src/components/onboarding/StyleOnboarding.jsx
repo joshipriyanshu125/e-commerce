@@ -31,7 +31,6 @@ const CATEGORY_OPTIONS = [
   { id: 'sneakers',    label: 'Sneakers' },
   { id: 'joggers',     label: 'Joggers' },
   { id: 'jackets',     label: 'Jackets' },
-  { id: 'accessories', label: 'Accessories' },
   { id: 'denim',       label: 'Denim' },
 ]
 

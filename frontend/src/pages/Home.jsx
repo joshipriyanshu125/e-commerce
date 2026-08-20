@@ -121,7 +121,7 @@ const Home = () => {
   // Categories list based on active type
   const categories = isCatalogueView
     ? typeParam === 'fashion'
-      ? ['all', 'Outerwear', 'Shoes', 'Bags', 'Tops', 'Bottoms', 'Accessories']
+      ? ['all', 'Outerwear', 'Shoes', 'Bags', 'Tops', 'Bottoms']
       : []
     : []
 
@@ -235,7 +235,7 @@ const Home = () => {
               Objects worth keeping.
             </h1>
             <p className="text-atelier-gray text-sm sm:text-base leading-relaxed font-light font-sans pt-2">
-              A slow collection of fashion and accessories — sourced, considered, and quietly built for the years ahead of you.
+              A slow collection of fashion and footwear — sourced, considered, and quietly built for the years ahead of you.
             </p>
           </div>
 
@@ -276,7 +276,7 @@ const Home = () => {
         >
           <img 
             src={IMAGES.categoryFashion} 
-            alt="Tailoring, Knitwear, Leather Goods" 
+            alt="Tailoring, Knitwear, Apparel" 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null
@@ -287,7 +287,7 @@ const Home = () => {
           
           <div className="relative z-10 space-y-2">
             <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/80 block">
-              Tailoring, Knitwear, Leather Goods
+              Tailoring, Knitwear, Outerwear
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2">
               <span>Fashion</span>
@@ -296,14 +296,14 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Right Column: Accessories */}
+        {/* Right Column: Footwear */}
         <div 
           onClick={() => navigate('/?type=fashion')}
           className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden flex flex-col justify-end p-8 sm:p-12 transition-shadow duration-300 hover:shadow-2xl"
         >
           <img 
-            src={IMAGES.categoryAccessories} 
-            alt="Accessories, Bags, Jewelry" 
+            src={IMAGES.sneakers} 
+            alt="Footwear, Sneakers, Boots" 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null
@@ -314,10 +314,10 @@ const Home = () => {
 
           <div className="relative z-10 space-y-2">
             <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/80 block">
-              Accessories, Bags, Jewelry
+              Sneakers, Boots, Footwear
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2">
-              <span>Accessories</span>
+              <span>Footwear</span>
               <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" strokeWidth={1.5} />
             </h2>
           </div>
