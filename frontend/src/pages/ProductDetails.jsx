@@ -7,6 +7,7 @@ import { Star, ShieldCheck, Truck, RefreshCw, Plus, Minus, ChevronLeft, ChevronR
 import ReviewSection from '../components/product/ReviewSection'
 import SizeRecommender from '../components/product/SizeRecommender'
 import SimilarProducts from '../components/product/SimilarProducts'
+import { IMAGES } from '../utils/images'
 
 const ProductDetails = () => {
   const { id } = useParams()
@@ -280,7 +281,10 @@ const ProductDetails = () => {
                     : 'opacity-100 translate-x-0'
                 }`}
                 style={{ transition: 'opacity 280ms ease, transform 280ms ease' }}
-                onError={(e) => { e.target.style.display = 'none' }}
+                onError={(e) => {
+                  e.target.onerror = null
+                  e.target.src = IMAGES.fallback
+                }}
               />
             ) : (
               <div className="h-full w-full flex flex-col items-center justify-center text-atelier-gray">
@@ -356,7 +360,10 @@ const ProductDetails = () => {
                       src={imgUrl(img)}
                       alt=""
                       className="h-full w-full object-contain p-1"
-                      onError={(e) => { e.target.style.opacity = '0' }}
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = IMAGES.fallback
+                      }}
                     />
                   </button>
                 ))}

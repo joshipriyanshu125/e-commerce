@@ -107,23 +107,21 @@ const Home = () => {
   const covetedProducts = allProducts.slice(0, 4)
   const newArrivals = allProducts.slice(4, 8)
 
-  // Helper to extract image URL from product object
-  const getProductImg = (product) => {
-    if (!product) return null
-    const raw = product.images?.[0]
-    if (!raw) return null
-    return typeof raw === 'string' ? raw : raw.url
-  }
+  // Permanent static image assets for Homepage Showcase (never changes when admin adds products)
+  const heroImgSrc = IMAGES.heroFashion
+  const fashionImgSrc = IMAGES.categoryFashion
+  const footwearImgSrc = IMAGES.sneakers
+  const manifestoImg1 = IMAGES.manifestoFlatlay
+  const manifestoImg2 = IMAGES.tote
 
-  // 1. Hero Product (Funky Fashion Oversized Tshirt)
+  // Product links for hero/showcase sections (maps to matching store product if available)
   const heroProduct = React.useMemo(() => {
     return allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return name.includes('oversized') || name.includes('tshirt') || name.includes('t-shirt')
+      return name.includes('sweatshirt') || name.includes('hoodie') || name.includes('oversized') || name.includes('tshirt')
     }) || allProducts[0] || null
   }, [allProducts])
 
-  // 2. Footwear Product (Nike Air Max 90)
   const footwearProduct = React.useMemo(() => {
     return allProducts.find(p => {
       const cat = (p.category || '').toLowerCase()
@@ -135,7 +133,6 @@ const Home = () => {
     }) || allProducts.find(p => p !== heroProduct) || allProducts[1] || null
   }, [allProducts, heroProduct])
 
-  // 3. Fashion Product (VD Looks Casual Striped Shirt)
   const fashionProduct = React.useMemo(() => {
     return allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
@@ -143,27 +140,19 @@ const Home = () => {
     }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct) || allProducts[2] || null
   }, [allProducts, heroProduct, footwearProduct])
 
-  // 4. Manifesto Product 1 (METRONAUT Cargo Pants)
   const manifestoProduct1 = React.useMemo(() => {
     return allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return (name.includes('cargo') || name.includes('pants')) && p !== heroProduct && p !== footwearProduct && p !== fashionProduct
+      return (name.includes('cargo') || name.includes('pants') || name.includes('shorts')) && p !== heroProduct && p !== footwearProduct && p !== fashionProduct
     }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct && p !== fashionProduct) || allProducts[3] || null
   }, [allProducts, heroProduct, footwearProduct, fashionProduct])
 
-  // 5. Manifesto Product 2 (KOTTY Low Rise Black Jeans / Joshua Jenny Joggers)
   const manifestoProduct2 = React.useMemo(() => {
     return allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
       return (name.includes('jeans') || name.includes('jogger')) && p !== heroProduct && p !== footwearProduct && p !== fashionProduct && p !== manifestoProduct1
     }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct && p !== fashionProduct && p !== manifestoProduct1) || allProducts[4] || null
   }, [allProducts, heroProduct, footwearProduct, fashionProduct, manifestoProduct1])
-
-  const heroImgSrc = getProductImg(heroProduct) || IMAGES.heroFashion
-  const footwearImgSrc = getProductImg(footwearProduct) || IMAGES.sneakers
-  const fashionImgSrc = getProductImg(fashionProduct) || IMAGES.categoryFashion
-  const manifestoImg1 = getProductImg(manifestoProduct1) || IMAGES.manifestoFlatlay
-  const manifestoImg2 = getProductImg(manifestoProduct2) || IMAGES.manifestoHeadphones
 
   // Determine if catalogue view is active
   const isCatalogueView = typeParam !== null
