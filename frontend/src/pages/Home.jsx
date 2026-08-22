@@ -107,15 +107,25 @@ const Home = () => {
   const covetedProducts = allProducts.slice(0, 4)
   const newArrivals = allProducts.slice(4, 8)
 
-  // Fixed Showcase Items from the Homepage SS (completely permanent - never change when admin adds products)
+  // Helper to extract image URL from product object
+  const getImg = (prod, fallback) => {
+    if (!prod || !prod.images || prod.images.length === 0) return fallback
+    const raw = prod.images[0]
+    return (typeof raw === 'string' ? raw : raw?.url) || fallback
+  }
+
+  // Fixed Showcase Items from the Homepage SS (completely permanent - locked to SS target products)
   const heroShowcase = React.useMemo(() => {
     const matched = allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return name.includes('modern soul') || name.includes('hooded') || name.includes('sweatshirt')
+      return name.includes('modern soul') || name.includes('full sleeve solid hooded sweatshirt')
+    }) || allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return name.includes('sweatshirt') || name.includes('hooded')
     })
     return {
-      img: IMAGES.heroFashion,
-      name: "THE MODERN SOUL MEN & WOMEN FULL SLEEVE SOLID HOODED SWEATSHIRT",
+      img: getImg(matched, IMAGES.heroFashion),
+      name: matched ? matched.name : "THE MODERN SOUL MEN & WOMEN FULL SLEEVE SOLID HOODED SWEATSHIRT",
       product: matched || null
     }
   }, [allProducts])
@@ -123,24 +133,30 @@ const Home = () => {
   const fashionShowcase = React.useMemo(() => {
     const matched = allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return name.includes('striped') || name.includes('shirt')
+      return name.includes('acid wash') || name.includes('vd looks') || name.includes('striped')
+    }) || allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return name.includes('shirt')
     })
     return {
-      img: IMAGES.categoryFashion,
-      label: "Tailoring, Knitwear, Outerwear",
+      img: getImg(matched, IMAGES.categoryFashion),
+      label: matched ? matched.name : "Tailoring, Knitwear, Outerwear",
       product: matched || null
     }
   }, [allProducts])
 
   const footwearShowcase = React.useMemo(() => {
     const matched = allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return name.includes('nike') || name.includes('air max')
+    }) || allProducts.find(p => {
       const cat = (p.category || '').toLowerCase()
       const name = (p.name || '').toLowerCase()
-      return name.includes('nike') || cat.includes('shoe') || cat.includes('footwear') || name.includes('sneaker')
+      return cat.includes('shoe') || cat.includes('footwear') || name.includes('sneaker')
     })
     return {
-      img: IMAGES.sneakers,
-      label: "Sneakers, Boots, Footwear",
+      img: getImg(matched, IMAGES.sneakers),
+      label: matched ? matched.name : "Sneakers, Boots, Footwear",
       product: matched || null
     }
   }, [allProducts])
@@ -148,11 +164,14 @@ const Home = () => {
   const manifestoShowcase1 = React.useMemo(() => {
     const matched = allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return name.includes('littlerebel') || name.includes('cargo') || name.includes('shorts')
+      return name.includes('littlerebel') || name.includes('green cargo shorts')
+    }) || allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return name.includes('cargo') || name.includes('shorts')
     })
     return {
-      img: IMAGES.manifestoFlatlay,
-      name: "LITTLEREBEL PRINTED MEN GREEN CARGO SHORTS",
+      img: getImg(matched, IMAGES.manifestoFlatlay),
+      name: matched ? matched.name : "LITTLEREBEL PRINTED MEN GREEN CARGO SHORTS",
       product: matched || null
     }
   }, [allProducts])
@@ -160,11 +179,14 @@ const Home = () => {
   const manifestoShowcase2 = React.useMemo(() => {
     const matched = allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return name.includes('joshua jenny') || name.includes('jogger') || name.includes('jeans')
+      return name.includes('joshua jenny') || name.includes('low rise') || name.includes('denim jogger')
+    }) || allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return name.includes('jeans') || name.includes('jogger')
     })
     return {
-      img: IMAGES.tote,
-      name: "JOSHUA JENNY MEN JOGGER FIT LOW RISE DENIM JOGGER",
+      img: getImg(matched, IMAGES.tote),
+      name: matched ? matched.name : "JOSHUA JENNY MEN JOGGER FIT LOW RISE DENIM JOGGER",
       product: matched || null
     }
   }, [allProducts])
