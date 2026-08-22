@@ -107,52 +107,67 @@ const Home = () => {
   const covetedProducts = allProducts.slice(0, 4)
   const newArrivals = allProducts.slice(4, 8)
 
-  // Permanent static image assets for Homepage Showcase (never changes when admin adds products)
-  const heroImgSrc = IMAGES.heroFashion
-  const fashionImgSrc = IMAGES.categoryFashion
-  const footwearImgSrc = IMAGES.sneakers
-  const manifestoImg1 = IMAGES.manifestoFlatlay
-  const manifestoImg2 = IMAGES.tote
-
-  // Product links for hero/showcase sections (maps to matching store product if available)
-  const heroProduct = React.useMemo(() => {
-    return allProducts.find(p => {
+  // Fixed Showcase Items from the Homepage SS (completely permanent - never change when admin adds products)
+  const heroShowcase = React.useMemo(() => {
+    const matched = allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return name.includes('sweatshirt') || name.includes('hoodie') || name.includes('oversized') || name.includes('tshirt')
-    }) || allProducts[0] || null
+      return name.includes('modern soul') || name.includes('hooded') || name.includes('sweatshirt')
+    })
+    return {
+      img: IMAGES.heroFashion,
+      name: "THE MODERN SOUL MEN & WOMEN FULL SLEEVE SOLID HOODED SWEATSHIRT",
+      product: matched || null
+    }
   }, [allProducts])
 
-  const footwearProduct = React.useMemo(() => {
-    return allProducts.find(p => {
+  const fashionShowcase = React.useMemo(() => {
+    const matched = allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return name.includes('striped') || name.includes('shirt')
+    })
+    return {
+      img: IMAGES.categoryFashion,
+      label: "Tailoring, Knitwear, Outerwear",
+      product: matched || null
+    }
+  }, [allProducts])
+
+  const footwearShowcase = React.useMemo(() => {
+    const matched = allProducts.find(p => {
       const cat = (p.category || '').toLowerCase()
       const name = (p.name || '').toLowerCase()
-      const tags = Array.isArray(p.tags) ? p.tags.map(t => String(t).toLowerCase()) : []
-      return cat.includes('shoe') || cat.includes('footwear') || cat.includes('sneaker') ||
-             name.includes('nike') || name.includes('shoe') || name.includes('sneaker') || name.includes('boot') ||
-             tags.some(t => ['shoe', 'shoes', 'sneaker', 'sneakers', 'footwear', 'boot', 'boots'].includes(t))
-    }) || allProducts.find(p => p !== heroProduct) || allProducts[1] || null
-  }, [allProducts, heroProduct])
+      return name.includes('nike') || cat.includes('shoe') || cat.includes('footwear') || name.includes('sneaker')
+    })
+    return {
+      img: IMAGES.sneakers,
+      label: "Sneakers, Boots, Footwear",
+      product: matched || null
+    }
+  }, [allProducts])
 
-  const fashionProduct = React.useMemo(() => {
-    return allProducts.find(p => {
+  const manifestoShowcase1 = React.useMemo(() => {
+    const matched = allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return name.includes('shirt') && p !== heroProduct && p !== footwearProduct
-    }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct) || allProducts[2] || null
-  }, [allProducts, heroProduct, footwearProduct])
+      return name.includes('littlerebel') || name.includes('cargo') || name.includes('shorts')
+    })
+    return {
+      img: IMAGES.manifestoFlatlay,
+      name: "LITTLEREBEL PRINTED MEN GREEN CARGO SHORTS",
+      product: matched || null
+    }
+  }, [allProducts])
 
-  const manifestoProduct1 = React.useMemo(() => {
-    return allProducts.find(p => {
+  const manifestoShowcase2 = React.useMemo(() => {
+    const matched = allProducts.find(p => {
       const name = (p.name || '').toLowerCase()
-      return (name.includes('cargo') || name.includes('pants') || name.includes('shorts')) && p !== heroProduct && p !== footwearProduct && p !== fashionProduct
-    }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct && p !== fashionProduct) || allProducts[3] || null
-  }, [allProducts, heroProduct, footwearProduct, fashionProduct])
-
-  const manifestoProduct2 = React.useMemo(() => {
-    return allProducts.find(p => {
-      const name = (p.name || '').toLowerCase()
-      return (name.includes('jeans') || name.includes('jogger')) && p !== heroProduct && p !== footwearProduct && p !== fashionProduct && p !== manifestoProduct1
-    }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct && p !== fashionProduct && p !== manifestoProduct1) || allProducts[4] || null
-  }, [allProducts, heroProduct, footwearProduct, fashionProduct, manifestoProduct1])
+      return name.includes('joshua jenny') || name.includes('jogger') || name.includes('jeans')
+    })
+    return {
+      img: IMAGES.tote,
+      name: "JOSHUA JENNY MEN JOGGER FIT LOW RISE DENIM JOGGER",
+      product: matched || null
+    }
+  }, [allProducts])
 
   // Determine if catalogue view is active
   const isCatalogueView = typeParam !== null
@@ -247,23 +262,21 @@ const Home = () => {
       <section className="border-b border-atelier-lightgray/60 grid grid-cols-1 md:grid-cols-2 h-auto md:h-[600px] overflow-hidden bg-atelier-cream">
         {/* Left Side: Image */}
         <div 
-          onClick={() => heroProduct && navigate(`/product/${heroProduct._id || heroProduct.id}`)}
+          onClick={() => heroShowcase.product ? navigate(`/product/${heroShowcase.product._id || heroShowcase.product.id}`) : navigate('/?type=fashion')}
           className="relative h-[400px] md:h-full overflow-hidden border-r border-atelier-lightgray/40 cursor-pointer group"
         >
           <img 
-            src={heroImgSrc} 
-            alt={heroProduct ? heroProduct.name : "Atelier Autumn Collection"} 
+            src={heroShowcase.img} 
+            alt={heroShowcase.name} 
             className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
             onError={(e) => {
               e.target.onerror = null
               e.target.src = IMAGES.fallback
             }}
           />
-          {heroProduct && (
-            <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/70 to-transparent text-white font-mono text-xs tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity z-10">
-              Featured: {heroProduct.name}
-            </div>
-          )}
+          <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/70 to-transparent text-white font-mono text-xs tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity z-10">
+            FEATURED: {heroShowcase.name}
+          </div>
           {/* Fallback pattern in case image doesn't load */}
           <div className="absolute inset-0 bg-[#E5DFD3]/40 mix-blend-multiply z-0 pointer-events-none" />
         </div>
@@ -314,12 +327,12 @@ const Home = () => {
       <section className="grid grid-cols-1 md:grid-cols-2 border-b border-atelier-lightgray/60">
         {/* Left Column: Fashion */}
         <div 
-          onClick={() => navigate(fashionProduct ? `/product/${fashionProduct._id || fashionProduct.id}` : '/?type=fashion')}
+          onClick={() => fashionShowcase.product ? navigate(`/product/${fashionShowcase.product._id || fashionShowcase.product.id}`) : navigate('/?type=fashion')}
           className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden border-r border-atelier-lightgray/40 flex flex-col justify-end p-8 sm:p-12 transition-shadow duration-300 hover:shadow-2xl"
         >
           <img 
-            src={fashionImgSrc} 
-            alt={fashionProduct ? fashionProduct.name : "Tailoring & Outerwear"} 
+            src={fashionShowcase.img} 
+            alt="Fashion" 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null
@@ -330,7 +343,7 @@ const Home = () => {
           
           <div className="relative z-10 space-y-2">
             <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/90 block font-medium drop-shadow-sm">
-              {fashionProduct ? fashionProduct.name : 'Tailoring, Knitwear, Outerwear'}
+              {fashionShowcase.label}
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2 drop-shadow-md">
               <span>Fashion</span>
@@ -341,12 +354,12 @@ const Home = () => {
 
         {/* Right Column: Footwear */}
         <div 
-          onClick={() => navigate(footwearProduct ? `/product/${footwearProduct._id || footwearProduct.id}` : '/?type=fashion')}
+          onClick={() => footwearShowcase.product ? navigate(`/product/${footwearShowcase.product._id || footwearShowcase.product.id}`) : navigate('/?type=fashion')}
           className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden flex flex-col justify-end p-8 sm:p-12 transition-shadow duration-300 hover:shadow-2xl"
         >
           <img 
-            src={footwearImgSrc} 
-            alt={footwearProduct ? footwearProduct.name : "Footwear & Shoes"} 
+            src={footwearShowcase.img} 
+            alt="Footwear" 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null
@@ -357,7 +370,7 @@ const Home = () => {
 
           <div className="relative z-10 space-y-2">
             <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/90 block font-medium drop-shadow-sm">
-              {footwearProduct ? footwearProduct.name : 'Sneakers, Boots, Footwear'}
+              {footwearShowcase.label}
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2 drop-shadow-md">
               <span>Footwear</span>
@@ -441,44 +454,40 @@ const Home = () => {
           <div className="lg:col-span-7 grid grid-cols-12 gap-4 items-center">
             {/* Primary store product image */}
             <div 
-              onClick={() => manifestoProduct1 && navigate(`/product/${manifestoProduct1._id || manifestoProduct1.id}`)}
+              onClick={() => manifestoShowcase1.product ? navigate(`/product/${manifestoShowcase1.product._id || manifestoShowcase1.product.id}`) : navigate('/?type=fashion')}
               className="col-span-8 aspect-[4/5] bg-atelier-beige/10 overflow-hidden border border-white/10 relative cursor-pointer group"
             >
               <img 
-                src={manifestoImg1} 
-                alt={manifestoProduct1 ? manifestoProduct1.name : "Store product"} 
+                src={manifestoShowcase1.img} 
+                alt={manifestoShowcase1.name} 
                 className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = IMAGES.fallback
                 }}
               />
-              {manifestoProduct1 && (
-                <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white font-mono text-xs tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity">
-                  {manifestoProduct1.name}
-                </div>
-              )}
+              <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white font-mono text-xs tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity">
+                {manifestoShowcase1.name}
+              </div>
             </div>
 
             {/* Secondary store product image */}
             <div 
-              onClick={() => manifestoProduct2 && navigate(`/product/${manifestoProduct2._id || manifestoProduct2.id}`)}
+              onClick={() => manifestoShowcase2.product ? navigate(`/product/${manifestoShowcase2.product._id || manifestoShowcase2.product.id}`) : navigate('/?type=fashion')}
               className="col-span-4 aspect-[4/6] bg-atelier-beige/10 overflow-hidden border border-white/10 relative mt-16 cursor-pointer group"
             >
               <img 
-                src={manifestoImg2} 
-                alt={manifestoProduct2 ? manifestoProduct2.name : "Store product"} 
+                src={manifestoShowcase2.img} 
+                alt={manifestoShowcase2.name} 
                 className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = IMAGES.fallback
                 }}
               />
-              {manifestoProduct2 && (
-                <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-white font-mono text-[10px] tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity">
-                  {manifestoProduct2.name}
-                </div>
-              )}
+              <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-white font-mono text-[10px] tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity">
+                {manifestoShowcase2.name}
+              </div>
             </div>
           </div>
         </div>
