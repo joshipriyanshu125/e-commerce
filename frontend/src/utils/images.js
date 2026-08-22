@@ -1,19 +1,19 @@
-// Curated Unsplash images for mock product & marketing visuals
+// Distinct real store product visuals from Cloudinary
 export const IMAGES = {
-  heroFashion: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=900&q=80',
-  categoryFashion: 'https://images.unsplash.com/photo-1483985988350-763728e80e29?auto=format&fit=crop&w=900&q=80',
-  categoryAccessories: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=900&q=80',
-  manifestoFlatlay: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=80',
-  manifestoHeadphones: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80',
-  woolCoat: 'https://images.unsplash.com/photo-1539533018448-63fcce267634?auto=format&fit=crop&w=800&q=80',
-  sneakers: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80',
-  tote: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=800&q=80',
-  watch: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
-  silkBlouse: 'https://images.unsplash.com/photo-1564257631407-4deb1f99d992?auto=format&fit=crop&w=800&q=80',
-  sunglasses: 'https://images.unsplash.com/photo-1572635196233-15949d1148?auto=format&fit=crop&w=800&q=80',
-  phone: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80',
-  trousers: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80',
-  phoneCase: 'https://images.unsplash.com/photo-1555529771-5ec39f2d7fd1?auto=format&fit=crop&w=800&q=80',
-  scarf: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80',
-  fallback: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80',
+  heroFashion: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1786980110/products/fldallobqevbfsowvhwe.jpg', // Funky Fashion Oversized Tshirt
+  categoryFashion: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787202419/products/eb0pf95bch5tmosigl3k.jpg', // VD Looks Striped Shirt
+  categoryAccessories: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787072702/products/iktddfljwafsazefqu7g.jpg', // KOTTY Black Jeans
+  manifestoFlatlay: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787201883/products/hkcrjxxonjb7egf1ggaw.jpg', // METRONAUT Cargos
+  manifestoHeadphones: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787072702/products/iktddfljwafsazefqu7g.jpg', // KOTTY Black Jeans
+  woolCoat: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787201883/products/hkcrjxxonjb7egf1ggaw.jpg', // METRONAUT Cargos
+  sneakers: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1786027069/products/dmcqlxlflhwle2wrc3pj.jpg', // Nike Air Max 90
+  tote: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787200847/products/bc6vztb7iddpiafoazx7.jpg', // Joshua Jenny Joggers
+  watch: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787202419/products/eb0pf95bch5tmosigl3k.jpg', // VD Looks Shirt
+  silkBlouse: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1786980110/products/fldallobqevbfsowvhwe.jpg', // Funky Fashion Tshirt
+  sunglasses: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787072702/products/iktddfljwafsazefqu7g.jpg', // KOTTY Black Jeans
+  phone: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787202419/products/eb0pf95bch5tmosigl3k.jpg',
+  trousers: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787200847/products/bc6vztb7iddpiafoazx7.jpg', // Joshua Jenny Joggers
+  phoneCase: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787201883/products/hkcrjxxonjb7egf1ggaw.jpg',
+  scarf: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787202419/products/eb0pf95bch5tmosigl3k.jpg',
+  fallback: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1786980110/products/fldallobqevbfsowvhwe.jpg',
 }

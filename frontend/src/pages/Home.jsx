@@ -103,9 +103,67 @@ const Home = () => {
     dispatch(setCategory('all'))
   }, [typeParam, dispatch])
 
-  // Featured sections: use first 4 and next 4 real products
+  // Featured sections: use real products loaded from database
   const covetedProducts = allProducts.slice(0, 4)
   const newArrivals = allProducts.slice(4, 8)
+
+  // Helper to extract image URL from product object
+  const getProductImg = (product) => {
+    if (!product) return null
+    const raw = product.images?.[0]
+    if (!raw) return null
+    return typeof raw === 'string' ? raw : raw.url
+  }
+
+  // 1. Hero Product (Funky Fashion Oversized Tshirt)
+  const heroProduct = React.useMemo(() => {
+    return allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return name.includes('oversized') || name.includes('tshirt') || name.includes('t-shirt')
+    }) || allProducts[0] || null
+  }, [allProducts])
+
+  // 2. Footwear Product (Nike Air Max 90)
+  const footwearProduct = React.useMemo(() => {
+    return allProducts.find(p => {
+      const cat = (p.category || '').toLowerCase()
+      const name = (p.name || '').toLowerCase()
+      const tags = Array.isArray(p.tags) ? p.tags.map(t => String(t).toLowerCase()) : []
+      return cat.includes('shoe') || cat.includes('footwear') || cat.includes('sneaker') ||
+             name.includes('nike') || name.includes('shoe') || name.includes('sneaker') || name.includes('boot') ||
+             tags.some(t => ['shoe', 'shoes', 'sneaker', 'sneakers', 'footwear', 'boot', 'boots'].includes(t))
+    }) || allProducts.find(p => p !== heroProduct) || allProducts[1] || null
+  }, [allProducts, heroProduct])
+
+  // 3. Fashion Product (VD Looks Casual Striped Shirt)
+  const fashionProduct = React.useMemo(() => {
+    return allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return name.includes('shirt') && p !== heroProduct && p !== footwearProduct
+    }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct) || allProducts[2] || null
+  }, [allProducts, heroProduct, footwearProduct])
+
+  // 4. Manifesto Product 1 (METRONAUT Cargo Pants)
+  const manifestoProduct1 = React.useMemo(() => {
+    return allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return (name.includes('cargo') || name.includes('pants')) && p !== heroProduct && p !== footwearProduct && p !== fashionProduct
+    }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct && p !== fashionProduct) || allProducts[3] || null
+  }, [allProducts, heroProduct, footwearProduct, fashionProduct])
+
+  // 5. Manifesto Product 2 (KOTTY Low Rise Black Jeans / Joshua Jenny Joggers)
+  const manifestoProduct2 = React.useMemo(() => {
+    return allProducts.find(p => {
+      const name = (p.name || '').toLowerCase()
+      return (name.includes('jeans') || name.includes('jogger')) && p !== heroProduct && p !== footwearProduct && p !== fashionProduct && p !== manifestoProduct1
+    }) || allProducts.find(p => p !== heroProduct && p !== footwearProduct && p !== fashionProduct && p !== manifestoProduct1) || allProducts[4] || null
+  }, [allProducts, heroProduct, footwearProduct, fashionProduct, manifestoProduct1])
+
+  const heroImgSrc = getProductImg(heroProduct) || IMAGES.heroFashion
+  const footwearImgSrc = getProductImg(footwearProduct) || IMAGES.sneakers
+  const fashionImgSrc = getProductImg(fashionProduct) || IMAGES.categoryFashion
+  const manifestoImg1 = getProductImg(manifestoProduct1) || IMAGES.manifestoFlatlay
+  const manifestoImg2 = getProductImg(manifestoProduct2) || IMAGES.manifestoHeadphones
 
   // Determine if catalogue view is active
   const isCatalogueView = typeParam !== null
@@ -139,88 +197,84 @@ const Home = () => {
             </h1>
           </div>
 
-          {/* Sorting / Controls */}
-          <div className="flex items-center space-x-4 font-mono text-sm uppercase tracking-wider">
-            <span className="flex items-center text-atelier-gray">
-              <SlidersHorizontal size={12} className="mr-1.5" /> Filter & Sort
-            </span>
+          <div className="flex items-center space-x-4">
+            <SlidersHorizontal size={16} className="text-atelier-gray" />
             <select
               value={sortOption}
               onChange={handleSortChange}
-              className="bg-transparent border border-atelier-lightgray px-3 py-2 text-atelier-dark focus:outline-none focus:border-atelier-dark font-medium"
+              className="bg-transparent border border-atelier-lightgray px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-atelier-dark focus:outline-none cursor-pointer"
             >
-              <option value="featured">Featured</option>
-              <option value="price-low-high">Price: Low to High</option>
-              <option value="price-high-low">Price: High to Low</option>
+              <option value="featured">Sort: Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
               <option value="rating">Top Rated</option>
             </select>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Sidebar categories filter */}
-          <div className="lg:col-span-3">
-            <h3 className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-atelier-gray border-b border-atelier-lightgray/40 pb-3 mb-4">
-              Categories
-            </h3>
-            <ul className="space-y-3 font-serif text-base text-atelier-dark">
-              {categories.map((cat) => (
-                <li key={cat}>
-                  <button
-                    onClick={() => handleCategoryChange(cat)}
-                    className={`capitalize text-left hover:text-atelier-accent transition-colors ${
-                      selectedCategory.toLowerCase() === cat.toLowerCase()
-                        ? 'text-atelier-accent font-medium list-disc ml-1'
-                        : 'text-atelier-dark font-light'
-                    }`}
-                  >
-                    {cat === 'all' ? `All ${typeParam}` : cat}
-                  </button>
-                </li>
-              ))}
-            </ul>
+        {/* Category Pills Filter */}
+        {categories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-10 pb-4 border-b border-atelier-lightgray/40">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => handleCategoryChange(cat)}
+                className={`font-mono text-xs uppercase tracking-widest px-4 py-2 transition-colors duration-200 border ${
+                  selectedCategory === cat
+                    ? 'bg-atelier-dark text-white border-atelier-dark'
+                    : 'bg-transparent text-atelier-gray border-atelier-lightgray hover:border-atelier-dark hover:text-atelier-dark'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
+        )}
 
-          {/* Product list grid */}
-          <div className="lg:col-span-9">
-            {apiLoading ? (
-              <div className="py-20 text-center">
-                <p className="font-serif text-lg text-atelier-gray italic">Loading products...</p>
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-12 gap-x-6">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id || product._id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="py-20 text-center">
-                <p className="font-serif text-lg text-atelier-gray italic">No products found in this category.</p>
-              </div>
-            )}
+        {/* Products Grid */}
+        {apiLoading ? (
+          <div className="py-20 text-center">
+            <p className="font-serif text-lg text-atelier-gray italic">Loading products...</p>
           </div>
-        </div>
+        ) : filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-12 gap-x-6">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id || product._id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 text-center">
+            <p className="font-serif text-lg text-atelier-gray italic">No products found in this category.</p>
+          </div>
+        )}
       </div>
     )
   }
 
-  // Standard Homepage view
   return (
-    <div className="animate-fade-in">
+    <div className="space-y-0">
       <PromotionStrip />
       {/* 1. Hero Section */}
       <section className="border-b border-atelier-lightgray/60 grid grid-cols-1 md:grid-cols-2 h-auto md:h-[600px] overflow-hidden bg-atelier-cream">
         {/* Left Side: Image */}
-        <div className="relative h-[400px] md:h-full overflow-hidden border-r border-atelier-lightgray/40">
+        <div 
+          onClick={() => heroProduct && navigate(`/product/${heroProduct._id || heroProduct.id}`)}
+          className="relative h-[400px] md:h-full overflow-hidden border-r border-atelier-lightgray/40 cursor-pointer group"
+        >
           <img 
-            src={IMAGES.heroFashion} 
-            alt="Atelier Autumn Edition Model" 
-            className="h-full w-full object-cover object-center"
+            src={heroImgSrc} 
+            alt={heroProduct ? heroProduct.name : "Atelier Autumn Collection"} 
+            className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
             onError={(e) => {
               e.target.onerror = null
               e.target.src = IMAGES.fallback
             }}
           />
+          {heroProduct && (
+            <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/70 to-transparent text-white font-mono text-xs tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity z-10">
+              Featured: {heroProduct.name}
+            </div>
+          )}
           {/* Fallback pattern in case image doesn't load */}
           <div className="absolute inset-0 bg-[#E5DFD3]/40 mix-blend-multiply z-0 pointer-events-none" />
         </div>
@@ -271,25 +325,25 @@ const Home = () => {
       <section className="grid grid-cols-1 md:grid-cols-2 border-b border-atelier-lightgray/60">
         {/* Left Column: Fashion */}
         <div 
-          onClick={() => navigate('/?type=fashion')}
+          onClick={() => navigate(fashionProduct ? `/product/${fashionProduct._id || fashionProduct.id}` : '/?type=fashion')}
           className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden border-r border-atelier-lightgray/40 flex flex-col justify-end p-8 sm:p-12 transition-shadow duration-300 hover:shadow-2xl"
         >
           <img 
-            src={IMAGES.categoryFashion} 
-            alt="Tailoring, Knitwear, Apparel" 
+            src={fashionImgSrc} 
+            alt={fashionProduct ? fashionProduct.name : "Tailoring & Outerwear"} 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null
               e.target.src = IMAGES.fallback
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none" />
           
           <div className="relative z-10 space-y-2">
-            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/80 block">
-              Tailoring, Knitwear, Outerwear
+            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/90 block font-medium drop-shadow-sm">
+              {fashionProduct ? fashionProduct.name : 'Tailoring, Knitwear, Outerwear'}
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2">
+            <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2 drop-shadow-md">
               <span>Fashion</span>
               <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" strokeWidth={1.5} />
             </h2>
@@ -298,25 +352,25 @@ const Home = () => {
 
         {/* Right Column: Footwear */}
         <div 
-          onClick={() => navigate('/?type=fashion')}
+          onClick={() => navigate(footwearProduct ? `/product/${footwearProduct._id || footwearProduct.id}` : '/?type=fashion')}
           className="relative h-[350px] sm:h-[450px] group cursor-pointer overflow-hidden flex flex-col justify-end p-8 sm:p-12 transition-shadow duration-300 hover:shadow-2xl"
         >
           <img 
-            src={IMAGES.sneakers} 
-            alt="Footwear, Sneakers, Boots" 
+            src={footwearImgSrc} 
+            alt={footwearProduct ? footwearProduct.name : "Footwear & Shoes"} 
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null
               e.target.src = IMAGES.fallback
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none" />
 
           <div className="relative z-10 space-y-2">
-            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/80 block">
-              Sneakers, Boots, Footwear
+            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/90 block font-medium drop-shadow-sm">
+              {footwearProduct ? footwearProduct.name : 'Sneakers, Boots, Footwear'}
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2">
+            <h2 className="font-serif text-3xl sm:text-4xl text-white font-medium flex items-center gap-2 drop-shadow-md">
               <span>Footwear</span>
               <ArrowRight size={20} className="group-hover:translate-x-1.5 transition-transform" strokeWidth={1.5} />
             </h2>
@@ -366,7 +420,7 @@ const Home = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-12 gap-x-6">
           {covetedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id || product._id} product={product} />
           ))}
         </div>
       </section>
@@ -394,31 +448,48 @@ const Home = () => {
             </button>
           </div>
 
-          {/* Right layout column */}
+          {/* Right layout column featuring real store products */}
           <div className="lg:col-span-7 grid grid-cols-12 gap-4 items-center">
-            {/* Flatlay Shirt */}
-            <div className="col-span-8 aspect-[4/5] bg-atelier-beige/10 overflow-hidden border border-white/10 relative">
+            {/* Primary store product image */}
+            <div 
+              onClick={() => manifestoProduct1 && navigate(`/product/${manifestoProduct1._id || manifestoProduct1.id}`)}
+              className="col-span-8 aspect-[4/5] bg-atelier-beige/10 overflow-hidden border border-white/10 relative cursor-pointer group"
+            >
               <img 
-                src={IMAGES.manifestoFlatlay} 
-                alt="Minimal Folded Shirt flatlay" 
-                className="h-full w-full object-cover object-center transition-transform duration-700 ease-out hover:scale-105"
+                src={manifestoImg1} 
+                alt={manifestoProduct1 ? manifestoProduct1.name : "Store product"} 
+                className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = IMAGES.fallback
                 }}
               />
+              {manifestoProduct1 && (
+                <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white font-mono text-xs tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity">
+                  {manifestoProduct1.name}
+                </div>
+              )}
             </div>
-            {/* Over-ear headphone layout */}
-            <div className="col-span-4 aspect-[4/6] bg-atelier-beige/10 overflow-hidden border border-white/10 relative mt-16">
+
+            {/* Secondary store product image */}
+            <div 
+              onClick={() => manifestoProduct2 && navigate(`/product/${manifestoProduct2._id || manifestoProduct2.id}`)}
+              className="col-span-4 aspect-[4/6] bg-atelier-beige/10 overflow-hidden border border-white/10 relative mt-16 cursor-pointer group"
+            >
               <img 
-                src={IMAGES.manifestoHeadphones} 
-                alt="Headphones product layout" 
-                className="h-full w-full object-cover object-center transition-transform duration-700 ease-out hover:scale-105"
+                src={manifestoImg2} 
+                alt={manifestoProduct2 ? manifestoProduct2.name : "Store product"} 
+                className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
                 onError={(e) => {
                   e.target.onerror = null
                   e.target.src = IMAGES.fallback
                 }}
               />
+              {manifestoProduct2 && (
+                <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent text-white font-mono text-[10px] tracking-widest uppercase truncate opacity-90 group-hover:opacity-100 transition-opacity">
+                  {manifestoProduct2.name}
+                </div>
+              )}
             </div>
           </div>
         </div>
