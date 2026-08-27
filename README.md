@@ -1,5 +1,6 @@
 # e-commerce
 
+
 ## Razorpay payments
 
 The checkout uses Razorpay Standard Checkout. Copy `backend/.env.example` to `backend/.env` and add Razorpay **test** keys before running the app. The key secret and webhook secret must remain on the backend.
