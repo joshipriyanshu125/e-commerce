@@ -14,7 +14,7 @@ const STATUS_OPTIONS = [
 
 const initialForm = {
   name: '', description: '', price: '', discountPrice: '',
-  countInStock: '', category: '', brand: '',
+  countInStock: '', category: '', brand: '', gender: '',
   status: 'Active', tags: [], sizes: [], colors: [],
   features: [],           // [{ title, description, imageUrl }]
   specifications: [],     // [{ key, value }]
@@ -82,6 +82,7 @@ const AdminProductForm = () => {
             countInStock: p.countInStock ?? '',
             category: p.category || '',
             brand: p.brand || '',
+            gender: p.gender || '',
             status: p.status || 'Active',
             tags: p.tags || [],
             sizes: p.sizes || [],
@@ -291,6 +292,8 @@ const AdminProductForm = () => {
       formData.append('countInStock', form.countInStock)
       formData.append('category', form.category)
       formData.append('brand', form.brand)
+      const inferredGender = form.gender || (form.category?.startsWith('women') ? 'women' : form.category?.startsWith('men') ? 'men' : 'unisex')
+      formData.append('gender', inferredGender)
       formData.append('status', form.status)
       formData.append('tags', JSON.stringify(pendingTags))
       formData.append('sizes', JSON.stringify(pendingSizes))

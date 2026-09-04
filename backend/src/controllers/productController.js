@@ -85,10 +85,28 @@ export const createProduct = asyncHandler(async (req, res) => {
         const file = req.files[i];
         const result = await streamUpload(file.buffer);
         images.push({
+
+    // UPLOAD IMAGES TO CLOUDINARY
+    for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const result = await streamUpload(file.buffer);
+        images.push({
             public_id: result.public_id,
             url: result.secure_url,
             color: imageColors[i] || "",
         });
+    }
+
+    let determinedGender = gender;
+    if (!determinedGender || determinedGender === "unisex") {
+        const catLower = String(category || "").toLowerCase();
+        if (catLower.startsWith("women") || catLower === "women") {
+            determinedGender = "women";
+        } else if (catLower.startsWith("men") || catLower === "men") {
+            determinedGender = "men";
+        } else {
+            determinedGender = determinedGender || "unisex";
+        }
     }
 
     const product = new Product({
@@ -99,7 +117,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         countInStock,
         category,
         brand,
-        gender: gender || "unisex",
+        gender: determinedGender,
         tags,
         sizes,
         colors,
@@ -117,15 +135,10 @@ export const createProduct = asyncHandler(async (req, res) => {
     await clearCachePattern("all_products*");
 
     res.status(201).json({
-
         success: true,
-
         message: "Product created successfully",
-
         product: createdProduct,
-
     });
-
 });
 
 
@@ -141,38 +154,118 @@ export const getProducts = asyncHandler(async (req, res) => {
         const rx = new RegExp(escaped, "i");
         query.$or = [{ name: rx }, { description: rx }, { category: rx }, { brand: rx }, { tags: rx }];
     }
-    const categories = valueList(req.query.category); if (categories.length) query.category = { $in: categories };
-    const brands = valueList(req.query.brand); if (brands.length) query.brand = { $in: brands };
-    const genders = valueList(req.query.gender); if (genders.length) query.gender = { $in: genders };
-    const sizes = valueList(req.query.size); if (sizes.length) query.sizes = { $in: sizes };
-    const colors = valueList(req.query.color); if (colors.length) query.colors = { $in: colors };
+
+    const categories = valueList(req.query.category);
+    const brands = valueList(req.query.brand);
+    const genders = valueList(req.query.gender);
+    const sizes = valueList(req.query.size);
+    const colors = valueList(req.query.color);
+
+    const andConditions = [];
+
+    // Gender filtering (strict isolation)
+    if (genders.length) {
+        const isWomenOnly = genders.length === 1 && genders[0].toLowerCase() === 'women';
+        const isMenOnly = genders.length === 1 && genders[0].toLowerCase() === 'men';
+
+        if (isWomenOnly) {
+            andConditions.push({
+                $or: [
+                    { gender: 'women' },
+                    { category: { $regex: /^women(-|$)/i } }
+                ],
+                gender: { $ne: 'men' },
+                category: { $not: { $regex: /^men(-|$)/i } }
+            });
+        } else if (isMenOnly) {
+            andConditions.push({
+                $or: [
+                    { gender: 'men' },
+                    { category: { $regex: /^men(-|$)/i } }
+                ],
+                gender: { $ne: 'women' },
+                category: { $not: { $regex: /^women(-|$)/i } }
+            });
+        } else {
+            andConditions.push({ gender: { $in: genders } });
+        }
+    }
+
+    // Category filtering
+    if (categories.length) {
+        const isWomenCat = categories.length === 1 && categories[0].toLowerCase() === 'women';
+        const isMenCat = categories.length === 1 && categories[0].toLowerCase() === 'men';
+
+        if (isWomenCat) {
+            andConditions.push({
+                $or: [
+                    { category: { $regex: /^women(-|$)/i } },
+                    { gender: 'women' }
+                ],
+                gender: { $ne: 'men' },
+                category: { $not: { $regex: /^men(-|$)/i } }
+            });
+        } else if (isMenCat) {
+            andConditions.push({
+                $or: [
+                    { category: { $regex: /^men(-|$)/i } },
+                    { gender: 'men' }
+                ],
+                gender: { $ne: 'women' },
+                category: { $not: { $regex: /^women(-|$)/i } }
+            });
+        } else {
+            // Match specific subcategory slugs (e.g. women-dresses, men-t-shirts)
+            const catOrs = categories.map(cat => {
+                const escaped = cat.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                return { category: { $regex: new RegExp(`^${escaped}(-|$)`, 'i') } };
+            });
+            andConditions.push({
+                $or: [
+                    { category: { $in: categories } },
+                    ...catOrs
+                ]
+            });
+        }
+    }
+
+    if (andConditions.length > 0) {
+        query.$and = (query.$and || []).concat(andConditions);
+    }
+
+    if (brands.length) query.brand = { $in: brands };
+    if (sizes.length) query.sizes = { $in: sizes };
+    if (colors.length) query.colors = { $in: colors };
     if (req.query.availability === "in-stock") query.countInStock = { $gt: 0 };
-    if (req.query.minPrice || req.query.maxPrice) query.price = { ...(req.query.minPrice ? { $gte: Number(req.query.minPrice) } : {}), ...(req.query.maxPrice ? { $lte: Number(req.query.maxPrice) } : {}) };
+    if (req.query.minPrice || req.query.maxPrice) {
+        query.price = {
+            ...(req.query.minPrice ? { $gte: Number(req.query.minPrice) } : {}),
+            ...(req.query.maxPrice ? { $lte: Number(req.query.maxPrice) } : {})
+        };
+    }
     if (req.query.rating) query.rating = { $gte: Number(req.query.rating) };
     if (req.query.discount === "true") query.$expr = { $lt: ["$discountPrice", "$price"] };
-    const sortMap = { newest: { createdAt: -1 }, lowToHigh: { price: 1 }, highToLow: { price: -1 }, popularity: { numReviews: -1, soldCount: -1 }, bestSelling: { soldCount: -1 }, highestRated: { rating: -1, numReviews: -1 } };
+
+    const sortMap = {
+        newest: { createdAt: -1 },
+        lowToHigh: { price: 1 },
+        highToLow: { price: -1 },
+        popularity: { numReviews: -1, soldCount: -1 },
+        bestSelling: { soldCount: -1 },
+        highestRated: { rating: -1, numReviews: -1 }
+    };
     const sortOption = sortMap[req.query.sort] || { createdAt: -1 };
 
-    const count = await Product.countDocuments(
-        query
-    );
-
+    const count = await Product.countDocuments(query);
     const products = await Product.find(query).sort(sortOption).limit(pageSize).skip(pageSize * (page - 1)).lean();
 
     res.status(200).json({
-
         success: true,
-
         products,
-
         page,
-
         pages: Math.ceil(count / pageSize),
-
         totalProducts: count,
-
     });
-
 });
 
 export const getSearchSuggestions = asyncHandler(async (req, res) => {
@@ -225,14 +318,18 @@ export const updateProduct = asyncHandler(async (req, res) => {
         product.price = req.body.price !== undefined ? Number(req.body.price) : product.price;
         product.discountPrice = req.body.discountPrice !== undefined ? (req.body.discountPrice === '' ? null : Number(req.body.discountPrice)) : product.discountPrice;
         product.countInStock = req.body.countInStock !== undefined ? Number(req.body.countInStock) : product.countInStock;
-        product.category = req.body.category || product.category;
-        product.brand = req.body.brand !== undefined ? req.body.brand : product.brand;
-        product.gender = req.body.gender || product.gender;
-        product.status = req.body.status || product.status;
-
-        if (req.body.tags !== undefined) {
-            product.tags = Array.isArray(req.body.tags) ? req.body.tags : JSON.parse(req.body.tags);
+        product.category = req.body.category !== undefined ? req.body.category : product.category;
+        if (req.body.gender) {
+            product.gender = req.body.gender;
+        } else if (req.body.category !== undefined) {
+            const catLower = String(product.category || "").toLowerCase();
+            if (catLower.startsWith("women") || catLower === "women") {
+                product.gender = "women";
+            } else if (catLower.startsWith("men") || catLower === "men") {
+                product.gender = "men";
+            }
         }
+        product.brand = req.body.brand !== undefined ? req.body.brand : product.brand;
         if (req.body.sizes !== undefined) {
             product.sizes = Array.isArray(req.body.sizes) ? req.body.sizes : JSON.parse(req.body.sizes);
         }
