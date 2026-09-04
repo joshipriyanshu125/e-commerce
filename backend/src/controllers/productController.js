@@ -85,12 +85,6 @@ export const createProduct = asyncHandler(async (req, res) => {
         const file = req.files[i];
         const result = await streamUpload(file.buffer);
         images.push({
-
-    // UPLOAD IMAGES TO CLOUDINARY
-    for (let i = 0; i < req.files.length; i++) {
-        const file = req.files[i];
-        const result = await streamUpload(file.buffer);
-        images.push({
             public_id: result.public_id,
             url: result.secure_url,
             color: imageColors[i] || "",
