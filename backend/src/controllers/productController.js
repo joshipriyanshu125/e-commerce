@@ -10,6 +10,37 @@ import streamifier from "streamifier";
 import { deleteCache, clearCachePattern } from "../utils/cache.js";
 import { recalculateProductRating } from "../services/reviewService.js";
 
+// Legacy imports created before the gender field was introduced can have an
+// incorrect value in `gender`.  A product that explicitly says "Women's" or
+// "Men's" in its catalogue details must never be shown in the opposite shop.
+const WOMEN_AUDIENCE_PATTERN = /\b(?:women'?s?|ladies|female|girls?)\b/i;
+const MEN_AUDIENCE_PATTERN = /\b(?:men'?s?|male|boys?)\b/i;
+
+const audienceTextCondition = (pattern) => ([
+    { name: { $regex: pattern } },
+    { description: { $regex: pattern } },
+    { category: { $regex: pattern } },
+    { tags: { $regex: pattern } },
+]);
+
+const sectionCondition = (section) => {
+    const isWomen = section === "women";
+    const audiencePattern = isWomen ? WOMEN_AUDIENCE_PATTERN : MEN_AUDIENCE_PATTERN;
+    const oppositeAudiencePattern = isWomen ? MEN_AUDIENCE_PATTERN : WOMEN_AUDIENCE_PATTERN;
+    const categoryPrefix = new RegExp(`^${section}(-|$)`, "i");
+
+    return {
+        // Keep support for correctly categorised legacy products, but never
+        // allow an explicit audience label to be overruled by stale metadata.
+        $or: [
+            { gender: section },
+            { category: { $regex: categoryPrefix } },
+            ...audienceTextCondition(audiencePattern),
+        ],
+        $nor: audienceTextCondition(oppositeAudiencePattern),
+    };
+};
+
 
 // CLOUDINARY STREAM FUNCTION
 const streamUpload = (buffer) => {
@@ -157,29 +188,17 @@ export const getProducts = asyncHandler(async (req, res) => {
 
     const andConditions = [];
 
-    // Gender filtering (strict isolation)
+    // Gender filtering.  Explicit product text is treated as the source of
+    // truth when old metadata conflicts with it, which prevents (for example)
+    // a product named "Women's ..." from leaking into the Men's catalogue.
     if (genders.length) {
         const isWomenOnly = genders.length === 1 && genders[0].toLowerCase() === 'women';
         const isMenOnly = genders.length === 1 && genders[0].toLowerCase() === 'men';
 
         if (isWomenOnly) {
-            andConditions.push({
-                $or: [
-                    { gender: 'women' },
-                    { category: { $regex: /^women(-|$)/i } }
-                ],
-                gender: { $ne: 'men' },
-                category: { $not: { $regex: /^men(-|$)/i } }
-            });
+            andConditions.push(sectionCondition("women"));
         } else if (isMenOnly) {
-            andConditions.push({
-                $or: [
-                    { gender: 'men' },
-                    { category: { $regex: /^men(-|$)/i } }
-                ],
-                gender: { $ne: 'women' },
-                category: { $not: { $regex: /^women(-|$)/i } }
-            });
+            andConditions.push(sectionCondition("men"));
         } else {
             andConditions.push({ gender: { $in: genders } });
         }
@@ -191,23 +210,9 @@ export const getProducts = asyncHandler(async (req, res) => {
         const isMenCat = categories.length === 1 && categories[0].toLowerCase() === 'men';
 
         if (isWomenCat) {
-            andConditions.push({
-                $or: [
-                    { category: { $regex: /^women(-|$)/i } },
-                    { gender: 'women' }
-                ],
-                gender: { $ne: 'men' },
-                category: { $not: { $regex: /^men(-|$)/i } }
-            });
+            andConditions.push(sectionCondition("women"));
         } else if (isMenCat) {
-            andConditions.push({
-                $or: [
-                    { category: { $regex: /^men(-|$)/i } },
-                    { gender: 'men' }
-                ],
-                gender: { $ne: 'women' },
-                category: { $not: { $regex: /^women(-|$)/i } }
-            });
+            andConditions.push(sectionCondition("men"));
         } else {
             // Match specific subcategory slugs (e.g. women-dresses, men-t-shirts)
             const catOrs = categories.map(cat => {
