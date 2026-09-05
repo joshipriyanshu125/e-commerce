@@ -22,6 +22,33 @@ const title = (s) =>
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
 
+// Keep the collection page safe if it receives stale or incorrectly labelled
+// catalogue data. The API is the primary filter; this prevents an explicitly
+// named Women's product from being rendered in Men (and vice versa) as a
+// final client-side guard.
+const WOMEN_AUDIENCE_PATTERN = /\b(?:women'?s?|ladies|female|girls?)\b/i
+const MEN_AUDIENCE_PATTERN = /\b(?:men'?s?|male|boys?)\b/i
+
+const belongsToSection = (product, section) => {
+  const text = [product.name, product.description, product.category, ...(product.tags || [])]
+    .filter(Boolean)
+    .join(' ')
+  const hasWomenAudience = WOMEN_AUDIENCE_PATTERN.test(text)
+  const hasMenAudience = MEN_AUDIENCE_PATTERN.test(text)
+
+  if (section === 'women') {
+    if (hasMenAudience) return false
+    return hasWomenAudience || product.gender === 'women' || String(product.category || '').toLowerCase().startsWith('women')
+  }
+
+  if (section === 'men') {
+    if (hasWomenAudience) return false
+    return hasMenAudience || product.gender === 'men' || String(product.category || '').toLowerCase().startsWith('men')
+  }
+
+  return true
+}
+
 function FilterPanel({ filters, setFilters, options, clear, isWomenSection, isMenSection }) {
   const toggle = (key, value) =>
     setFilters((f) => ({
@@ -247,8 +274,12 @@ export default function Shop() {
         })
 
         const { data } = await api.get(`products?${sp}`)
-        setProducts(data.products || [])
-        setTotal(data.totalProducts || 0)
+        const section = isWomenSection ? 'women' : isMenSection ? 'men' : null
+        const visibleProducts = section
+          ? (data.products || []).filter((product) => belongsToSection(product, section))
+          : (data.products || [])
+        setProducts(visibleProducts)
+        setTotal(section ? visibleProducts.length : (data.totalProducts || 0))
       } catch (err) {
         console.error('Failed to load shop products:', err)
         setProducts([])
