@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ChevronRight, Sparkles } from 'lucide-react'
 import { getCategoryLink, defaultMenGroups, defaultWomenGroups } from '../../utils/categories'
 import { COLLECTION_IMAGES, IMAGES } from '../../utils/images'
@@ -105,32 +105,34 @@ const MegaMenuPanel = ({ category, onClose }) => {
             )
           )}
 
+          {/* Clean product showcase card with NO text overlay on the image */}
           {showcaseImage && (
             <div className="hidden lg:block col-span-1">
               <Link
                 to={getCategoryLink(category.slug)}
                 onClick={onClose}
-                className="group block relative aspect-[3/4] overflow-hidden rounded bg-atelier-cream shadow-sm hover:shadow-md transition-all"
+                className="group flex flex-col cursor-pointer"
               >
-                <img
-                  src={showcaseImage}
-                  alt={category.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = IMAGES.fallback
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 inset-x-0 p-4">
-                  <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-white/80 block">
-                    Featured Collection
-                  </span>
-                  <p className="font-serif text-lg text-white font-medium mt-0.5">
+                <p className="font-mono text-[10px] tracking-[0.2em] uppercase text-atelier-gray font-semibold mb-2">
+                  Featured Look
+                </p>
+                <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-atelier-cream border border-atelier-lightgray/40 shadow-sm hover:shadow-md transition-all">
+                  <img
+                    src={showcaseImage}
+                    alt={category.name}
+                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = IMAGES.fallback
+                    }}
+                  />
+                </div>
+                <div className="mt-2.5 text-left">
+                  <p className="font-serif text-base text-atelier-dark group-hover:text-atelier-accent transition-colors font-medium">
                     Shop {category.name}
                   </p>
-                  <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:text-white transition-colors mt-1 inline-flex items-center gap-1">
-                    Explore &rarr;
+                  <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-atelier-gray group-hover:text-atelier-dark transition-colors inline-flex items-center gap-1 mt-0.5">
+                    View collection &rarr;
                   </span>
                 </div>
               </Link>
@@ -157,10 +159,17 @@ const FeaturedPanel = ({ collections, onClose }) => {
   return (
     <div className="absolute left-0 right-0 top-full bg-atelier-beige border-b border-atelier-lightgray shadow-xl animate-fade-in">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-10">
-        <div className="flex items-center gap-2 mb-8 border-b border-atelier-lightgray/50 pb-4">
-          <Sparkles size={16} className="text-atelier-accent" />
-          <h3 className="font-serif text-2xl text-atelier-dark">Featured Collections</h3>
+        <div className="flex items-center justify-between mb-8 border-b border-atelier-lightgray/50 pb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-atelier-accent" />
+            <h3 className="font-serif text-2xl text-atelier-dark">Featured Collections</h3>
+          </div>
+          <span className="font-mono text-xs tracking-[0.2em] uppercase text-atelier-gray">
+            Curated Edits
+          </span>
         </div>
+
+        {/* Clean cards: images are completely clear with text situated below */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {items.map((col) => {
             const imgUrl =
@@ -170,24 +179,24 @@ const FeaturedPanel = ({ collections, onClose }) => {
                 key={col.slug}
                 to={getCategoryLink(col.slug)}
                 onClick={onClose}
-                className="group relative aspect-[4/5] overflow-hidden rounded bg-atelier-cream shadow-sm hover:shadow-md transition-shadow"
+                className="group flex flex-col cursor-pointer"
               >
-                <img
-                  src={imgUrl}
-                  alt={col.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = IMAGES.fallback
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/80 block">
-                    Collection
-                  </span>
-                  <p className="font-serif text-lg text-white font-medium mt-0.5">{col.name}</p>
-                  <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-white/90 group-hover:text-white transition-colors mt-1 inline-flex items-center gap-1">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-atelier-cream border border-atelier-lightgray/40 shadow-sm hover:shadow-md transition-all">
+                  <img
+                    src={imgUrl}
+                    alt={col.name}
+                    className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = IMAGES.fallback
+                    }}
+                  />
+                </div>
+                <div className="mt-3 text-left">
+                  <p className="font-serif text-base text-atelier-dark group-hover:text-atelier-accent transition-colors font-medium">
+                    {col.name}
+                  </p>
+                  <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-atelier-gray group-hover:text-atelier-dark transition-colors inline-flex items-center gap-1 mt-0.5">
                     Explore &rarr;
                   </span>
                 </div>
@@ -203,7 +212,6 @@ const FeaturedPanel = ({ collections, onClose }) => {
 const CategoryMegaMenu = ({ menu, onClose }) => {
   const [activePanel, setActivePanel] = useState(null)
   const timeoutRef = useRef(null)
-  const navigate = useNavigate()
 
   const handleEnter = (key) => {
     clearTimeout(timeoutRef.current)
@@ -235,15 +243,16 @@ const CategoryMegaMenu = ({ menu, onClose }) => {
     children: defaultWomenGroups,
   }
 
-  const featured = menu.featured && menu.featured.length > 0
-    ? menu.featured
-    : [
-        { name: 'Best Sellers', slug: 'best-sellers', image: { url: COLLECTION_IMAGES['best-sellers'] } },
-        { name: 'Streetwear', slug: 'streetwear', image: { url: COLLECTION_IMAGES['streetwear'] } },
-        { name: 'Co-ord Sets', slug: 'co-ord-sets', image: { url: COLLECTION_IMAGES['co-ord-sets'] } },
-        { name: 'Summer Collection', slug: 'summer-collection', image: { url: COLLECTION_IMAGES['summer-collection'] } },
-        { name: 'Winter Collection', slug: 'winter-collection', image: { url: COLLECTION_IMAGES['winter-collection'] } },
-      ]
+  const featured =
+    menu.featured && menu.featured.length > 0
+      ? menu.featured
+      : [
+          { name: 'Best Sellers', slug: 'best-sellers', image: { url: COLLECTION_IMAGES['best-sellers'] } },
+          { name: 'Streetwear', slug: 'streetwear', image: { url: COLLECTION_IMAGES['streetwear'] } },
+          { name: 'Co-ord Sets', slug: 'co-ord-sets', image: { url: COLLECTION_IMAGES['co-ord-sets'] } },
+          { name: 'Summer Collection', slug: 'summer-collection', image: { url: COLLECTION_IMAGES['summer-collection'] } },
+          { name: 'Winter Collection', slug: 'winter-collection', image: { url: COLLECTION_IMAGES['winter-collection'] } },
+        ]
 
   return (
     <div className="relative hidden md:block" onMouseLeave={handleLeave}>
