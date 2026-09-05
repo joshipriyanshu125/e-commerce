@@ -2,8 +2,10 @@ export const buildCategoryTree = (categories, parentId = null) => {
     return categories
         .filter((cat) => {
             const pid = cat.parent?._id || cat.parent || null;
+            // Both sides must be stringified – MongoDB ObjectId !== String
+            const pidStr = pid ? String(pid) : null;
             const compareId = parentId ? String(parentId) : null;
-            return pid === compareId;
+            return pidStr === compareId;
         })
         .sort((a, b) => a.sortOrder - b.sortOrder)
         .map((cat) => ({

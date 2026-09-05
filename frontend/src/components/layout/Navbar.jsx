@@ -98,16 +98,8 @@ const Navbar = () => {
             {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          {!menuLoading && (menu.main?.length > 0 || menu.featured?.length > 0) ? (
-            <CategoryMegaMenu menu={menu} onClose={closeMenus} />
-          ) : (
-            <nav className="hidden md:flex items-center space-x-8 font-mono text-base tracking-[0.2em] uppercase">
-              <Link to="/shop" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Shop All</Link>
-              <Link to="/shop/men" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Men</Link>
-              <Link to="/shop/women" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Women</Link>
-              <Link to="/journal" className="text-atelier-gray hover:text-atelier-dark pb-0.5">Journal</Link>
-            </nav>
-          )}
+          <CategoryMegaMenu menu={menu} onClose={closeMenus} />
+
 
           <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto">
             <Link

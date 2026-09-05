@@ -1,5 +1,137 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '../services/axiosInstance'
+import { COLLECTION_IMAGES, IMAGES } from './images'
+
+export const defaultMenGroups = [
+  {
+    name: 'Topwear',
+    slug: 'men-topwear',
+    children: [
+      { name: 'T-Shirts', slug: 'men-t-shirts' },
+      { name: 'Oversized T-Shirts', slug: 'men-oversized-t-shirts' },
+      { name: 'Shirts', slug: 'men-shirts' },
+      { name: 'Hoodies & Sweatshirts', slug: 'men-hoodies-sweatshirts' },
+    ],
+  },
+  {
+    name: 'Bottomwear',
+    slug: 'men-bottomwear',
+    children: [
+      { name: 'Jeans', slug: 'men-bottom-wear-jeans' },
+      { name: 'Cargo Pants', slug: 'men-bottom-wear-cargo-pants' },
+      { name: 'Joggers', slug: 'men-bottom-wear-joggers' },
+      { name: 'Shorts', slug: 'men-bottom-wear-shorts' },
+    ],
+  },
+  {
+    name: 'Footwear',
+    slug: 'men-footwear',
+    children: [
+      { name: 'Sneakers', slug: 'men-footwear-sneakers' },
+      { name: 'Casual Shoes', slug: 'men-footwear-casual-shoes' },
+      { name: 'Slides', slug: 'men-footwear-slides' },
+    ],
+  },
+  {
+    name: 'Collections',
+    slug: 'men-collections',
+    children: [
+      { name: 'Co-ord Sets', slug: 'co-ord-sets' },
+      { name: 'Summer Collection', slug: 'summer-collection' },
+      { name: 'Winter Collection', slug: 'winter-collection' },
+      { name: 'Best Sellers', slug: 'best-sellers' },
+    ],
+  },
+]
+
+export const defaultWomenGroups = [
+  {
+    name: 'Topwear',
+    slug: 'women-topwear',
+    children: [
+      { name: 'Tops', slug: 'women-tops' },
+      { name: 'Oversized T-Shirts', slug: 'women-oversized-t-shirts' },
+      { name: 'Dresses', slug: 'women-dresses' },
+      { name: 'Hoodies & Sweatshirts', slug: 'women-hoodies-sweatshirts' },
+    ],
+  },
+  {
+    name: 'Bottomwear',
+    slug: 'women-bottomwear',
+    children: [
+      { name: 'Jeans', slug: 'women-bottom-wear-jeans' },
+      { name: 'Cargo Pants', slug: 'women-bottom-wear-cargo-pants' },
+      { name: 'Skirts', slug: 'women-bottom-wear-skirts' },
+      { name: 'Shorts', slug: 'women-bottom-wear-shorts' },
+    ],
+  },
+  {
+    name: 'Footwear',
+    slug: 'women-footwear',
+    children: [
+      { name: 'Sneakers', slug: 'women-footwear-sneakers' },
+      { name: 'Heels', slug: 'women-footwear-heels' },
+      { name: 'Flats', slug: 'women-footwear-flats' },
+    ],
+  },
+  {
+    name: 'Collections',
+    slug: 'women-collections',
+    children: [
+      { name: 'Co-ord Sets', slug: 'co-ord-sets' },
+      { name: 'Summer Collection', slug: 'summer-collection' },
+      { name: 'Winter Collection', slug: 'winter-collection' },
+      { name: 'Best Sellers', slug: 'best-sellers' },
+    ],
+  },
+]
+
+export const enhanceMenuWithVisuals = (rawMenu) => {
+  if (!rawMenu) return { main: [], featured: [] }
+
+  const main = (rawMenu.main || []).map((cat) => {
+    const isMen = cat.slug === 'men'
+    const isWomen = cat.slug === 'women'
+    const fallbackImg = isMen ? COLLECTION_IMAGES.men : isWomen ? COLLECTION_IMAGES.women : IMAGES.fallback
+    const imgUrl = cat.image?.url || fallbackImg
+    const fallbackChildren = isMen ? defaultMenGroups : isWomen ? defaultWomenGroups : []
+    const children = cat.children && cat.children.length > 0 ? cat.children : fallbackChildren
+
+    return {
+      ...cat,
+      image: { ...(cat.image || {}), url: imgUrl },
+      children,
+    }
+  })
+
+  // Ensure Men and Women always exist in main
+  if (!main.some((c) => c.slug === 'men')) {
+    main.push({
+      name: 'Men',
+      slug: 'men',
+      image: { url: COLLECTION_IMAGES.men },
+      children: defaultMenGroups,
+    })
+  }
+  if (!main.some((c) => c.slug === 'women')) {
+    main.push({
+      name: 'Women',
+      slug: 'women',
+      image: { url: COLLECTION_IMAGES.women },
+      children: defaultWomenGroups,
+    })
+  }
+
+  const featured = (rawMenu.featured || []).map((col) => {
+    const imgUrl = col.image?.url || COLLECTION_IMAGES[col.slug] || IMAGES.fallback
+    return {
+      ...col,
+      image: { ...(col.image || {}), url: imgUrl },
+    }
+  })
+
+  return { main, featured }
+}
 
 let menuCache = null
 let menuPromise = null
@@ -8,18 +140,27 @@ export const fetchCategoryMenu = async () => {
   if (menuCache) return menuCache
   if (menuPromise) return menuPromise
 
-  menuPromise = api.get('categories/menu').then((res) => {
-    if (res.data.success) {
-      menuCache = res.data.menu
+  menuPromise = api
+    .get('categories/menu')
+    .then((res) => {
+      if (res.data?.success && res.data?.menu) {
+        menuCache = enhanceMenuWithVisuals(res.data.menu)
+        return menuCache
+      }
+      menuCache = enhanceMenuWithVisuals({ main: [], featured: [] })
       return menuCache
-    }
-    return { main: [], featured: [] }
-  }).finally(() => {
-    menuPromise = null
-  })
+    })
+    .catch(() => {
+      menuCache = enhanceMenuWithVisuals({ main: [], featured: [] })
+      return menuCache
+    })
+    .finally(() => {
+      menuPromise = null
+    })
 
   return menuPromise
 }
+
 
 export const fetchCategoriesAdmin = async () => {
   const res = await api.get('categories?admin=true&format=tree')

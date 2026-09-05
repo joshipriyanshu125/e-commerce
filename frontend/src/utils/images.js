@@ -17,3 +17,15 @@ export const IMAGES = {
   scarf: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787202419/products/eb0pf95bch5tmosigl3k.jpg',
   fallback: 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1786980110/products/fldallobqevbfsowvhwe.jpg',
 }
+
+// Dedicated product images from catalog for Collections, Men, and Women showcases
+export const COLLECTION_IMAGES = {
+  'best-sellers': 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1788539276/products/gdcsmn4invhabmobljpr.jpg', // Rockwell Men’s Baggy Sweatpants
+  'streetwear': 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1788540282/products/oqkkjvodxtetsqqnkde2.jpg', // AUSK Graphic Printed Co-Ord Set
+  'co-ord-sets': 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1788541791/products/uk1ozymhekccfoqvlvdc.jpg', // TAGDO Solid Co-Ord Set
+  'summer-collection': 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1788581950/products/eujfxdjd14myakfxdbbp.jpg', // Cool Plus Cotton Blue T-Shirt
+  'winter-collection': 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1788582977/products/vuddpa2ti0ump5niqrhk.jpg', // AZIZAN Men Full Sleeve Solid Sweatshirt
+  'men': 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1787202419/products/eb0pf95bch5tmosigl3k.jpg', // VD Looks Striped Shirt
+  'women': 'https://res.cloudinary.com/drpdrw9k7/image/upload/v1788431234/products/eselg78hdchtlgg9zdqs.jpg', // METRONAUT Women Fit and Flare Dress
+}
+
