@@ -13,6 +13,7 @@ const notificationPreferenceSchema = new mongoose.Schema(
         // Email notification toggles
         email: {
             promotionalEmails: { type: Boolean, default: true },
+            promotions: { type: Boolean, default: true },
             orderUpdates: { type: Boolean, default: true },
             deliveryUpdates: { type: Boolean, default: true },
             returnRefundUpdates: { type: Boolean, default: true },
@@ -20,7 +21,9 @@ const notificationPreferenceSchema = new mongoose.Schema(
             priceDropAlerts: { type: Boolean, default: true },
             backInStockAlerts: { type: Boolean, default: true },
             newArrivalEmails: { type: Boolean, default: false },
+            newArrivals: { type: Boolean, default: true },
             weeklyNewsletter: { type: Boolean, default: false },
+            newsletter: { type: Boolean, default: true },
             securityAlerts: { type: Boolean, default: true },
             cartReminders: { type: Boolean, default: true },
             reviewReminders: { type: Boolean, default: true },
@@ -35,6 +38,8 @@ const notificationPreferenceSchema = new mongoose.Schema(
             priceDropAlerts: { type: Boolean, default: true },
             backInStockAlerts: { type: Boolean, default: true },
             promotions: { type: Boolean, default: true },
+            newArrivals: { type: Boolean, default: true },
+            newsletter: { type: Boolean, default: true },
             securityAlerts: { type: Boolean, default: true },
         },
 

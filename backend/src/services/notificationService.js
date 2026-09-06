@@ -1,6 +1,51 @@
 import Notification from "../models/notificationModel.js";
 import NotificationPreference from "../models/notificationPreferenceModel.js";
 import { getIO } from "../config/socket.js";
+import User from "../models/userModel.js";
+import { sendEmail } from "./emailService.js";
+
+const EMAIL_PREFERENCE_BY_TYPE = {
+    order: "orderUpdates",
+    order_status: "orderUpdates",
+    order_placed: "orderUpdates",
+    payment: "orderUpdates",
+    payment_failed: "orderUpdates",
+    shipping: "deliveryUpdates",
+    shipping_update: "deliveryUpdates",
+    delivery: "deliveryUpdates",
+    return: "returnRefundUpdates",
+    return_update: "returnRefundUpdates",
+    refund: "returnRefundUpdates",
+    refund_update: "returnRefundUpdates",
+    wishlist: "wishlistAlerts",
+    wishlist_alert: "wishlistAlerts",
+    price_drop: "priceDropAlerts",
+    back_in_stock: "backInStockAlerts",
+    promotion: "promotions",
+    marketing: "promotions",
+    security: "securityAlerts",
+    security_alert: "securityAlerts",
+};
+
+const escapeHtml = (value) => String(value || "").replace(/[&<>'\"]/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
+}[character]));
+
+const notificationEmailHtml = ({ title, message, link }) => `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:28px;color:#1a1a1a">
+        <h1 style="font-size:22px;margin:0 0 16px">${escapeHtml(title)}</h1>
+        <p style="font-size:16px;line-height:1.55">${escapeHtml(message)}</p>
+        ${link ? `<p><a href="${escapeHtml(`${process.env.FRONTEND_URL || "http://localhost:5173"}${link}`)}">View details</a></p>` : ""}
+    </div>`;
+
+const isEmailEnabled = (preferences, preferenceKey) => {
+    if (!preferences || preferences.allEmailsOptedOut) return false;
+    if (!preferenceKey) return false;
+    if (preferenceKey === "promotions" && preferences.marketingOptedOut) return false;
+    // Older documents used these names; retain their choices after the UI rename.
+    const legacyKey = { promotions: "promotionalEmails", newArrivals: "newArrivalEmails", newsletter: "weeklyNewsletter" }[preferenceKey];
+    return preferences.email?.[preferenceKey] !== false && (!legacyKey || preferences.email?.[legacyKey] !== false);
+};
 
 /*
 ==================================================
@@ -17,28 +62,16 @@ const sendNotification = async ({
     metadata = {},
 }) => {
     try {
+        let prefs = null;
+        const prefKey = EMAIL_PREFERENCE_BY_TYPE[type];
+        let inAppAllowed = true;
+
         // Check user's in-app notification preferences for this type
         try {
-            const prefs = await NotificationPreference.findOne({ user: userId });
+            prefs = await NotificationPreference.getOrCreate(userId);
             if (prefs) {
-                const typeToPref = {
-                    order: "orderUpdates",
-                    payment: "orderUpdates",
-                    shipping: "deliveryUpdates",
-                    delivery: "deliveryUpdates",
-                    return: "returnRefundUpdates",
-                    refund: "returnRefundUpdates",
-                    wishlist: "wishlistAlerts",
-                    price_drop: "priceDropAlerts",
-                    back_in_stock: "backInStockAlerts",
-                    promotion: "promotions",
-                    marketing: "promotions",
-                    security: "securityAlerts",
-                    admin: "securityAlerts",
-                };
-                const prefKey = typeToPref[type];
                 if (prefKey && prefs.inApp[prefKey] === false) {
-                    return null; // User opted out of this type
+                    inAppAllowed = false;
                 }
             }
         } catch (prefError) {
@@ -46,8 +79,9 @@ const sendNotification = async ({
             console.error("Preference check failed:", prefError.message);
         }
 
-        // Save notification to database
-        const notification = await Notification.create({
+        // Save only the in-app channel when it is enabled. Email preferences are
+        // intentionally evaluated independently below.
+        const notification = inAppAllowed ? await Notification.create({
             user: userId,
             title,
             message,
@@ -55,10 +89,35 @@ const sendNotification = async ({
             link,
             image,
             metadata,
-        });
+        }) : null;
+
+        // Email is deliberately non-fatal: in-app notifications are still saved even
+        // when the provider is temporarily unavailable, while EmailLog records failures.
+        if (isEmailEnabled(prefs, prefKey)) {
+            try {
+                const user = await User.findById(userId).select("email");
+                if (!user?.email) throw new Error("Notification recipient has no email address.");
+                const emailResult = await sendEmail({
+                    to: user.email,
+                    subject: title,
+                    html: notificationEmailHtml({ title, message, link }),
+                    text: `${title}\n\n${message}`,
+                    template: "notification",
+                    userId,
+                    metadata: { notificationId: notification?._id || null, type, link },
+                });
+                if (!emailResult.success) throw new Error(emailResult.error || "Email provider rejected the message.");
+                if (notification) {
+                    notification.sentViaEmail = true;
+                    await notification.save();
+                }
+            } catch (emailError) {
+                console.error("Notification email failed:", emailError.message);
+            }
+        }
 
         // Emit notification through Socket.IO
-        try {
+        if (notification) try {
             const io = getIO();
             if (io) {
                 io.to(userId.toString()).emit("newNotification", notification);
@@ -151,7 +210,7 @@ const notifyNewOrder = async (order) => {
         userId: order.user,
         title: "Order Placed Successfully",
         message: `Your order #${order.orderId || order._id} has been placed successfully.`,
-        type: "order",
+        type: "order_status",
         link: `/orders/${order._id}`,
         metadata: { orderId: order._id },
     });
@@ -175,7 +234,7 @@ const notifyPaymentFailed = async (order) => {
         userId: order.user,
         title: "Payment Failed",
         message: `Payment for order #${order.orderId || order._id} has failed. Please try again.`,
-        type: "payment",
+        type: "order_status",
         link: `/orders/${order._id}`,
         metadata: { orderId: order._id },
     });
@@ -199,7 +258,7 @@ const notifyReturnRequested = async (returnRequest) => {
         userId: returnRequest.user,
         title: "Return Request Received",
         message: `Your return request for order #${returnRequest.order?.orderId || returnRequest.order} has been received.`,
-        type: "return",
+        type: "return_update",
         link: `/returns/${returnRequest._id}`,
         metadata: { returnId: returnRequest._id },
     });
@@ -223,7 +282,7 @@ const notifyRefundInitiated = async (returnRequest) => {
         userId: returnRequest.user,
         title: "Refund Initiated",
         message: `Your refund for order #${returnRequest.order?.orderId || returnRequest.order} has been initiated.`,
-        type: "refund",
+        type: "refund_update",
         link: `/returns/${returnRequest._id}`,
         metadata: { returnId: returnRequest._id },
     });
@@ -313,7 +372,7 @@ const notifyOrderStatusUpdate = async (order, status) => {
         userId: order.user,
         title: `Order ${status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ")}`,
         message,
-        type: "order",
+        type: "order_status",
         link: `/orders/${order._id}`,
         metadata: { orderId: order._id, status },
     });

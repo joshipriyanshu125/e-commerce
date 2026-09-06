@@ -24,6 +24,7 @@ const notificationSchema = new mongoose.Schema(
                 "negative_review",
                 // User notifications
                 "order_status",
+                "order_placed",
                 "shipping_update",
                 "return_update",
                 "refund_update",

@@ -1,13 +1,5 @@
 import mongoose from "mongoose";
 
-import sendEmail from "../utils/sendEmail.js";
-
-import {
-    orderConfirmationTemplate,
-    orderDeliveredTemplate,
-    orderStatusUpdateTemplate,
-} from "../utils/emailTemplates.js";
-
 import {
     sendNotification,
     notifyAdmins,
@@ -166,18 +158,7 @@ const createOrderService = async ({ body, user }) => {
         console.error("Socket newOrder error:", socketErr.message);
     }
 
-    // SEND EMAIL (non-fatal)
-    try {
-        await sendEmail({
-            to: populatedOrder.user.email,
-            subject: "Order Confirmation",
-            html: orderConfirmationTemplate(populatedOrder.user.name, order._id),
-        });
-    } catch (emailErr) {
-        console.error("Order confirmation email failed:", emailErr.message);
-    }
-
-    // SEND NOTIFICATION (non-fatal)
+    // Creates the in-app notification and sends email through the same preference-aware path.
     try {
         await sendNotification({
             userId: user._id,
@@ -185,7 +166,7 @@ const createOrderService = async ({ body, user }) => {
             message: paymentInfo?.paymentStatus === "Failed"
                 ? `Your payment for order ${order._id} failed.`
                 : `Your order #${order._id.toString().slice(-6).toUpperCase()} has been placed successfully.`,
-            type: paymentInfo?.paymentStatus === "Failed" ? "payment_failed" : "new_order",
+            type: paymentInfo?.paymentStatus === "Failed" ? "order_status" : "order_placed",
         });
     } catch (notifErr) {
         console.error("Order notification failed:", notifErr.message);
@@ -361,18 +342,7 @@ const updateOrderStatusService = async (orderId, status, extras = {}, adminUser 
     // SEND NOTIFICATIONS
     const notifyStatuses = ["Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered", "Cancelled", "Refunded"];
     if (notifyStatuses.includes(status)) {
-        // Email
-        try {
-            const subject = status === "Delivered" ? "Order Delivered" : `Order Status: ${status}`;
-            const html = status === "Delivered"
-                ? orderDeliveredTemplate(order.user.name, order._id)
-                : orderStatusUpdateTemplate(order.user.name, order._id, status);
-            await sendEmail({ to: order.user.email, subject, html });
-        } catch (err) {
-            console.error("Status email failed:", err.message);
-        }
-
-        // In-app notification
+        // In-app notification and preference-aware email
         try {
             await sendNotification({
                 userId: order.user._id,
@@ -583,7 +553,7 @@ const refundOrderService = async (orderId) => {
             userId: order.user._id,
             title: "Refund Initiated",
             message: `A refund for your order #${order._id.toString().slice(-6).toUpperCase()} has been initiated.`,
-            type: "refund_requested",
+            type: "refund_update",
         });
     } catch (err) {
         console.error("Refund notification failed:", err.message);

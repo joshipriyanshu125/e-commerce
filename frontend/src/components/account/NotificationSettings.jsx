@@ -17,7 +17,6 @@ const PREF_GROUPS = [
     label: 'Order & Delivery',
     icon: ShoppingBag,
     description: 'Essential updates about your orders',
-    canDisableEmail: false,  // transactional emails can't be disabled
     keys: [
       { key: 'orderUpdates',         label: 'Order Updates',          desc: 'Confirmations, packing, status changes' },
       { key: 'deliveryUpdates',      label: 'Delivery Updates',       desc: 'Shipping, out-for-delivery, delivered' },
@@ -51,7 +50,6 @@ const PREF_GROUPS = [
     label: 'Security',
     icon: Shield,
     description: 'Keep your account safe',
-    canDisableEmail: false,
     keys: [
       { key: 'securityAlerts',       label: 'Security Alerts',        desc: 'Password changes, login alerts, account activity' },
     ],
@@ -265,14 +263,12 @@ const NotificationSettings = () => {
               <div className="flex items-center gap-4">
                 {/* Group-level toggles for email + in-app */}
                 {['email', 'inApp'].map((ch) => {
-                  const canToggle = !(group.canDisableEmail === false && ch === 'email')
                   return (
                     <div key={ch} className="hidden sm:flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <Toggle
                         id={`group-${group.id}-${ch}`}
                         checked={isGroupAllOn(group, ch)}
-                        disabled={!canToggle}
-                        onChange={(val) => canToggle && toggleGroupChannel(group, ch, val)}
+                        onChange={(val) => toggleGroupChannel(group, ch, val)}
                       />
                     </div>
                   )
@@ -292,7 +288,6 @@ const NotificationSettings = () => {
             {isOpen && (
               <div className="border-t border-atelier-lightgray/30 divide-y divide-atelier-lightgray/20">
                 {group.keys.map(({ key, label, desc }) => {
-                  const canDisableEmail = group.canDisableEmail !== false
                   return (
                     <div
                       key={key}
@@ -306,7 +301,6 @@ const NotificationSettings = () => {
                       {/* Mobile: stacked channel toggles */}
                       <div className="sm:hidden flex flex-col gap-2 items-end">
                         {['email', 'inApp'].map((ch) => {
-                          const canToggle = !(group.canDisableEmail === false && ch === 'email')
                           const chLabels = { email: 'Email', inApp: 'In-App' }
                           return (
                             <label key={ch} className="flex items-center gap-2 text-[11px] font-mono text-atelier-gray">
@@ -314,8 +308,7 @@ const NotificationSettings = () => {
                               <Toggle
                                 id={`pref-mobile-${key}-${ch}`}
                                 checked={prefs[ch]?.[key] ?? false}
-                                disabled={!canToggle}
-                                onChange={(val) => canToggle && updatePref(ch, key, val)}
+                                onChange={(val) => updatePref(ch, key, val)}
                               />
                             </label>
                           )
@@ -329,8 +322,7 @@ const NotificationSettings = () => {
                           <Toggle
                             id={`pref-${key}-email`}
                             checked={prefs.email?.[key] ?? false}
-                            disabled={!canDisableEmail}
-                            onChange={(val) => canDisableEmail && updatePref('email', key, val)}
+                            onChange={(val) => updatePref('email', key, val)}
                           />
                         </div>
                         {/* In-App */}

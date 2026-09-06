@@ -417,7 +417,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
         if (wasOutOfStock && updatedProduct.countInStock > 0 && updatedProduct.status !== "OutOfStock") {
             const watching = await Wishlist.find({ items: { $elemMatch: { product: updatedProduct._id, notifyOnRestock: true } } }).select("user");
-            await Promise.all(watching.map(({ user }) => sendNotification({ userId: user, title: "Back in stock", message: `${updatedProduct.name} is available again.`, type: "wishlist_back_in_stock" })));
+            await Promise.all(watching.map(({ user }) => sendNotification({ userId: user, title: "Back in stock", message: `${updatedProduct.name} is available again.`, type: "back_in_stock" })));
         }
 
         // CLEAR REDIS CACHE

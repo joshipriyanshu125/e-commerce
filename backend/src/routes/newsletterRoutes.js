@@ -312,7 +312,7 @@ router.post("/admin/broadcast", protect, admin, async (req, res) => {
                 name: "Admin Tester",
             });
 
-            await sendEmail({
+            const result = await sendEmail({
                 to: testEmail,
                 subject: `[TEST] ${subject}`,
                 html,
@@ -320,6 +320,13 @@ router.post("/admin/broadcast", protect, admin, async (req, res) => {
                 userId: req.user._id,
                 metadata: { isTestBroadcast: true },
             });
+
+            if (!result.success) {
+                return res.status(502).json({
+                    success: false,
+                    message: `Test email was not sent: ${result.error || "Email provider error"}`,
+                });
+            }
 
             return res.json({
                 success: true,

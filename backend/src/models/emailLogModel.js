@@ -96,6 +96,10 @@ const emailLogSchema = new mongoose.Schema(
                 "trending_collections",
                 "style_guides",
                 "upcoming_sales",
+                // Free-form/admin notifications
+                "newsletter_broadcast",
+                "notification",
+                "custom",
             ],
         },
 

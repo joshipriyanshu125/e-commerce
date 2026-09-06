@@ -154,8 +154,13 @@ NODEMAILER TRANSPORTER (DEFAULT)
 ==================================================
 */
 const createNodemailerTransporter = () => {
+    if (!process.env.SMTP_MAIL || !process.env.SMTP_PASSWORD) {
+        throw new Error("SMTP_MAIL and SMTP_PASSWORD must be configured before email can be sent.");
+    }
+
     const transporterObj = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.gmail.com",
+        service: process.env.SMTP_SERVICE || undefined,
+        host: process.env.SMTP_HOST || (process.env.SMTP_SERVICE ? undefined : "smtp.gmail.com"),
         port: Number(process.env.SMTP_PORT) || 587,
         secure: Number(process.env.SMTP_PORT) === 465,
         auth: {
@@ -168,7 +173,7 @@ const createNodemailerTransporter = () => {
         provider: "nodemailer",
         send: async ({ to, subject, html, text }) => {
             const info = await transporterObj.sendMail({
-                from: `"${process.env.STORE_NAME || "E-Commerce"}" <${process.env.SMTP_MAIL}>`,
+                from: process.env.SMTP_FROM || `"${process.env.STORE_NAME || "E-Commerce"}" <${process.env.SMTP_MAIL}>`,
                 to,
                 subject,
                 html,
