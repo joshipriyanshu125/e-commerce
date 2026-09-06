@@ -1995,31 +1995,6 @@ export const welcomeNewsletterTemplate = (name = "there", siteUrl = "") => baseW
     </table>
 `, `Welcome to the Atelier community — your subscription is confirmed.`);
 
-// Email Verification Template
-export const emailVerificationTemplate = (name = "there", verificationLink = "") => baseWrapper(`
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-            <td align="center" style="font-size: 48px; line-height: 1; padding-bottom: 15px;">✉️</td>
-        </tr>
-        <tr>
-            <td align="center" style="padding-bottom: 8px;">
-                <h1 style="font-size: 24px; font-weight: 800; color: ${BRAND.textColor}; margin: 0;">Confirm Your Subscription</h1>
-            </td>
-        </tr>
-        <tr>
-            <td style="font-size: 14px; color: ${BRAND.mutedText}; line-height: 1.8; padding-bottom: 25px;">
-                <p style="margin: 0 0 12px;">Hello <strong style="color: ${BRAND.textColor};">${name}</strong>,</p>
-                <p style="margin: 0 0 12px;">Please confirm your email address to complete your subscription to Atelier newsletters.</p>
-            </td>
-        </tr>
-        <tr>
-            <td align="center" style="padding-bottom: 10px;">
-                ${button("Confirm Subscription", verificationLink)}
-            </td>
-        </tr>
-    </table>
-`, `Please confirm your newsletter subscription to Atelier.`);
-
 // Broadcast / Custom Newsletter Template
 export const broadcastNewsletterTemplate = ({
     title = "Atelier News & Updates",
