@@ -1957,4 +1957,105 @@ export const upcomingSalesTemplate = (name, saleDetails, newsletterLink) => news
     <p style="margin: 0;">Mark your calendar and don't miss out!</p>`,
     newsletterLink
 );
+
+// Welcome / Confirmation Template for Newsletter Subscribers
+export const welcomeNewsletterTemplate = (name = "there", siteUrl = "") => baseWrapper(`
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="font-size: 48px; line-height: 1; padding-bottom: 15px;">✨</td>
+        </tr>
+        <tr>
+            <td align="center" style="padding-bottom: 8px;">
+                <h1 style="font-size: 24px; font-weight: 800; color: ${BRAND.textColor}; margin: 0; letter-spacing: 1px;">WELCOME TO ATELIER</h1>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" style="padding-bottom: 20px;">
+                <p style="font-size: 14px; color: ${BRAND.primaryColor}; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">Subscription Confirmed</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size: 14px; color: ${BRAND.mutedText}; line-height: 1.8; padding-bottom: 25px;">
+                <p style="margin: 0 0 12px;">Hello <strong style="color: ${BRAND.textColor};">${name}</strong>,</p>
+                <p style="margin: 0 0 12px;">Thank you for subscribing to the Atelier journal. You are now part of our private inner circle.</p>
+                <p style="margin: 0 0 12px;">Here is what you can look forward to:</p>
+                <ul style="margin: 0 0 20px; padding-left: 20px; color: ${BRAND.mutedText};">
+                    <li style="margin-bottom: 6px;"><strong style="color: ${BRAND.textColor};">Early Access:</strong> First look at new seasonal capsule drops & curated collections.</li>
+                    <li style="margin-bottom: 6px;"><strong style="color: ${BRAND.textColor};">Exclusive Offers:</strong> Private discounts & VIP member promotions.</li>
+                    <li style="margin-bottom: 6px;"><strong style="color: ${BRAND.textColor};">Curated Edits:</strong> Fashion editorials, styling journals, and design notes.</li>
+                </ul>
+                <p style="margin: 0;">We craft thoughtful pieces designed to outlast the season.</p>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" style="padding-bottom: 10px;">
+                ${button("Explore The Collection", siteUrl || BRAND.website)}
+            </td>
+        </tr>
+    </table>
+`, `Welcome to the Atelier community — your subscription is confirmed.`);
+
+// Email Verification Template
+export const emailVerificationTemplate = (name = "there", verificationLink = "") => baseWrapper(`
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="font-size: 48px; line-height: 1; padding-bottom: 15px;">✉️</td>
+        </tr>
+        <tr>
+            <td align="center" style="padding-bottom: 8px;">
+                <h1 style="font-size: 24px; font-weight: 800; color: ${BRAND.textColor}; margin: 0;">Confirm Your Subscription</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size: 14px; color: ${BRAND.mutedText}; line-height: 1.8; padding-bottom: 25px;">
+                <p style="margin: 0 0 12px;">Hello <strong style="color: ${BRAND.textColor};">${name}</strong>,</p>
+                <p style="margin: 0 0 12px;">Please confirm your email address to complete your subscription to Atelier newsletters.</p>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" style="padding-bottom: 10px;">
+                ${button("Confirm Subscription", verificationLink)}
+            </td>
+        </tr>
+    </table>
+`, `Please confirm your newsletter subscription to Atelier.`);
+
+// Broadcast / Custom Newsletter Template
+export const broadcastNewsletterTemplate = ({
+    title = "Atelier News & Updates",
+    headline = "",
+    message = "",
+    buttonText = "Shop Atelier",
+    buttonUrl = "",
+    name = "there"
+}) => baseWrapper(`
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="font-size: 44px; line-height: 1; padding-bottom: 15px;">🛍️</td>
+        </tr>
+        <tr>
+            <td align="center" style="padding-bottom: 8px;">
+                <h1 style="font-size: 22px; font-weight: 800; color: ${BRAND.textColor}; margin: 0; letter-spacing: 1px;">
+                    ${headline || title}
+                </h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="font-size: 14px; color: ${BRAND.mutedText}; line-height: 1.8; padding-bottom: 25px;">
+                <p style="margin: 0 0 14px;">Hello <strong style="color: ${BRAND.textColor};">${name}</strong>,</p>
+                <div style="margin: 0 0 16px; color: ${BRAND.textColor}; font-size: 14px; line-height: 1.8; white-space: pre-line;">
+                    ${message}
+                </div>
+            </td>
+        </tr>
+        ${buttonUrl ? `
+        <tr>
+            <td align="center" style="padding-bottom: 15px;">
+                ${button(buttonText || "Discover More", buttonUrl)}
+            </td>
+        </tr>
+        ` : ""}
+    </table>
+`, headline || title);
+
 

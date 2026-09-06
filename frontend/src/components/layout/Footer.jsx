@@ -1,16 +1,43 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import api from '../../services/axiosInstance'
 
 const Footer = () => {
   const [email, setEmail] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault()
-    if (email.trim() !== '') {
-      setSubscribed(true)
-      setEmail('')
-      setTimeout(() => setSubscribed(false), 5000)
+    const cleanEmail = email.trim()
+    if (!cleanEmail) return
+
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await api.post('newsletter/subscribe', {
+        email: cleanEmail,
+        source: 'footer',
+      })
+
+      if (res.data?.success) {
+        setSubscribed(true)
+        setMessage(res.data?.message || 'Thank you for subscribing to Atelier.')
+        setEmail('')
+        setTimeout(() => {
+          setSubscribed(false)
+          setMessage('')
+        }, 6000)
+      } else {
+        setError(res.data?.message || 'Subscription failed. Please try again.')
+      }
+    } catch (err) {
+      const serverMsg = err.response?.data?.message
+      setError(serverMsg || 'Unable to subscribe right now. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -30,27 +57,41 @@ const Footer = () => {
           {/* Email Subscription Form */}
           <div className="max-w-md w-full">
             {subscribed ? (
-              <p className="font-mono text-xs sm:text-sm uppercase text-atelier-accent tracking-wider animate-pulse">
-                Thank you for subscribing.
-              </p>
+              <div className="py-2 border-b border-atelier-dark/40">
+                <p className="font-mono text-xs sm:text-sm uppercase text-atelier-accent tracking-wider font-medium">
+                  {message || 'Thank you for subscribing.'}
+                </p>
+              </div>
             ) : (
-              <form onSubmit={handleSubscribe} className="relative flex items-center border-b border-atelier-dark py-2">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="appearance-none bg-transparent border-none w-full text-atelier-dark mr-3 py-1 px-1 leading-tight focus:outline-none text-xs sm:text-sm font-light placeholder-atelier-gray/60"
-                  aria-label="Email Address"
-                />
-                <button
-                  type="submit"
-                  className="flex-shrink-0 font-mono text-sm tracking-[0.15em] uppercase text-atelier-dark font-medium hover:opacity-75 transition-opacity"
-                >
-                  Subscribe &rarr;
-                </button>
-              </form>
+              <div>
+                <form onSubmit={handleSubscribe} className="relative flex items-center border-b border-atelier-dark py-2">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      if (error) setError('')
+                    }}
+                    placeholder="Enter your email"
+                    disabled={submitting}
+                    className="appearance-none bg-transparent border-none w-full text-atelier-dark mr-3 py-1 px-1 leading-tight focus:outline-none text-xs sm:text-sm font-light placeholder-atelier-gray/60 disabled:opacity-50"
+                    aria-label="Email Address"
+                  />
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-shrink-0 font-mono text-sm tracking-[0.15em] uppercase text-atelier-dark font-medium hover:opacity-75 transition-opacity disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {submitting ? 'Subscribing...' : <>Subscribe &rarr;</>}
+                  </button>
+                </form>
+                {error && (
+                  <p className="text-xs text-red-600 mt-1.5 font-mono tracking-wide">
+                    {error}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>

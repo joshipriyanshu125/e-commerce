@@ -43,6 +43,7 @@ const AdminNotificationsPanel = lazy(() => import('./pages/admin/AdminNotificati
 const AdminSettingsPanel = lazy(() => import('./pages/admin/AdminSettingsPanel'))
 const AdminCategoriesManager = lazy(() => import('./pages/admin/AdminCategoriesManager'))
 const AdminInvoiceHistory = lazy(() => import('./pages/admin/AdminInvoiceHistory'))
+const AdminSubscribersManager = lazy(() => import('./pages/admin/AdminSubscribersManager'))
 
 function App() {
   return (
@@ -123,6 +124,10 @@ function App() {
           <Route
             path="/admin/users"
             element={<AdminRoute><AdminUsersManager /></AdminRoute>}
+          />
+          <Route
+            path="/admin/subscribers"
+            element={<AdminRoute><AdminSubscribersManager /></AdminRoute>}
           />
           <Route
             path="/admin/reviews"

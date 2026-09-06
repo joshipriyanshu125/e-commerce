@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users,
   Star, Tag, Bell, Settings, LogOut, Menu, X, ChevronRight, FolderTree,
   CheckCircle, Trash2, CheckCheck, AlertTriangle, UserPlus, CreditCard,
-  RotateCcw, TrendingDown, Info, Package as PackageIcon, FileText
+  RotateCcw, TrendingDown, Info, Package as PackageIcon, FileText, Mail
 } from 'lucide-react'
 import api from '../../services/axiosInstance'
 import { io } from 'socket.io-client'
@@ -41,6 +41,7 @@ const navItems = [
   { to: '/admin/categories',    label: 'Categories',   icon: FolderTree },
   { to: '/admin/orders',        label: 'Orders',       icon: ShoppingCart },
   { to: '/admin/users',         label: 'Users',        icon: Users },
+  { to: '/admin/subscribers',   label: 'Subscribers',  icon: Mail },
   { to: '/admin/reviews',       label: 'Reviews',      icon: Star },
   { to: '/admin/coupons',       label: 'Coupons',      icon: Tag },
   { to: '/admin/invoices',      label: 'Invoices',     icon: FileText },

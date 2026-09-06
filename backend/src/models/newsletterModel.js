@@ -119,27 +119,47 @@ newsletterSchema.pre("save", function (next) {
     next();
 });
 
-// Static: subscribe with double opt-in
+// Static: subscribe
 newsletterSchema.statics.subscribe = async function (email, name = "", source = "footer") {
-    const existing = await this.findOne({ email: email.toLowerCase() });
+    const cleanEmail = email.toLowerCase().trim();
+    const existing = await this.findOne({ email: cleanEmail });
     if (existing) {
-        if (existing.isSubscribed && existing.isVerified) {
-            return { success: false, message: "Already subscribed" };
+        if (existing.isSubscribed) {
+            return {
+                success: true,
+                message: "You are already subscribed to Atelier.",
+                subscriber: existing,
+                alreadySubscribed: true,
+            };
         }
-        // Resend verification
-        existing.verificationToken = crypto.randomBytes(32).toString("hex");
-        existing.verificationTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        // Reactivate previously unsubscribed user
+        existing.isSubscribed = true;
+        existing.isVerified = true;
+        existing.unsubscribedAt = null;
+        existing.unsubscribeReason = "";
+        if (name && !existing.name) existing.name = name;
+        if (source) existing.source = source;
         await existing.save();
-        return { success: true, message: "Verification email resent", subscriber: existing };
+        return {
+            success: true,
+            message: "Welcome back! Your subscription has been reactivated.",
+            subscriber: existing,
+            reactivated: true,
+        };
     }
     const subscriber = await this.create({
-        email: email.toLowerCase(),
-        name,
-        source,
+        email: cleanEmail,
+        name: name || "",
+        source: source || "footer",
         isSubscribed: true,
-        isVerified: false,
+        isVerified: true,
+        verifiedAt: new Date(),
     });
-    return { success: true, message: "Verification email sent", subscriber };
+    return {
+        success: true,
+        message: "Thank you for subscribing to Atelier.",
+        subscriber,
+    };
 };
 
 // Static: verify email
