@@ -10,16 +10,20 @@ import streamifier from "streamifier";
 import { deleteCache, clearCachePattern } from "../utils/cache.js";
 import { recalculateProductRating } from "../services/reviewService.js";
 
-// Strict category-prefix-based section filter.
-// Products belong to the "men" or "women" section ONLY if their category slug
-// starts with that prefix (e.g. "men-t-shirts", "women-footwear-sneakers").
-// This prevents featured-collection products (co-ord-sets, summer-collection,
-// etc.) from leaking into gender sections just because their name mentions
-// "Men's" or "Women's".
+// Products created before the category tree used readable values such as
+// "Hoodies & Sweatshirts".  A section therefore needs to recognise its slug,
+// the saved gender, or a clear Men/Women marker in the product details.
 const sectionCondition = (section) => {
     const categoryPrefix = new RegExp(`^${section}(-|$)`, "i");
+    const sectionText = new RegExp(`\\b${section}\\b`, "i");
     return {
-        category: { $regex: categoryPrefix },
+        $or: [
+            { category: { $regex: categoryPrefix } },
+            { gender: section },
+            { name: { $regex: sectionText } },
+            { description: { $regex: sectionText } },
+            { tags: { $regex: sectionText } },
+        ],
     };
 };
 
@@ -62,7 +66,7 @@ const categoryCondition = (category) => {
     const section = category.startsWith("women-") ? "women" : category.startsWith("men-") ? "men" : null;
 
     return section
-        ? { $or: [exactOrDescendant, { $and: [legacyMatch, { gender: section }] }] }
+        ? { $or: [exactOrDescendant, { $and: [legacyMatch, sectionCondition(section)] }] }
         : { $or: [exactOrDescendant, legacyMatch] };
 };
 

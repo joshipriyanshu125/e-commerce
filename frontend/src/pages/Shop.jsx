@@ -22,14 +22,19 @@ const title = (s) =>
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
 
-// Client-side section guard: only checks category slug prefix, matching the
-// backend's strict sectionCondition.  The backend is the primary filter; this
-// just prevents stale or miscategorised products from leaking through.
+// Client-side safeguard matching the backend's section rule.  This also
+// supports products created before category slugs were enforced.
 const belongsToSection = (product, section) => {
   const cat = String(product.category || '').toLowerCase()
   const gender = String(product.gender || '').toLowerCase()
-  if (section === 'women') return cat.startsWith('women') || gender === 'women'
-  if (section === 'men') return cat.startsWith('men') || gender === 'men'
+  const productText = [product.name, product.description, ...(product.tags || [])]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+  const sectionText = new RegExp(`\\b${section}\\b`, 'i')
+
+  if (section === 'women') return cat.startsWith('women') || gender === 'women' || sectionText.test(productText)
+  if (section === 'men') return cat.startsWith('men') || gender === 'men' || sectionText.test(productText)
   return true
 }
 

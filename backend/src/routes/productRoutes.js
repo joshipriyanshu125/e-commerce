@@ -34,7 +34,9 @@ router.get(
 
 router.get(
     "/",
-    cacheMiddleware((req) => `all_products_${req.originalUrl || req.url}`, 3600),
+    // Versioned after category filtering changes so previously cached, broad
+    // product lists cannot be returned for a specific submenu.
+    cacheMiddleware((req) => `all_products_categories_v2_${req.originalUrl || req.url}`, 3600),
     getProducts
 );
 
