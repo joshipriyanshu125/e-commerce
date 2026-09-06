@@ -33,6 +33,39 @@ const getBaseProductType = (category) => {
         .replace(/^(bottom-wear|footwear|topwear|hoodies)-/, '');
 };
 
+// Older products may have been saved with a readable category value (for
+// example "Joggers" or "Men — Joggers (Bottom Wear)") instead of the current
+// category slug.  Keep submenu links working for both formats.  New products
+// continue to use the precise slug match first.
+const categoryCondition = (category) => {
+    const escaped = category.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const exactOrDescendant = {
+        category: { $regex: new RegExp(`^${escaped}(-|$)`, "i") },
+    };
+
+    const parts = category
+        .toLowerCase()
+        .split("-")
+        .filter((part) => !["men", "women", "topwear", "bottom", "wear", "bottomwear", "footwear", "collections"].includes(part));
+
+    // Parent groups (such as "men-bottom-wear") already use the precise
+    // descendant matcher above.  A label fallback is only safe for concrete
+    // product subcategories such as Jeans or Cargo Pants.
+    if (!parts.length || ["topwear", "bottomwear", "footwear", "collections"].some((group) => category.endsWith(group))) {
+        return exactOrDescendant;
+    }
+
+    const readablePattern = parts.map((part) => `(?=.*\\b${part}\\b)`).join("");
+    const legacyMatch = {
+        category: { $regex: new RegExp(`^${readablePattern}.*$`, "i") },
+    };
+    const section = category.startsWith("women-") ? "women" : category.startsWith("men-") ? "men" : null;
+
+    return section
+        ? { $or: [exactOrDescendant, { $and: [legacyMatch, { gender: section }] }] }
+        : { $or: [exactOrDescendant, legacyMatch] };
+};
+
 
 // CLOUDINARY STREAM FUNCTION
 const streamUpload = (buffer) => {
@@ -207,10 +240,7 @@ export const getProducts = asyncHandler(async (req, res) => {
             andConditions.push(sectionCondition("men"));
         } else {
             // Match specific subcategory slugs (e.g. women-dresses, men-t-shirts)
-            const catOrs = categories.map(cat => {
-                const escaped = cat.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                return { category: { $regex: new RegExp(`^${escaped}(-|$)`, 'i') } };
-            });
+            const catOrs = categories.map(categoryCondition);
             andConditions.push({
                 $or: [
                     { category: { $in: categories } },

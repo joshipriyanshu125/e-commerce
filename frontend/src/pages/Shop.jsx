@@ -27,9 +27,32 @@ const title = (s) =>
 // just prevents stale or miscategorised products from leaking through.
 const belongsToSection = (product, section) => {
   const cat = String(product.category || '').toLowerCase()
-  if (section === 'women') return cat.startsWith('women')
-  if (section === 'men') return cat.startsWith('men')
+  const gender = String(product.gender || '').toLowerCase()
+  if (section === 'women') return cat.startsWith('women') || gender === 'women'
+  if (section === 'men') return cat.startsWith('men') || gender === 'men'
   return true
+}
+
+// Keep the page route as the source of truth.  This is deliberately also
+// applied after the API response: it prevents an older in-flight request (or
+// stale cached response) from ever showing products from another submenu.
+const belongsToCategory = (product, categorySlug) => {
+  if (!categorySlug || categorySlug === 'men' || categorySlug === 'women') return true
+
+  const normalize = (value) => String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .replace(/(^|-)(topwear|bottom-wear|bottomwear|footwear|collections)(?=-|$)/g, '$1')
+    .replace(/-+/g, '-')
+    .replace(/(^-|-$)/g, '')
+
+  const category = normalize(product.category)
+  const target = normalize(categorySlug)
+  return category === target ||
+    category.startsWith(`${target}-`) ||
+    target.endsWith(`-${category}`) ||
+    category.endsWith(`-${target}`)
 }
 
 function FilterPanel({ filters, setFilters, options, clear, isWomenSection, isMenSection }) {
@@ -225,6 +248,8 @@ export default function Shop() {
 
   // Fetch products with section isolation
   useEffect(() => {
+    let cancelled = false
+
     const load = async () => {
       setLoading(true)
       try {
@@ -245,6 +270,10 @@ export default function Shop() {
 
         // Apply user-selected filters
         Object.entries(filters).forEach(([k, v]) => {
+          // A submenu route must never be overwritten by a category filter
+          // left over from the previously viewed shop page.
+          if (k === 'category' && normalizedSlug) return
+
           if (Array.isArray(v) && v.length) {
             sp.set(k, v.join(','))
           } else if (v && k !== 'discount' && k !== 'availability') {
@@ -258,21 +287,28 @@ export default function Shop() {
 
         const { data } = await api.get(`products?${sp}`)
         const section = isWomenSection ? 'women' : isMenSection ? 'men' : null
-        const visibleProducts = section
-          ? (data.products || []).filter((product) => belongsToSection(product, section))
-          : (data.products || [])
+        const visibleProducts = (data.products || []).filter((product) =>
+          (!section || belongsToSection(product, section)) &&
+          belongsToCategory(product, normalizedSlug)
+        )
+
+        if (cancelled) return
         setProducts(visibleProducts)
-        setTotal(section ? visibleProducts.length : (data.totalProducts || 0))
+        setTotal(section || normalizedSlug ? visibleProducts.length : (data.totalProducts || 0))
       } catch (err) {
+        if (cancelled) return
         console.error('Failed to load shop products:', err)
         setProducts([])
         setTotal(0)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     load()
+    return () => {
+      cancelled = true
+    }
   }, [slug, normalizedSlug, isWomenSection, isMenSection, query, filters, sort, page])
 
   const clear = () => {
