@@ -90,10 +90,6 @@ const createOrderService = async ({ body, user }) => {
     const {
         orderItems,
         shippingInfo,
-        itemsPrice,
-        shippingPrice,
-        taxPrice,
-        totalPrice,
         addressId,
         paymentInfo,
     } = body;
@@ -105,19 +101,48 @@ const createOrderService = async ({ body, user }) => {
         throw new Error("Order items are empty");
     }
 
-    // CHECK STOCK
+    // Reprice each item from the catalogue. Browser totals are display-only and
+    // must never be required (or trusted) to create an order.
+    const normalizedOrderItems = [];
+    let itemsPrice = 0;
+
     for (const item of orderItems) {
-        if (mongoose.Types.ObjectId.isValid(item.product)) {
-            await validateStock(item.product, item.size, item.color, item.quantity);
+        if (!mongoose.Types.ObjectId.isValid(item.product) || !Number.isInteger(item.quantity) || item.quantity < 1) {
+            throw new Error("One or more cart items are invalid");
         }
+
+        const product = await getProductByIdRepository(item.product);
+        if (!product || product.status !== "Active") {
+            throw new Error("A product in your cart is no longer available");
+        }
+
+        const size = item.size || "N/A";
+        const color = item.color || "N/A";
+        await validateStock(product._id, size, color, item.quantity);
+
+        const unitPrice = product.discountPrice ?? product.price;
+        itemsPrice += unitPrice * item.quantity;
+        normalizedOrderItems.push({
+            product: product._id,
+            name: product.name,
+            image: product.images?.[0]?.url || "",
+            price: unitPrice,
+            quantity: item.quantity,
+            size,
+            color,
+        });
     }
+
+    const shippingPrice = itemsPrice >= 150 ? 0 : 15;
+    const taxPrice = 0;
+    const totalPrice = Number((itemsPrice + shippingPrice + taxPrice).toFixed(2));
 
     const initialStatus = paymentInfo?.paymentStatus === "Failed" ? "Cancelled" : "Pending";
 
     // CREATE ORDER
     const order = await createOrderRepository({
         user: user._id,
-        orderItems,
+        orderItems: normalizedOrderItems,
         shippingInfo,
         shippingAddress: addressId,
         itemsPrice,
