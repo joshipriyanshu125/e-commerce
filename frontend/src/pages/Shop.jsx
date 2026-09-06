@@ -22,30 +22,13 @@ const title = (s) =>
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
 
-// Keep the collection page safe if it receives stale or incorrectly labelled
-// catalogue data. The API is the primary filter; this prevents an explicitly
-// named Women's product from being rendered in Men (and vice versa) as a
-// final client-side guard.
-const WOMEN_AUDIENCE_PATTERN = /\b(?:women'?s?|ladies|female|girls?)\b/i
-const MEN_AUDIENCE_PATTERN = /\b(?:men'?s?|male|boys?)\b/i
-
+// Client-side section guard: only checks category slug prefix, matching the
+// backend's strict sectionCondition.  The backend is the primary filter; this
+// just prevents stale or miscategorised products from leaking through.
 const belongsToSection = (product, section) => {
-  const text = [product.name, product.description, product.category, ...(product.tags || [])]
-    .filter(Boolean)
-    .join(' ')
-  const hasWomenAudience = WOMEN_AUDIENCE_PATTERN.test(text)
-  const hasMenAudience = MEN_AUDIENCE_PATTERN.test(text)
-
-  if (section === 'women') {
-    if (hasMenAudience) return false
-    return hasWomenAudience || product.gender === 'women' || String(product.category || '').toLowerCase().startsWith('women')
-  }
-
-  if (section === 'men') {
-    if (hasWomenAudience) return false
-    return hasMenAudience || product.gender === 'men' || String(product.category || '').toLowerCase().startsWith('men')
-  }
-
+  const cat = String(product.category || '').toLowerCase()
+  if (section === 'women') return cat.startsWith('women')
+  if (section === 'men') return cat.startsWith('men')
   return true
 }
 
@@ -53,7 +36,7 @@ function FilterPanel({ filters, setFilters, options, clear, isWomenSection, isMe
   const toggle = (key, value) =>
     setFilters((f) => ({
       ...f,
-      [key]: f[key].includes(value) ? f[key].filter((v) => v !== value) : [...f[key], value],
+      [key]: f[key]?.includes(value) ? f[key].filter((v) => v !== value) : [...(f[key] || []), value],
     }))
 
   const group = (key, label, filteredOptions) => {
@@ -73,7 +56,7 @@ function FilterPanel({ filters, setFilters, options, clear, isWomenSection, isMe
             >
               <input
                 type="checkbox"
-                checked={filters[key].includes(value)}
+                checked={filters[key]?.includes(value)}
                 onChange={() => toggle(key, value)}
                 className="mr-2 accent-atelier-dark"
               />
@@ -85,14 +68,14 @@ function FilterPanel({ filters, setFilters, options, clear, isWomenSection, isMe
     )
   }
 
-  // Filter category list based on section if on Women or Men view
+  // Filter category list based on section — strict prefix matching
   const categoryOptions = useMemo(() => {
     const raw = options.category || []
     if (isWomenSection) {
-      return raw.filter((c) => String(c).toLowerCase().startsWith('women') || !String(c).toLowerCase().startsWith('men'))
+      return raw.filter((c) => String(c).toLowerCase().startsWith('women'))
     }
     if (isMenSection) {
-      return raw.filter((c) => String(c).toLowerCase().startsWith('men') || !String(c).toLowerCase().startsWith('women'))
+      return raw.filter((c) => String(c).toLowerCase().startsWith('men'))
     }
     return raw
   }, [options.category, isWomenSection, isMenSection])

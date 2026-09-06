@@ -10,35 +10,27 @@ import streamifier from "streamifier";
 import { deleteCache, clearCachePattern } from "../utils/cache.js";
 import { recalculateProductRating } from "../services/reviewService.js";
 
-// Legacy imports created before the gender field was introduced can have an
-// incorrect value in `gender`.  A product that explicitly says "Women's" or
-// "Men's" in its catalogue details must never be shown in the opposite shop.
-const WOMEN_AUDIENCE_PATTERN = /\b(?:women'?s?|ladies|female|girls?)\b/i;
-const MEN_AUDIENCE_PATTERN = /\b(?:men'?s?|male|boys?)\b/i;
-
-const audienceTextCondition = (pattern) => ([
-    { name: { $regex: pattern } },
-    { description: { $regex: pattern } },
-    { category: { $regex: pattern } },
-    { tags: { $regex: pattern } },
-]);
-
+// Strict category-prefix-based section filter.
+// Products belong to the "men" or "women" section ONLY if their category slug
+// starts with that prefix (e.g. "men-t-shirts", "women-footwear-sneakers").
+// This prevents featured-collection products (co-ord-sets, summer-collection,
+// etc.) from leaking into gender sections just because their name mentions
+// "Men's" or "Women's".
 const sectionCondition = (section) => {
-    const isWomen = section === "women";
-    const audiencePattern = isWomen ? WOMEN_AUDIENCE_PATTERN : MEN_AUDIENCE_PATTERN;
-    const oppositeAudiencePattern = isWomen ? MEN_AUDIENCE_PATTERN : WOMEN_AUDIENCE_PATTERN;
     const categoryPrefix = new RegExp(`^${section}(-|$)`, "i");
-
     return {
-        // Keep support for correctly categorised legacy products, but never
-        // allow an explicit audience label to be overruled by stale metadata.
-        $or: [
-            { gender: section },
-            { category: { $regex: categoryPrefix } },
-            ...audienceTextCondition(audiencePattern),
-        ],
-        $nor: audienceTextCondition(oppositeAudiencePattern),
+        category: { $regex: categoryPrefix },
     };
+};
+
+// Extract the base product type from a category slug.
+// Strips gender prefix and intermediate segments so that
+// "men-bottom-wear-jeans" → "jeans" and "women-footwear-sneakers" → "sneakers".
+const getBaseProductType = (category) => {
+    if (!category) return '';
+    return category.toLowerCase()
+        .replace(/^(men|women)-/, '')
+        .replace(/^(bottom-wear|footwear|topwear|hoodies)-/, '');
 };
 
 
@@ -657,6 +649,9 @@ export const replyToReview = asyncHandler(async (req, res) => {
 });
 
 // GET SIMILAR PRODUCTS
+// Returns products that share the same base product type (e.g. "jeans",
+// "t-shirts", "sneakers") regardless of gender prefix.  Never pads the
+// result with unrelated products.
 export const getSimilarProducts = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const targetProduct = await Product.findById(id).lean();
@@ -666,69 +661,69 @@ export const getSimilarProducts = asyncHandler(async (req, res) => {
         throw new Error("Product not found");
     }
 
-    // Fetch active products excluding current product
+    // Fetch all active products excluding the current one
     const candidateProducts = await Product.find({
         _id: { $ne: targetProduct._id },
         status: { $ne: "Draft" },
     }).lean();
 
     if (!candidateProducts.length) {
-        return res.status(200).json({
-            success: true,
-            products: [],
-        });
+        return res.status(200).json({ success: true, products: [] });
     }
 
     const tCategory = (targetProduct.category || "").toLowerCase();
+    const tBaseType = getBaseProductType(targetProduct.category);
     const tBrand = (targetProduct.brand || "").toLowerCase();
-    const tGender = (targetProduct.gender || "unisex").toLowerCase();
     const tTags = (targetProduct.tags || []).map(t => String(t).toLowerCase());
     const tPrice = Number(targetProduct.price) || 0;
 
-    const scored = candidateProducts.map(prod => {
+    // ── Step 1: Strict type filter ──────────────────────────────────────
+    // Only consider candidates whose base product type matches.
+    // e.g. target "men-t-shirts" (type "t-shirts") matches
+    //      candidate "women-t-shirts" but NOT "men-bottom-wear-jeans".
+    let typeCandidates = candidateProducts.filter(prod => {
+        if (!tBaseType) return false;
+        const pBaseType = getBaseProductType(prod.category);
+        if (!pBaseType) return false;
+        // Exact base type OR exact category match
+        return pBaseType === tBaseType || (prod.category || "").toLowerCase() === tCategory;
+    });
+
+    // If no type-matched candidates, return empty (don't pad with unrelated)
+    if (typeCandidates.length === 0) {
+        return res.status(200).json({ success: true, products: [], count: 0 });
+    }
+
+    // ── Step 2: Score within type-matched candidates ────────────────────
+    const scored = typeCandidates.map(prod => {
         let score = 0;
-
-        // 1. Category similarity (+40)
         const pCategory = (prod.category || "").toLowerCase();
-        if (pCategory && tCategory) {
-            if (pCategory === tCategory) score += 40;
-            else if (pCategory.includes(tCategory) || tCategory.includes(pCategory)) score += 25;
-        }
 
-        // 2. Gender similarity (+20)
-        const pGender = (prod.gender || "unisex").toLowerCase();
-        if (pGender === tGender || pGender === "unisex" || tGender === "unisex") {
-            score += 20;
-        }
+        // Exact category match (+30)
+        if (pCategory && tCategory && pCategory === tCategory) score += 30;
 
-        // 3. Brand similarity (+15)
+        // Brand similarity (+20)
         const pBrand = (prod.brand || "").toLowerCase();
-        if (pBrand && tBrand && pBrand === tBrand) {
-            score += 15;
-        }
+        if (pBrand && tBrand && pBrand === tBrand) score += 20;
 
-        // 4. Tag / Color overlap (+15)
+        // Tag overlap (+15)
         const pTags = (prod.tags || []).map(t => String(t).toLowerCase());
         const tagMatches = pTags.filter(t => tTags.includes(t)).length;
-        if (tagMatches > 0) {
-            score += Math.min(15, tagMatches * 5);
-        }
+        if (tagMatches > 0) score += Math.min(15, tagMatches * 5);
 
-        // 5. Price proximity (+10)
+        // Price proximity (+10)
         const pPrice = Number(prod.price) || 0;
         if (tPrice > 0 && pPrice > 0) {
             const priceDiffRatio = Math.abs(pPrice - tPrice) / tPrice;
-            if (priceDiffRatio <= 0.2) score += 10;
-            else if (priceDiffRatio <= 0.4) score += 5;
+            if (priceDiffRatio <= 0.25) score += 10;
+            else if (priceDiffRatio <= 0.5) score += 5;
         }
 
         return { product: prod, score };
     });
 
-    // Sort descending by score, then by rating
     scored.sort((a, b) => b.score - a.score || (b.product.rating || 0) - (a.product.rating || 0));
 
-    // Limit to top 12 products
     const resultProducts = scored.slice(0, 12).map(item => item.product);
 
     res.status(200).json({

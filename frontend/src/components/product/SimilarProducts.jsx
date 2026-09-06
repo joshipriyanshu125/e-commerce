@@ -6,12 +6,84 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
+export const detectProductType = (product) => {
+  if (!product) return 'other'
+  const text = [
+    product.name || '',
+    product.category || '',
+    ...(Array.isArray(product.tags) ? product.tags : []),
+    product.description || '',
+  ]
+    .join(' ')
+    .toLowerCase()
+
+  if (/\b(?:t-?shirts?|tees?)\b/i.test(text)) return 't-shirt'
+  if (/\bco-?ord\b/i.test(text)) return 'co-ord'
+  if (/\b(?:hoodies?|sweatshirts?)\b/i.test(text)) return 'hoodie-sweatshirt'
+  if (/\bjeans?\b/i.test(text)) return 'jeans'
+  if (/\b(?:cargos?|cargo pants?)\b/i.test(text) && !/\bshorts?\b/i.test(text)) return 'cargo-pants'
+  if (/\b(?:joggers?|track pants?|sweatpants?)\b/i.test(text)) return 'joggers'
+  if (/\bshorts?\b/i.test(text)) return 'shorts'
+  if (/\bskirts?\b/i.test(text)) return 'skirt'
+  if (/\bdress(?:es)?\b/i.test(text)) return 'dress'
+  if (/\bshirts?\b/i.test(text)) return 'shirt'
+  if (/\btops?\b/i.test(text)) return 'top'
+  if (/\bsneakers?\b/i.test(text)) return 'sneakers'
+  if (/\b(?:heels?|heeled)\b/i.test(text)) return 'heels'
+  if (/\b(?:flats?|mules?)\b/i.test(text)) return 'flats'
+  if (/\b(?:slides?|sandals?|shoes?|boots?|footwear)\b/i.test(text)) return 'shoes'
+  if (/\bsocks?\b/i.test(text)) return 'socks'
+  if (/\b(?:scarf|stole)\b/i.test(text)) return 'scarf'
+
+  return (product.category || 'other').toLowerCase()
+}
+
+// Extract the gender section from a category slug (e.g. "men-t-shirts" → "men")
+const getCategorySection = (category) => {
+  const cat = String(category || '').toLowerCase()
+  if (cat.startsWith('men-') || cat === 'men') return 'men'
+  if (cat.startsWith('women-') || cat === 'women') return 'women'
+  return null // featured collection or ungendered
+}
+
 const SimilarProducts = ({ productId, currentProduct }) => {
   const navigate = useNavigate()
   const scrollRef = useRef(null)
   const [similarProducts, setSimilarProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const allProducts = useSelector(state => state.products.allProducts || [])
+
+  const filterStrictlySimilar = (list) => {
+    if (!currentProduct || !Array.isArray(list)) return []
+    const currentId = String(currentProduct._id || currentProduct.id || '')
+    const targetType = detectProductType(currentProduct)
+    const targetCat = String(currentProduct.category || '').toLowerCase()
+    const targetSection = getCategorySection(currentProduct.category)
+
+    return list.filter(p => {
+      const pId = String(p._id || p.id || '')
+      if (pId && pId === currentId) return false
+
+      const pType = detectProductType(p)
+      const pCat = String(p.category || '').toLowerCase()
+
+      // 1. MUST match product type OR exact category
+      const typeMatches =
+        pType === targetType ||
+        (targetCat && pCat && targetCat === pCat)
+      if (!typeMatches) return false
+
+      // 2. Category-prefix section isolation (no more text matching)
+      // Only filter by section if the target product belongs to a gendered section
+      if (targetSection) {
+        const pSection = getCategorySection(p.category)
+        // Allow products from same section or from featured collections (no section)
+        if (pSection && pSection !== targetSection) return false
+      }
+
+      return true
+    })
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -23,10 +95,10 @@ const SimilarProducts = ({ productId, currentProduct }) => {
         .then(res => {
           if (isMounted) {
             const fetched = res.data?.products || []
-            if (fetched.length > 0) {
-              setSimilarProducts(normalizeProducts(fetched))
+            const strictlyFiltered = filterStrictlySimilar(fetched)
+            if (strictlyFiltered.length > 0) {
+              setSimilarProducts(normalizeProducts(strictlyFiltered))
             } else {
-              // Fallback to store filtering if API returns empty
               fallbackFromStore()
             }
             setLoading(false)
@@ -50,25 +122,8 @@ const SimilarProducts = ({ productId, currentProduct }) => {
 
   const fallbackFromStore = () => {
     if (!currentProduct || !allProducts.length) return
-    const currentId = currentProduct._id || currentProduct.id
-    const category = (currentProduct.category || '').toLowerCase()
-
-    const matches = allProducts.filter(p => {
-      const pId = p._id || p.id
-      if (pId === currentId) return false
-      return p.category && p.category.toLowerCase() === category
-    })
-
-    // If not enough in category, fill with remaining items
-    let finalItems = [...matches]
-    if (finalItems.length < 4) {
-      const remaining = allProducts.filter(
-        p => (p._id || p.id) !== currentId && !finalItems.some(f => (f._id || f.id) === (p._id || p.id))
-      )
-      finalItems = [...finalItems, ...remaining]
-    }
-
-    setSimilarProducts(finalItems.slice(0, 10))
+    const strictlyFiltered = filterStrictlySimilar(allProducts)
+    setSimilarProducts(normalizeProducts(strictlyFiltered.slice(0, 10)))
   }
 
   // Helper to normalize product images & price calculations
