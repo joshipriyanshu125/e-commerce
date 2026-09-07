@@ -87,7 +87,9 @@ export const decreaseStock = async (productId, size, color, qty, orderNumber, us
     syncProductTotalStock(product);
     await product.save();
 
-    await logHistory({
+    // The stock write is the checkout-critical operation. History is an audit
+    // record and must not delay the order confirmation response.
+    void logHistory({
         productId,
         size: hasVariants ? size : "",
         color: hasVariants ? color : "",
@@ -156,8 +158,8 @@ export const increaseStock = async (productId, size, color, qty, reason, userNam
 
 // ─── VALIDATE STOCK BEFORE CHECKOUT ──────────────────────────────────────────
 // Checks product availability. Returns { valid: true } or throws custom error.
-export const validateStock = async (productId, size, color, qty) => {
-    const product = await Product.findById(productId).lean();
+export const validateStock = async (productId, size, color, qty, loadedProduct = null) => {
+    const product = loadedProduct || await Product.findById(productId).lean();
     if (!product) throw new Error("Product not found");
 
     if (product.status === "Draft") {

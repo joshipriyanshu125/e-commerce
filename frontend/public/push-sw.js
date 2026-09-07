@@ -15,6 +15,6 @@ self.addEventListener('push', function(event) {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  const url = '/account/orders'
+  const url = event.notification.data?.url || '/notifications'
   event.waitUntil(clients.openWindow(url))
 })

@@ -18,6 +18,7 @@ import cookieParser from "cookie-parser";
 
 import connectDB from "./config/db.js";
 import { initSocket } from "./config/socket.js";
+import { initWebPush } from "./utils/webPush.js";
 
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -77,6 +78,7 @@ DATABASE
 =========================================
 */
 connectDB();
+initWebPush();
 
 // Start scheduled jobs after DB connection
 startCouponExpiryJob();

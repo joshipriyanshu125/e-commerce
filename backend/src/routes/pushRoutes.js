@@ -1,9 +1,10 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
-import { subscribePush, unsubscribePush } from "../controllers/pushController.js";
+import { getVapidPublicKey, subscribePush, unsubscribePush } from "../controllers/pushController.js";
 
 const router = express.Router();
 
+router.get("/vapid-public-key", getVapidPublicKey);
 router.post("/subscribe", protect, subscribePush);
 router.post("/unsubscribe", protect, unsubscribePush);
 

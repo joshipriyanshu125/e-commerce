@@ -245,7 +245,7 @@ const Checkout = () => {
         <div className="fixed inset-0 bg-atelier-beige/80 backdrop-blur-xs z-50 flex flex-col items-center justify-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-atelier-dark border-r-2" />
           <p className="font-mono text-sm uppercase tracking-[0.25em] text-atelier-dark font-medium">
-            Processing Secure Payment...
+            {paymentMethod === 'COD' ? 'Confirming Cash on Delivery Order...' : 'Processing Secure Payment...'}
           </p>
         </div>
       )}

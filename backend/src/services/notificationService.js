@@ -2,10 +2,13 @@ import Notification from "../models/notificationModel.js";
 import NotificationPreference from "../models/notificationPreferenceModel.js";
 import { getIO } from "../config/socket.js";
 import User from "../models/userModel.js";
+import PushSubscription from "../models/pushSubscriptionModel.js";
 import { sendEmail } from "./emailService.js";
+import { sendWebPush } from "../utils/webPush.js";
 
 const EMAIL_PREFERENCE_BY_TYPE = {
     order: "orderUpdates",
+    new_order: "orderUpdates",
     order_status: "orderUpdates",
     order_placed: "orderUpdates",
     payment: "orderUpdates",
@@ -27,6 +30,18 @@ const EMAIL_PREFERENCE_BY_TYPE = {
     security_alert: "securityAlerts",
 };
 
+const PUSH_PREFERENCE_BY_TYPE = {
+    order: "orderUpdates",
+    new_order: "orderUpdates",
+    order_status: "orderUpdates",
+    order_placed: "orderUpdates",
+    payment: "orderUpdates",
+    payment_failed: "orderUpdates",
+    shipping: "deliveryUpdates",
+    shipping_update: "deliveryUpdates",
+    delivery: "deliveryUpdates",
+};
+
 const escapeHtml = (value) => String(value || "").replace(/[&<>'\"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
 }[character]));
@@ -45,6 +60,13 @@ const isEmailEnabled = (preferences, preferenceKey) => {
     // Older documents used these names; retain their choices after the UI rename.
     const legacyKey = { promotions: "promotionalEmails", newArrivals: "newArrivalEmails", newsletter: "weeklyNewsletter" }[preferenceKey];
     return preferences.email?.[preferenceKey] !== false && (!legacyKey || preferences.email?.[legacyKey] !== false);
+};
+
+const isPushEnabled = (preferences, preferenceKey, hasSubscription = false) => {
+    // Before push preferences existed, the stored browser subscription itself
+    // was the user's opt-in. Preserve those registrations during the upgrade.
+    if (!preferences?.push?.enabled) return hasSubscription;
+    return !preferenceKey || preferences?.push?.[preferenceKey] !== false;
 };
 
 /*
@@ -113,6 +135,39 @@ const sendNotification = async ({
                 }
             } catch (emailError) {
                 console.error("Notification email failed:", emailError.message);
+            }
+        }
+
+        // A browser subscription is a separate delivery channel from Socket.IO.
+        // Socket.IO only reaches an open app, whereas Web Push reaches a registered
+        // service worker while the app is closed.
+        const pushPrefKey = PUSH_PREFERENCE_BY_TYPE[type];
+        if (notification) {
+            try {
+                const pushSubscription = await PushSubscription.findOne({ user: userId }).select("subscription");
+                if (pushSubscription?.subscription && isPushEnabled(prefs, pushPrefKey, true)) {
+                    // Migrate legacy subscriptions, which predate push.enabled.
+                    if (prefs && !prefs.push.enabled) {
+                        prefs.push.enabled = true;
+                        prefs.push.orderUpdates = true;
+                        prefs.push.deliveryUpdates = true;
+                        await prefs.save();
+                    }
+                    const delivered = await sendWebPush(pushSubscription.subscription, {
+                        title,
+                        body: message,
+                        url: link || "/notifications",
+                        notificationId: notification._id.toString(),
+                        type,
+                    });
+                    if (delivered) {
+                        notification.sentViaPush = true;
+                        await notification.save();
+                    }
+                }
+            } catch (pushError) {
+                // Push delivery is non-fatal; retain the in-app notification.
+                console.error("Notification push failed:", pushError.message);
             }
         }
 

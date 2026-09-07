@@ -71,7 +71,15 @@ const Account = () => {
         return;
       }
 
-      // Step 2: Ensure service worker is registered and ready
+      // Step 2: Get the server's current VAPID key. This must match the
+      // server's private key used to deliver the notification later.
+      const keyResponse = await axios.get('push/vapid-public-key');
+      const vapidPublicKey = keyResponse.data?.publicKey;
+      if (!vapidPublicKey) {
+        throw new Error('Push notifications are not configured on the server.');
+      }
+
+      // Step 3: Ensure service worker is registered and ready
       await navigator.serviceWorker.register('/push-sw.js');
       const reg = await navigator.serviceWorker.ready;
 
@@ -81,13 +89,13 @@ const Account = () => {
         await existingSub.unsubscribe();
       }
 
-      // Step 3: Subscribe to push
+      // Step 4: Subscribe to push
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array('BOOyPRZuO_1zdkUK6dJ61oFuudYTIIvLwNMNPEFQeH6quBUDH06uJT81Bmjdyu3GehbrC47EZJJ3dfP4kqlUgD8')
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
       });
 
-      // Step 4: Save subscription to backend
+      // Step 5: Save subscription to backend
       await axios.post('push/subscribe', sub);
       setPushEnabled(true);
       alert('Delivery alerts enabled! You will now receive push notifications for your orders.');

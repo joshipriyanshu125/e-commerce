@@ -94,8 +94,9 @@ const createOrderService = async ({ body, user }) => {
         paymentInfo,
     } = body;
 
-    // GET USER CART
-    const cart = await getUserCartRepository(user._id);
+    // Fetch the cart in parallel with catalogue validation; neither query
+    // depends on the other.
+    const cartPromise = getUserCartRepository(user._id);
 
     if (!orderItems || orderItems.length === 0) {
         throw new Error("Order items are empty");
@@ -103,10 +104,7 @@ const createOrderService = async ({ body, user }) => {
 
     // Reprice each item from the catalogue. Browser totals are display-only and
     // must never be required (or trusted) to create an order.
-    const normalizedOrderItems = [];
-    let itemsPrice = 0;
-
-    for (const item of orderItems) {
+    const normalizedOrderItems = await Promise.all(orderItems.map(async (item) => {
         if (!mongoose.Types.ObjectId.isValid(item.product) || !Number.isInteger(item.quantity) || item.quantity < 1) {
             throw new Error("One or more cart items are invalid");
         }
@@ -118,11 +116,12 @@ const createOrderService = async ({ body, user }) => {
 
         const size = item.size || "N/A";
         const color = item.color || "N/A";
-        await validateStock(product._id, size, color, item.quantity);
+        // Reuse the catalogue record already loaded above instead of making a
+        // second database read for the same product.
+        await validateStock(product._id, size, color, item.quantity, product);
 
         const unitPrice = product.discountPrice ?? product.price;
-        itemsPrice += unitPrice * item.quantity;
-        normalizedOrderItems.push({
+        return {
             product: product._id,
             name: product.name,
             image: product.images?.[0]?.url || "",
@@ -130,8 +129,14 @@ const createOrderService = async ({ body, user }) => {
             quantity: item.quantity,
             size,
             color,
-        });
-    }
+        };
+    }));
+
+    const itemsPrice = normalizedOrderItems.reduce(
+        (total, item) => total + (item.price * item.quantity),
+        0
+    );
+    const cart = await cartPromise;
 
     const shippingPrice = itemsPrice >= 150 ? 0 : 15;
     const taxPrice = 0;
@@ -172,73 +177,52 @@ const createOrderService = async ({ body, user }) => {
         await cart.save();
     }
 
-    // POPULATE ORDER
-    const populatedOrder = await getOrderByIdRepository(order._id);
+    // Keep the checkout response limited to essential order, stock, and cart
+    // writes. SMTP delivery and PDF rendering can take seconds and must not
+    // make a successful COD payment appear stuck.
+    setImmediate(() => {
+        getOrderByIdRepository(order._id)
+            .then((populatedOrder) => {
+                const io = getIO();
+                if (io) io.emit("newOrder", populatedOrder);
+            })
+            .catch((socketErr) => console.error("Socket newOrder error:", socketErr.message));
 
-    // EMIT REAL-TIME SOCKET EVENT
-    try {
-        const io = getIO();
-        if (io) io.emit("newOrder", populatedOrder);
-    } catch (socketErr) {
-        console.error("Socket newOrder error:", socketErr.message);
-    }
-
-    // Creates the in-app notification and sends email through the same preference-aware path.
-    try {
-        await sendNotification({
+        sendNotification({
             userId: user._id,
             title: paymentInfo?.paymentStatus === "Failed" ? "Payment Failed" : "Order Placed",
             message: paymentInfo?.paymentStatus === "Failed"
                 ? `Your payment for order ${order._id} failed.`
                 : `Your order #${order._id.toString().slice(-6).toUpperCase()} has been placed successfully.`,
             type: paymentInfo?.paymentStatus === "Failed" ? "order_status" : "order_placed",
-        });
-    } catch (notifErr) {
-        console.error("Order notification failed:", notifErr.message);
-    }
+        }).catch((notifErr) => console.error("Order notification failed:", notifErr.message));
 
-    // ADMIN NOTIFICATION
-    if (paymentInfo?.paymentStatus === "Failed") {
-        notifyAdmins({
-            title: "Payment Failed",
-            message: `Payment failed for order #${order._id.toString().slice(-6).toUpperCase()} ($${totalPrice.toFixed(2)})`,
-            type: "payment_failed",
-        }).catch(err => console.error("Payment failed admin notification:", err.message));
-    } else {
-        notifyAdmins({
-            title: "New Order",
-            message: `New order #${order._id.toString().slice(-6).toUpperCase()} by ${user.name} — $${totalPrice.toFixed(2)}`,
-            type: "new_order",
-        }).catch(err => console.error("New order admin notification:", err.message));
-    }
+        const adminNotification = paymentInfo?.paymentStatus === "Failed"
+            ? { title: "Payment Failed", message: `Payment failed for order #${order._id.toString().slice(-6).toUpperCase()} ($${totalPrice.toFixed(2)})`, type: "payment_failed" }
+            : { title: "New Order", message: `New order #${order._id.toString().slice(-6).toUpperCase()} by ${user.name} — $${totalPrice.toFixed(2)}`, type: "new_order" };
+        notifyAdmins(adminNotification).catch((err) => console.error("Admin order notification failed:", err.message));
+    });
 
-    // AUTOMATICALLY GENERATE INVOICE
-    try {
-        const invoiceNumber = `INV-${Date.now()}`;
-        const invoice = await Invoice.create({
-            user: user._id,
-            order: order._id,
-            invoiceNumber,
-            totalAmount: totalPrice
-        });
+    setImmediate(async () => {
+        try {
+            const invoiceNumber = `INV-${Date.now()}`;
+            const invoice = await Invoice.create({
+                user: user._id,
+                order: order._id,
+                invoiceNumber,
+                totalAmount: totalPrice,
+            });
 
-        const invoicesDir = path.join(process.cwd(), "src", "invoices");
-        if (!fs.existsSync(invoicesDir)) {
-            fs.mkdirSync(invoicesDir, { recursive: true });
+            const invoicesDir = path.join(process.cwd(), "src", "invoices");
+            if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
+            const populatedInvoice = await Invoice.findById(invoice._id)
+                .populate({ path: "order", populate: { path: "user", select: "name email" } })
+                .populate("user");
+            await generateInvoice(populatedInvoice, path.join(invoicesDir, `${invoiceNumber}.pdf`));
+        } catch (invoiceErr) {
+            console.error("Auto invoice generation failed:", invoiceErr.message);
         }
-        const invoicePath = path.join(invoicesDir, `${invoiceNumber}.pdf`);
-
-        const populatedInvoice = await Invoice.findById(invoice._id)
-            .populate({
-                path: "order",
-                populate: { path: "user", select: "name email" }
-            })
-            .populate("user");
-        
-        await generateInvoice(populatedInvoice, invoicePath);
-    } catch (invoiceErr) {
-        console.error("Auto invoice generation failed:", invoiceErr.message);
-    }
+    });
 
     return order;
 };
