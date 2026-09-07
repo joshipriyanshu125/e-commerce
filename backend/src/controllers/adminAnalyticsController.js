@@ -17,6 +17,8 @@ export const buildAnalyticsSnapshot = async () => {
     const prevMonthEnd     = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
     const last14DaysStart  = new Date(todayStart);
     last14DaysStart.setDate(last14DaysStart.getDate() - 13);
+    const last30Days       = new Date(todayStart);
+    last30Days.setDate(last30Days.getDate() - 29);
     const last12MonthsStart = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
     const sixMonthsAgo     = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
