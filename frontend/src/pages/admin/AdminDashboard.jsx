@@ -221,12 +221,14 @@ const AdminDashboard = () => {
   })) || []
 
   const topProductsData = analytics?.topProducts?.map(p => ({
-    label: p.name?.split(' ').slice(0, 2).join(' ') || 'N/A',
+    label: p.name || 'Unknown',
     value: p.totalSold || 0
   })) || []
 
   const topCategoriesData = analytics?.topCategories?.map(c => ({
-    label: c._id || 'Other',
+    label: c._id && c._id !== 'Uncategorized'
+      ? c._id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      : 'Other',
     value: c.totalSold || 0,
     revenue: c.totalRevenue || 0
   })) || []

@@ -26,24 +26,32 @@ const AISalesInsightsCard = ({ analytics }) => {
 
   const insights = {
     topProduct: {
-      name: rawInsights.topProduct?.name || 'Oversized Black Hoodie',
-      sub: `${rawInsights.topProduct?.unitsSold || 0} units sold ($${(rawInsights.topProduct?.revenue || 0).toLocaleString()})`
+      name: rawInsights.topProduct?.name || 'Unknown',
+      sub: rawInsights.topProduct?.unitsSold
+        ? `${rawInsights.topProduct.unitsSold} units sold ($${(rawInsights.topProduct.revenue || 0).toLocaleString()})`
+        : '0 units sold ($0.00)'
     },
     fastestGrowingCategory: {
-      name: rawInsights.fastestGrowingCategory?.name || "Women's Streetwear",
+      name: rawInsights.fastestGrowingCategory?.name || 'Unknown',
       sub: `${rawInsights.fastestGrowingCategory?.growth || '+0.0%'} MoM growth`
     },
     inventoryRisk: {
-      name: rawInsights.inventoryRisk?.name || 'Cargo Pants – Black / M',
-      sub: `${rawInsights.inventoryRisk?.status || 'Low Stock Alert'} (${rawInsights.inventoryRisk?.stock ?? 0} remaining)`
+      name: rawInsights.inventoryRisk?.name || 'All Stock Healthy',
+      sub: rawInsights.inventoryRisk && rawInsights.inventoryRisk.name !== 'All Stock Healthy' && rawInsights.inventoryRisk.name !== 'Unknown'
+        ? `${rawInsights.inventoryRisk.status || 'Low Stock Alert'} (${rawInsights.inventoryRisk.stock ?? 0} remaining)`
+        : 'All stock healthy'
     },
     highestRevenueProduct: {
-      name: rawInsights.highestRevenueProduct?.name || 'Classic Sneakers',
-      sub: `$${(rawInsights.highestRevenueProduct?.revenue || 0).toLocaleString()} revenue`
+      name: rawInsights.highestRevenueProduct?.name || 'Unknown',
+      sub: rawInsights.highestRevenueProduct?.revenue
+        ? `$${(rawInsights.highestRevenueProduct.revenue || 0).toLocaleString()} revenue`
+        : '$0.00 revenue'
     },
     highReturnProduct: {
-      name: rawInsights.highReturnProduct?.name || 'Oversized Denim Jacket',
-      sub: `${rawInsights.highReturnProduct?.returnedUnits || 0} return requests`
+      name: rawInsights.highReturnProduct?.name || 'No Return Requests',
+      sub: rawInsights.highReturnProduct?.returnedUnits
+        ? `${rawInsights.highReturnProduct.returnedUnits} return requests`
+        : '0 return requests'
     }
   }
 

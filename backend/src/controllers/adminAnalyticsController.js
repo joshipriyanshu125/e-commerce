@@ -92,33 +92,57 @@ export const buildAnalyticsSnapshot = async () => {
         // ── Top products ───────────────────────────────────────────────────
         Order.aggregate([
             { $unwind: "$orderItems" },
-            { $group: { _id: "$orderItems.product", totalSold: { $sum: "$orderItems.quantity" }, totalRevenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.quantity"] } } } },
+            {
+                $group: {
+                    _id: "$orderItems.product",
+                    itemName: { $first: "$orderItems.name" },
+                    itemImage: { $first: "$orderItems.image" },
+                    itemPrice: { $first: "$orderItems.price" },
+                    totalSold: { $sum: "$orderItems.quantity" },
+                    totalRevenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.quantity"] } },
+                },
+            },
             { $sort: { totalSold: -1 } },
             { $limit: 6 },
             { $lookup: { from: "products", localField: "_id", foreignField: "_id", as: "product" } },
             { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $ifNull: ["$product.name", "Unknown"] }, image: { $ifNull: [{ $arrayElemAt: ["$product.images", 0] }, "$product.image"] }, price: "$product.price", category: "$product.category", totalSold: 1, totalRevenue: 1 } }
+            {
+                $project: {
+                    name: { $ifNull: ["$product.name", { $ifNull: ["$itemName", "Unknown"] }] },
+                    image: { $ifNull: [{ $arrayElemAt: ["$product.images", 0] }, { $ifNull: ["$product.image", "$itemImage"] }] },
+                    price: { $ifNull: ["$product.price", "$itemPrice"] },
+                    category: { $ifNull: ["$product.category", "Uncategorized"] },
+                    totalSold: 1,
+                    totalRevenue: 1,
+                },
+            },
         ]),
         // ── Top categories ─────────────────────────────────────────────────
         Order.aggregate([
             { $unwind: "$orderItems" },
             { $lookup: { from: "products", localField: "orderItems.product", foreignField: "_id", as: "productData" } },
             { $unwind: { path: "$productData", preserveNullAndEmptyArrays: true } },
-            { $group: { _id: "$productData.category", totalSold: { $sum: "$orderItems.quantity" }, totalRevenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.quantity"] } } } },
+            {
+                $group: {
+                    _id: { $ifNull: ["$productData.category", "Uncategorized"] },
+                    totalSold: { $sum: "$orderItems.quantity" },
+                    totalRevenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.quantity"] } },
+                },
+            },
             { $match: { _id: { $ne: null } } },
             { $sort: { totalSold: -1 } },
-            { $limit: 6 }
+            { $limit: 6 },
         ]),
         // ── New vs repeat customers ────────────────────────────────────────
         Order.aggregate([
             { $group: { _id: "$user", orderCount: { $sum: 1 } } },
-            { $group: { _id: null, newCustomers: { $sum: { $cond: [{ $eq: ["$orderCount", 1] }, 1, 0] } }, repeatCustomers: { $sum: { $cond: [{ $gt: ["$orderCount", 1] }, 1, 0] } } } }
+            { $group: { _id: null, newCustomers: { $sum: { $cond: [{ $eq: ["$orderCount", 1] }, 1, 0] } }, repeatCustomers: { $sum: { $cond: [{ $gt: ["$orderCount", 1] }, 1, 0] } } } },
         ]),
         // ── Wishlist summary ───────────────────────────────────────────────
         Wishlist.aggregate([
             { $unwind: "$items" },
             { $group: { _id: null, totalItems: { $sum: 1 }, customers: { $addToSet: "$user" } } },
-            { $project: { totalItems: 1, customerCount: { $size: "$customers" } } }
+            { $project: { totalItems: 1, customerCount: { $size: "$customers" } } },
         ]),
         Wishlist.aggregate([
             { $unwind: "$items" },
@@ -127,28 +151,43 @@ export const buildAnalyticsSnapshot = async () => {
             { $limit: 8 },
             { $lookup: { from: "products", localField: "_id", foreignField: "_id", as: "product" } },
             { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $ifNull: ["$product.name", "Deleted product"] }, wishlistCount: 1, price: "$product.price" } }
+            { $project: { name: { $ifNull: ["$product.name", "Deleted product"] }, wishlistCount: 1, price: "$product.price" } },
         ]),
         // ── New users per month (last 6) ───────────────────────────────────
         User.aggregate([
             { $match: { createdAt: { $gte: sixMonthsAgo } } },
             { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
-            { $sort: { "_id.year": 1, "_id.month": 1 } }
+            { $sort: { "_id.year": 1, "_id.month": 1 } },
         ]),
         // ── Order status breakdown ─────────────────────────────────────────
         Order.aggregate([
-            { $group: { _id: "$orderStatus", count: { $sum: 1 } } }
+            { $group: { _id: "$orderStatus", count: { $sum: 1 } } },
         ]),
         // ── Sales velocity: units sold per product in last 30 days ─────────
         Order.aggregate([
             { $match: { createdAt: { $gte: last30Days } } },
             { $unwind: "$orderItems" },
-            { $group: { _id: "$orderItems.product", soldLast30Days: { $sum: "$orderItems.quantity" } } },
+            {
+                $group: {
+                    _id: "$orderItems.product",
+                    itemName: { $first: "$orderItems.name" },
+                    itemPrice: { $first: "$orderItems.price" },
+                    soldLast30Days: { $sum: "$orderItems.quantity" },
+                },
+            },
             { $sort: { soldLast30Days: -1 } },
             { $limit: 20 },
             { $lookup: { from: "products", localField: "_id", foreignField: "_id", as: "product" } },
             { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
-            { $project: { name: { $ifNull: ["$product.name", "Unknown"] }, soldLast30Days: 1, currentStock: "$product.countInStock", category: "$product.category", price: "$product.price" } }
+            {
+                $project: {
+                    name: { $ifNull: ["$product.name", { $ifNull: ["$itemName", "Unknown"] }] },
+                    soldLast30Days: 1,
+                    currentStock: "$product.countInStock",
+                    category: { $ifNull: ["$product.category", "Uncategorized"] },
+                    price: { $ifNull: ["$product.price", "$itemPrice"] },
+                },
+            },
         ]),
         // ── Low stock products ─────────────────────────────────────────────
         Product.find({ status: { $ne: "Draft" } })
@@ -156,8 +195,8 @@ export const buildAnalyticsSnapshot = async () => {
             .lean()
             .then(products =>
                 products
-                    .filter(p => p.countInStock <= (p.lowStockThreshold ?? 5))
-                    .sort((a, b) => a.countInStock - b.countInStock)
+                    .filter(p => (p.countInStock ?? 0) <= (p.lowStockThreshold ?? 5))
+                    .sort((a, b) => (a.countInStock ?? 0) - (b.countInStock ?? 0))
                     .slice(0, 20)
             ),
         // ── Category revenue this month ────────────────────────────────────
@@ -167,7 +206,7 @@ export const buildAnalyticsSnapshot = async () => {
             { $lookup: { from: "products", localField: "orderItems.product", foreignField: "_id", as: "p" } },
             { $unwind: { path: "$p", preserveNullAndEmptyArrays: true } },
             { $group: { _id: "$p.category", revenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.quantity"] } } } },
-            { $match: { _id: { $ne: null } } }
+            { $match: { _id: { $ne: null } } },
         ]),
         // ── Category revenue prev month ────────────────────────────────────
         Order.aggregate([
@@ -176,7 +215,7 @@ export const buildAnalyticsSnapshot = async () => {
             { $lookup: { from: "products", localField: "orderItems.product", foreignField: "_id", as: "p" } },
             { $unwind: { path: "$p", preserveNullAndEmptyArrays: true } },
             { $group: { _id: "$p.category", revenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.quantity"] } } } },
-            { $match: { _id: { $ne: null } } }
+            { $match: { _id: { $ne: null } } },
         ]),
         // ── Return counts this month ───────────────────────────────────────
         ReturnRequest.countDocuments({ createdAt: { $gte: monthStart } }),
@@ -187,7 +226,7 @@ export const buildAnalyticsSnapshot = async () => {
             { $unwind: "$items" },
             { $group: { _id: "$items.name", totalReturned: { $sum: "$items.quantity" } } },
             { $sort: { totalReturned: -1 } },
-            { $limit: 5 }
+            { $limit: 5 },
         ]),
     ]);
 
@@ -224,8 +263,17 @@ export const buildAnalyticsSnapshot = async () => {
         : "0.0";
 
     // ── Business Insights Highlights ───────────────────────────────────────
+    // Helper to format category slugs like "men-footwear-sneakers" into "Men Footwear Sneakers"
+    const formatCategory = (cat) => {
+        if (!cat || cat === "Unknown" || cat === "N/A" || cat === "Uncategorized") return cat || "Unknown";
+        return String(cat)
+            .split("-")
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+    };
+
     // 1. 🔥 Top Product (by units sold)
-    const topSoldProd = topProducts[0] || null;
+    const topSoldProd = topProducts.length > 0 && topProducts[0].totalSold > 0 ? topProducts[0] : null;
 
     // 2. 📈 Fastest Growing Category (by MoM growth % or this month revenue)
     let fastestCat = null;
@@ -248,40 +296,52 @@ export const buildAnalyticsSnapshot = async () => {
     }
 
     // 3. ⚠️ Inventory Risk (lowest stock product)
-    const lowStockItem = lowStockProducts[0] || null;
+    const lowStockItem = lowStockProducts.length > 0 ? lowStockProducts[0] : null;
 
     // 4. 💰 Highest Revenue Product
-    const highestRevProd = topProducts.length > 0
+    const highestRevProd = topProducts.length > 0 && topProducts.some(p => p.totalRevenue > 0)
         ? [...topProducts].sort((a, b) => (b.totalRevenue || 0) - (a.totalRevenue || 0))[0]
         : null;
 
     // 5. 🔄 High Return Product
-    const topReturnedItem = topReturnedProducts[0] || null;
+    const topReturnedItem = topReturnedProducts.length > 0 && topReturnedProducts[0].totalReturned > 0
+        ? topReturnedProducts[0]
+        : null;
+
+    // Determine category name from fastestCat or topCategories or "Unknown"
+    const validTopCategory = topCategories.find(c => c._id && c._id !== "Uncategorized" && c._id !== "N/A");
+    const fastestCategoryName = fastestCat?.category && fastestCat.category !== "Uncategorized"
+        ? formatCategory(fastestCat.category)
+        : validTopCategory
+            ? formatCategory(validTopCategory._id)
+            : "Unknown";
 
     const businessInsights = {
         topProduct: {
-            name: topSoldProd?.name || "Oversized Black Hoodie",
+            name: topSoldProd ? (topSoldProd.name || "Unknown") : "Unknown",
             unitsSold: topSoldProd?.totalSold || 0,
             revenue: parseFloat((topSoldProd?.totalRevenue || 0).toFixed(2)),
         },
         fastestGrowingCategory: {
-            name: fastestCat?.category || "Women's Streetwear",
-            growth: fastestCatGrowth,
-            revenue: fastestCat?.thisMonth || 0,
+            name: fastestCategoryName,
+            growth: fastestCat ? fastestCatGrowth : "+0.0%",
+            revenue: fastestCat?.thisMonth || validTopCategory?.totalRevenue || 0,
         },
         inventoryRisk: {
-            name: lowStockItem?.name || "Cargo Pants – Black / M",
-            stock: lowStockItem?.countInStock ?? 0,
+            name: lowStockItem ? lowStockItem.name : "All Stock Healthy",
+            stock: lowStockItem ? (lowStockItem.countInStock ?? 0) : 0,
             threshold: lowStockItem?.lowStockThreshold ?? 5,
-            status: (lowStockItem?.countInStock ?? 0) === 0 ? "Out of Stock" : "Low Stock Alert",
+            status: lowStockItem
+                ? ((lowStockItem.countInStock ?? 0) === 0 ? "Out of Stock" : "Low Stock Alert")
+                : "Optimal",
         },
         highestRevenueProduct: {
-            name: highestRevProd?.name || "Classic Sneakers",
+            name: highestRevProd ? (highestRevProd.name || "Unknown") : "Unknown",
             revenue: parseFloat((highestRevProd?.totalRevenue || 0).toFixed(2)),
             unitsSold: highestRevProd?.totalSold || 0,
         },
         highReturnProduct: {
-            name: topReturnedItem?._id || "Oversized Denim Jacket",
+            name: topReturnedItem ? (topReturnedItem._id || "Unknown") : "No Return Requests",
             returnedUnits: topReturnedItem?.totalReturned || 0,
         },
     };
