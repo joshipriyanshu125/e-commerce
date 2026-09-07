@@ -15,7 +15,8 @@ export const buildAnalyticsSnapshot = async () => {
     const monthStart       = new Date(now.getFullYear(), now.getMonth(), 1);
     const prevMonthStart   = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevMonthEnd     = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-    const last30Days       = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const last14DaysStart  = new Date(todayStart);
+    last14DaysStart.setDate(last14DaysStart.getDate() - 13);
     const last12MonthsStart = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
     const sixMonthsAgo     = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
@@ -83,9 +84,9 @@ export const buildAnalyticsSnapshot = async () => {
             { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, revenue: { $sum: "$totalPrice" }, orders: { $sum: 1 } } },
             { $sort: { "_id.year": 1, "_id.month": 1 } }
         ]),
-        // ── Orders per day (last 30 days) ──────────────────────────────────
+        // ── Orders per day (last 14 days) ──────────────────────────────────
         Order.aggregate([
-            { $match: { createdAt: { $gte: last30Days } } },
+            { $match: { createdAt: { $gte: last14DaysStart } } },
             { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" }, day: { $dayOfMonth: "$createdAt" } }, count: { $sum: 1 }, revenue: { $sum: "$totalPrice" } } },
             { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
         ]),
@@ -243,6 +244,41 @@ export const buildAnalyticsSnapshot = async () => {
     const wishlistSummary = wishlistSummary_arr[0];
     const topReturnedProducts = topReturnedProducts_arr || [];
 
+    // Aggregations only return periods that have records. Fill the fixed chart
+    // windows so a quiet week/month remains visible as an empty period instead
+    // of stretching the few sales bars across the whole chart.
+    const revenueByMonthMap = new Map(
+        revenueByMonth.map(entry => [`${entry._id.year}-${entry._id.month}`, entry])
+    );
+    const completeRevenueByMonth = Array.from({ length: 12 }, (_, index) => {
+        const date = new Date(now.getFullYear(), now.getMonth() - 11 + index, 1);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const entry = revenueByMonthMap.get(`${year}-${month}`);
+        return {
+            _id: { year, month },
+            revenue: entry?.revenue || 0,
+            orders: entry?.orders || 0,
+        };
+    });
+
+    const ordersByDayMap = new Map(
+        ordersPerDay.map(entry => [`${entry._id.year}-${entry._id.month}-${entry._id.day}`, entry])
+    );
+    const completeOrdersPerDay = Array.from({ length: 14 }, (_, index) => {
+        const date = new Date(last14DaysStart);
+        date.setDate(date.getDate() + index);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const entry = ordersByDayMap.get(`${year}-${month}-${day}`);
+        return {
+            _id: { year, month, day },
+            count: entry?.count || 0,
+            revenue: entry?.revenue || 0,
+        };
+    });
+
     // ── Category MoM merge ─────────────────────────────────────────────────
     const catMap = {};
     categoryMoMThis.forEach(c => {
@@ -356,7 +392,8 @@ export const buildAnalyticsSnapshot = async () => {
             wishlistItems: wishlistSummary?.totalItems || 0,
             wishlistCustomers: wishlistSummary?.customerCount || 0,
             mostWishlistedProducts,
-            revenueByMonth, ordersPerDay,
+            revenueByMonth: completeRevenueByMonth,
+            ordersPerDay: completeOrdersPerDay,
             topProducts, topCategories,
             orderStatusAnalytics, newUsersPerMonth,
             businessInsights,

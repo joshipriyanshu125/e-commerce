@@ -16,7 +16,9 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 
 // ─── SVG Bar Chart ────────────────────────────────────────────────────────────
 const BarChart = ({ data, color = '#f59e0b', labelKey, valueKey, valuePrefix = '', valueSuffix = '', height = 160 }) => {
-  const max = Math.max(...data.map(d => d[valueKey]), 1)
+  const maxValue = Math.max(...data.map(d => Number(d[valueKey]) || 0), 0)
+  const hasValues = maxValue > 0
+  const max = maxValue || 1
   const barWidth = Math.max(8, Math.floor(300 / data.length) - 4)
 
   return (
@@ -27,17 +29,20 @@ const BarChart = ({ data, color = '#f59e0b', labelKey, valueKey, valuePrefix = '
         style={{ minWidth: Math.max(data.length * (barWidth + 4), 300) }}
       >
         {data.map((d, i) => {
-          const barH = Math.max(2, Math.round((d[valueKey] / max) * height))
+          const value = Number(d[valueKey]) || 0
+          const barH = value > 0 ? Math.max(2, Math.round((value / max) * height)) : 0
           const x = i * (barWidth + 4)
           const y = height - barH
           return (
             <g key={i}>
               {/* bg track */}
               <rect x={x} y={0} width={barWidth} height={height} rx={3} fill="rgba(255,255,255,0.03)" />
-              {/* filled bar */}
-              <rect x={x} y={y} width={barWidth} height={barH} rx={3} fill={color} opacity={0.85}>
-                <title>{valuePrefix}{typeof d[valueKey] === 'number' ? d[valueKey].toLocaleString(undefined, { maximumFractionDigits: 0 }) : d[valueKey]}{valueSuffix}</title>
-              </rect>
+              {/* A zero-value period deliberately has no coloured bar. */}
+              {barH > 0 && (
+                <rect x={x} y={y} width={barWidth} height={barH} rx={3} fill={color} opacity={0.85}>
+                  <title>{valuePrefix}{value.toLocaleString(undefined, { maximumFractionDigits: 0 })}{valueSuffix}</title>
+                </rect>
+              )}
               {/* label */}
               <text
                 x={x + barWidth / 2}
@@ -52,6 +57,11 @@ const BarChart = ({ data, color = '#f59e0b', labelKey, valueKey, valuePrefix = '
             </g>
           )
         })}
+        {!hasValues && (
+          <text x="150" y={height / 2} textAnchor="middle" fontSize={10} fill="rgba(255,255,255,0.28)" fontFamily="monospace">
+            No sales in this period
+          </text>
+        )}
       </svg>
     </div>
   )
@@ -215,7 +225,7 @@ const AdminDashboard = () => {
     value: d.revenue
   })) || []
 
-  const ordersChartData = analytics?.ordersPerDay?.slice(-14).map(d => ({
+  const ordersChartData = analytics?.ordersPerDay?.map(d => ({
     label: `${d._id.day}`,
     value: d.count
   })) || []
