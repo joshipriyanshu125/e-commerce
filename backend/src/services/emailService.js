@@ -158,22 +158,46 @@ const createNodemailerTransporter = () => {
         throw new Error("SMTP_MAIL and SMTP_PASSWORD must be configured before email can be sent.");
     }
 
-    const transporterObj = nodemailer.createTransport({
-        service: process.env.SMTP_SERVICE || undefined,
-        host: process.env.SMTP_HOST || (process.env.SMTP_SERVICE ? undefined : "smtp.gmail.com"),
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: Number(process.env.SMTP_PORT) === 465,
-        auth: {
-            user: process.env.SMTP_MAIL,
-            pass: process.env.SMTP_PASSWORD,
-        },
-    });
+    const isGmail = process.env.SMTP_SERVICE === "gmail" || 
+                    process.env.SMTP_HOST === "smtp.gmail.com" || 
+                    process.env.SMTP_MAIL?.endsWith("@gmail.com");
+
+    const transporterObj = nodemailer.createTransport(
+        isGmail
+            ? {
+                service: "gmail",
+                pool: true,
+                maxConnections: 5,
+                maxMessages: 100,
+                connectionTimeout: 10000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000,
+                auth: {
+                    user: process.env.SMTP_MAIL,
+                    pass: process.env.SMTP_PASSWORD,
+                },
+            }
+            : {
+                service: process.env.SMTP_SERVICE || undefined,
+                host: process.env.SMTP_HOST || "smtp.gmail.com",
+                port: Number(process.env.SMTP_PORT) || 587,
+                secure: Number(process.env.SMTP_PORT) === 465,
+                pool: true,
+                maxConnections: 5,
+                connectionTimeout: 10000,
+                socketTimeout: 15000,
+                auth: {
+                    user: process.env.SMTP_MAIL,
+                    pass: process.env.SMTP_PASSWORD,
+                },
+            }
+    );
 
     return {
         provider: "nodemailer",
         send: async ({ to, subject, html, text }) => {
             const info = await transporterObj.sendMail({
-                from: process.env.SMTP_FROM || `"${process.env.STORE_NAME || "E-Commerce"}" <${process.env.SMTP_MAIL}>`,
+                from: process.env.SMTP_FROM || `"${process.env.STORE_NAME || "Atelier"}" <${process.env.SMTP_MAIL}>`,
                 to,
                 subject,
                 html,
@@ -202,6 +226,18 @@ const generateOpenTrackingId = () => {
 
 /*
 ==================================================
+SEND DIRECT / RAW EMAIL (Bypasses creating new EmailLog)
+==================================================
+*/
+const sendRawMail = async ({ to, subject, html, text }) => {
+    if (!transporter) {
+        transporter = createTransporter();
+    }
+    return await transporter.send({ to, subject, html, text });
+};
+
+/*
+==================================================
 SEND EMAIL (CORE)
 ==================================================
 */
@@ -215,6 +251,7 @@ const sendEmail = async ({
     campaignId = null,
     metadata = {},
 }) => {
+    let emailLog = null;
     const logData = {
         recipient: {
             email: to,
@@ -229,7 +266,7 @@ const sendEmail = async ({
     try {
         // Create email log
         const openTrackingId = generateOpenTrackingId();
-        const emailLog = await EmailLog.create({
+        emailLog = await EmailLog.create({
             ...logData,
             openTrackingId,
             campaign: campaignId,
@@ -271,6 +308,7 @@ const sendEmail = async ({
         emailLog.messageId = result.messageId;
         emailLog.providerMessageId = result.providerMessageId;
         emailLog.sentAt = new Date();
+        emailLog.errorMessage = "";
         await emailLog.save();
 
         logger.info(`Email sent successfully to ${to}`, {
@@ -285,18 +323,24 @@ const sendEmail = async ({
             error: error.stack,
         });
 
-        // Update log as failed
+        // Update existing log as failed rather than creating a duplicate
         try {
-            const emailLog = await EmailLog.create({
-                ...logData,
-                status: "failed",
-                errorMessage: error.message,
-                campaign: campaignId,
-                metadata,
-            });
+            if (emailLog) {
+                emailLog.status = "failed";
+                emailLog.errorMessage = error.message;
+                await emailLog.save();
+            } else {
+                emailLog = await EmailLog.create({
+                    ...logData,
+                    status: "failed",
+                    errorMessage: error.message,
+                    campaign: campaignId,
+                    metadata,
+                });
+            }
             return { success: false, error: error.message, emailLog };
         } catch (logError) {
-            logger.error("Failed to create email log:", logError.message);
+            logger.error("Failed to update email log:", logError.message);
             return { success: false, error: error.message };
         }
     }
@@ -389,6 +433,7 @@ EXPORT
 */
 export {
     sendEmail,
+    sendRawMail,
     sendBulkEmail,
     sendTestEmail,
     trackOpen,

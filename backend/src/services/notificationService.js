@@ -46,12 +46,68 @@ const escapeHtml = (value) => String(value || "").replace(/[&<>'\"]/g, (characte
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
 }[character]));
 
+const BRAND = {
+    name: "ATELIER",
+    tagline: "Premium Fashion",
+    primaryColor: "#f59e0b",
+    backgroundColor: "#0f0f1a",
+    cardBackground: "#1c1c28",
+    textColor: "#ffffff",
+    mutedText: "#a0a0b0",
+    borderColor: "#2a2a3a",
+    website: process.env.FRONTEND_URL || "http://localhost:5173",
+};
+
 const notificationEmailHtml = ({ title, message, link }) => `
-    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:28px;color:#1a1a1a">
-        <h1 style="font-size:22px;margin:0 0 16px">${escapeHtml(title)}</h1>
-        <p style="font-size:16px;line-height:1.55">${escapeHtml(message)}</p>
-        ${link ? `<p><a href="${escapeHtml(`${process.env.FRONTEND_URL || "http://localhost:5173"}${link}`)}">View details</a></p>` : ""}
-    </div>`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(title)}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: ${BRAND.backgroundColor}; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; color: ${BRAND.textColor};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: ${BRAND.backgroundColor}; padding: 30px 10px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: ${BRAND.cardBackground}; border-radius: 16px; border: 1px solid ${BRAND.borderColor}; overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 28px 24px 20px; border-bottom: 1px solid ${BRAND.borderColor};">
+                            <span style="font-size: 24px; font-weight: 800; letter-spacing: 4px; color: ${BRAND.textColor}; text-transform: uppercase;">${BRAND.name}</span>
+                            <br>
+                            <span style="font-size: 10px; letter-spacing: 3px; color: ${BRAND.mutedText}; text-transform: uppercase;">${BRAND.tagline}</span>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 32px 28px;">
+                            <h1 style="font-size: 22px; font-weight: 700; color: ${BRAND.textColor}; margin: 0 0 16px;">${escapeHtml(title)}</h1>
+                            <p style="font-size: 15px; line-height: 1.6; color: ${BRAND.mutedText}; margin: 0 0 24px;">${escapeHtml(message)}</p>
+                            ${link ? `
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 20px 0 10px;">
+                                <tr>
+                                    <td align="center" style="border-radius: 10px; background-color: ${BRAND.primaryColor};">
+                                        <a href="${escapeHtml(link.startsWith("http") ? link : `${BRAND.website}${link}`)}" target="_blank" style="display: inline-block; padding: 12px 28px; font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #000000; text-decoration: none; text-transform: uppercase; border-radius: 10px;">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>` : ""}
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" style="padding: 20px 24px; border-top: 1px solid ${BRAND.borderColor}; font-size: 12px; color: #777;">
+                            <p style="margin: 0;">© ${new Date().getFullYear()} ${BRAND.name}. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
 
 const isEmailEnabled = (preferences, preferenceKey) => {
     if (!preferences || preferences.allEmailsOptedOut) return false;
@@ -126,7 +182,14 @@ const sendNotification = async ({
                     text: `${title}\n\n${message}`,
                     template: "notification",
                     userId,
-                    metadata: { notificationId: notification?._id || null, type, link },
+                    metadata: {
+                        notificationId: notification?._id || null,
+                        type,
+                        title,
+                        message,
+                        link,
+                        ...metadata,
+                    },
                 });
                 if (!emailResult.success) throw new Error(emailResult.error || "Email provider rejected the message.");
                 if (notification) {
@@ -440,6 +503,7 @@ EXPORT
 */
 export {
     sendNotification,
+    notificationEmailHtml,
     notifyAdmins,
     notifyNewUserRegistration,
     notifyNewOrder,

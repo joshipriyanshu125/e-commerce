@@ -11,7 +11,9 @@
  */
 
 import EmailLog from "../models/emailLogModel.js";
-import { sendEmail } from "../services/emailService.js";
+import Notification from "../models/notificationModel.js";
+import { sendRawMail } from "../services/emailService.js";
+import { notificationEmailHtml } from "../services/notificationService.js";
 import * as EmailTemplates from "../services/emailTemplates.js";
 import logger from "../utils/logger.js";
 
@@ -40,12 +42,19 @@ REBUILD HTML FROM TEMPLATE
 ==================================================
 Re-generates the email HTML from the stored template name
 and metadata so we can resend without storing raw HTML.
-Falls back to a generic message if template not found.
 ==================================================
 */
 const rebuildHtml = (emailLog) => {
     try {
-        const { template, metadata = {}, recipient } = emailLog;
+        const { template, metadata = {} } = emailLog;
+
+        // If it's a notification template or has notification metadata
+        if (template === "notification" || metadata.message || metadata.title) {
+            const title = metadata.title || emailLog.subject;
+            const message = metadata.message || emailLog.subject;
+            const link = metadata.link || null;
+            return notificationEmailHtml({ title, message, link });
+        }
 
         // Map template name to the exported function
         const templateMap = {
@@ -87,18 +96,13 @@ const rebuildHtml = (emailLog) => {
             return templateFn(metadata.templateData);
         }
 
-        // Generic fallback HTML for retries
-        return `
-            <div style="font-family:Arial,sans-serif;padding:32px;text-align:center;">
-                <h2 style="color:#1a1a2e;">ATELIER</h2>
-                <p style="color:#555;">This is a retry of a previously failed notification.</p>
-                <p style="color:#555;">Subject: ${emailLog.subject}</p>
-                <p style="color:#999;font-size:12px;">If you believe this is an error, contact us at support@atelier.com</p>
-            </div>
-        `;
+        // Generic branded fallback HTML for retries
+        const title = metadata.title || emailLog.subject;
+        const message = metadata.message || emailLog.subject;
+        return notificationEmailHtml({ title, message, link: metadata.link || null });
     } catch (err) {
         logger.warn(`[RetryJob] Could not rebuild HTML for log ${emailLog._id}: ${err.message}`);
-        return `<p>Retry of: ${emailLog.subject}</p>`;
+        return notificationEmailHtml({ title: emailLog.subject, message: emailLog.subject, link: null });
     }
 };
 
@@ -143,30 +147,49 @@ const processFailedEmails = async () => {
                 const html = rebuildHtml(log);
                 const text = `${log.subject} - Please view this email in an HTML-capable client.`;
 
-                // Attempt resend
-                const result = await sendEmail({
+                // Inject tracking pixel if openTrackingId is present
+                const baseUrl = process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+                const trackingPixel = log.openTrackingId
+                    ? `<img src="${baseUrl}/api/email/track/open/${log.openTrackingId}" width="1" height="1" style="display:none;" alt=""/>`
+                    : "";
+                const finalHtml = html + trackingPixel;
+
+                // Send directly through transporter to avoid duplicate EmailLog records
+                const result = await sendRawMail({
                     to: log.recipient.email,
                     subject: log.subject,
-                    html,
+                    html: finalHtml,
                     text,
-                    template: log.template,
-                    userId: log.recipient.userId,
-                    campaignId: log.campaign,
-                    metadata: { ...log.metadata, isRetry: true, retryCount: log.retryCount + 1 },
                 });
 
-                if (result.success) {
+                if (result && result.messageId) {
                     logger.info(
                         `[RetryJob] ✅ Retry succeeded for ${log.recipient.email} (attempt ${log.retryCount + 1})`
                     );
-                    // sendEmail already updates the log via EmailLog.create/save internally.
-                    // Update the original log's retry count.
+
+                    // Update the original log
                     await EmailLog.updateOne(
                         { _id: log._id },
-                        { $inc: { retryCount: 1 }, $set: { status: "sent", sentAt: new Date() } }
+                        {
+                            $inc: { retryCount: 1 },
+                            $set: {
+                                status: "sent",
+                                sentAt: new Date(),
+                                messageId: result.messageId,
+                                providerMessageId: result.providerMessageId || result.messageId,
+                                errorMessage: "",
+                            },
+                        }
                     );
+
+                    // If linked to a Notification, mark it as sentViaEmail
+                    if (log.metadata?.notificationId) {
+                        await Notification.findByIdAndUpdate(log.metadata.notificationId, {
+                            sentViaEmail: true,
+                        });
+                    }
                 } else {
-                    throw new Error(result.error || "Unknown send error");
+                    throw new Error("No messageId returned from email provider");
                 }
             } catch (sendError) {
                 const newRetryCount = (log.retryCount || 0) + 1;
