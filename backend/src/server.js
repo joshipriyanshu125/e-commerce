@@ -164,18 +164,18 @@ app.use(
             const allowedOrigins = [
                 "http://localhost:5173",
                 "http://localhost:3000",
-                // Add your deployed frontend URL below — update if different
+                "https://e-commerce-eosin-one-13.vercel.app",
                 process.env.FRONTEND_URL,
             ].filter(Boolean);
-            if (allowedOrigins.some(o => origin.startsWith(o))) {
+            if (
+                allowedOrigins.some(o => origin.startsWith(o)) ||
+                origin.endsWith(".vercel.app") ||
+                process.env.NODE_ENV === "production" ||
+                origin.includes("localhost")
+            ) {
                 callback(null, true);
             } else {
-                // In production allow all HTTPS origins (for flexibility)
-                if (process.env.NODE_ENV === "production") {
-                    callback(null, true);
-                } else {
-                    callback(new Error(`CORS: ${origin} not allowed`));
-                }
+                callback(null, true);
             }
         },
         credentials: true,
