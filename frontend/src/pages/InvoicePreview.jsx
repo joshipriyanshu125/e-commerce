@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Printer, Download, Receipt, Building, CreditCard, ShoppingBag, ShieldAlert } from 'lucide-react'
 import api from '../services/axiosInstance'
+import { useCurrency } from '../context/CurrencyContext'
 
 const InvoicePreview = () => {
   const { orderId } = useParams()
@@ -11,6 +12,7 @@ const InvoicePreview = () => {
   const [error, setError] = useState(null)
   const [downloading, setDownloading] = useState(false)
   const [storeSettings, setStoreSettings] = useState(null)
+  const { formatPrice } = useCurrency()
 
   // Fetch store settings & invoice details
   useEffect(() => {
@@ -299,12 +301,12 @@ const InvoicePreview = () => {
 
                       {/* Unit Price */}
                       <td className="py-4 text-right font-mono text-gray-600">
-                        ${unitPrice.toFixed(2)}
+                        {formatPrice(unitPrice)}
                       </td>
 
                       {/* Subtotal */}
                       <td className="py-4 text-right font-mono text-gray-900 font-semibold">
-                        ${itemTotal.toFixed(2)}
+                        {formatPrice(itemTotal)}
                       </td>
                     </tr>
                   )
@@ -326,20 +328,20 @@ const InvoicePreview = () => {
           <div className="space-y-2.5 max-w-xs md:ml-auto w-full">
             <div className="flex justify-between text-xs text-gray-500">
               <span>Subtotal</span>
-              <span className="font-mono">${subtotal.toFixed(2)}</span>
+              <span className="font-mono">{formatPrice(subtotal)}</span>
             </div>
 
             {discountAmount > 0 && (
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Discount Code</span>
-                <span className="font-mono text-green-600">-${discountAmount.toFixed(2)}</span>
+                <span className="font-mono text-green-600">-{formatPrice(discountAmount)}</span>
               </div>
             )}
 
             {shippingCharge > 0 ? (
               <div className="flex justify-between text-xs text-gray-500">
                 <span>Shipping</span>
-                <span className="font-mono">${shippingCharge.toFixed(2)}</span>
+                <span className="font-mono">{formatPrice(shippingCharge)}</span>
               </div>
             ) : (
               <div className="flex justify-between text-xs text-gray-500">
@@ -351,13 +353,13 @@ const InvoicePreview = () => {
             {taxPrice > 0 && (
               <div className="flex justify-between text-xs text-gray-500">
                 <span>{taxSettings.taxType} ({taxSettings.taxRate}%)</span>
-                <span className="font-mono">${taxPrice.toFixed(2)}</span>
+                <span className="font-mono">{formatPrice(taxPrice)}</span>
               </div>
             )}
 
             <div className="border-t border-gray-100 pt-3 flex justify-between text-sm font-semibold text-gray-900">
               <span className="font-serif">Grand Total</span>
-              <span className="font-mono text-base">${grandTotal.toFixed(2)}</span>
+              <span className="font-mono text-base">{formatPrice(grandTotal)}</span>
             </div>
           </div>
         </div>

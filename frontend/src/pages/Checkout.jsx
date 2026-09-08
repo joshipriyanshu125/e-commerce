@@ -5,10 +5,12 @@ import { clearCart } from '../features/cart/cartSlice'
 import { CheckCircle, ArrowLeft, CreditCard, Shield, Lock, MapPin, Plus, CheckCircle2, Banknote } from 'lucide-react'
 import axios from '../services/axiosInstance'
 import { loadRazorpay } from '../utils/razorpay'
+import { useCurrency } from '../context/CurrencyContext'
 
 const Checkout = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { formatPrice } = useCurrency()
 
   const { items, discountAmount, couponCode } = useSelector(state => state.cart)
   const { user } = useSelector(state => state.auth)
@@ -655,7 +657,7 @@ const Checkout = () => {
                     </p>
                   </div>
                   <span className="font-mono text-xs text-atelier-dark font-medium">
-                    ₹{item.product.price * item.quantity}
+                    {formatPrice(item.product.price * item.quantity)}
                   </span>
                 </div>
               ))}
@@ -665,21 +667,21 @@ const Checkout = () => {
             <div className="space-y-2 text-xs font-mono tracking-wider text-atelier-gray border-t border-atelier-lightgray/40 pt-4 uppercase">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="text-atelier-dark font-medium">₹{subtotal}</span>
+                <span className="text-atelier-dark font-medium">{formatPrice(subtotal)}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-atelier-accent">
                   <span>Discount</span>
-                <span>-₹{discountAmount}</span>
+                  <span>-{formatPrice(discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span className="text-atelier-dark font-medium">{shipping === 0 ? 'FREE' : `₹${shipping}`}</span>
+                <span className="text-atelier-dark font-medium">{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
               </div>
               <div className="flex justify-between border-t border-atelier-lightgray/40 pt-4 text-sm tracking-widest text-atelier-dark">
                 <span className="font-serif capitalize font-medium text-base">Grand Total</span>
-                <span className="font-medium">₹{finalTotal}</span>
+                <span className="font-medium">{formatPrice(finalTotal)}</span>
               </div>
             </div>
 
@@ -689,7 +691,7 @@ const Checkout = () => {
                 type="submit"
                 className="w-full btn-atelier-dark py-4 text-center"
               >
-                {paymentMethod === 'COD' ? `Place Order with Cash on Delivery` : `Pay securely ($${finalTotal})`}
+                {paymentMethod === 'COD' ? `Place Order with Cash on Delivery` : `Pay securely (${formatPrice(finalTotal)})`}
               </button>
               
               <div className="flex items-center justify-center space-x-2 text-xs font-mono tracking-widest text-atelier-gray uppercase">

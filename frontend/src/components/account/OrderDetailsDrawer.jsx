@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import api from "../../services/axiosInstance";
 import { X, Download, Trash2, Undo2 } from "lucide-react";
+import { useCurrency } from "../../context/CurrencyContext";
 
 const OrderDetailsDrawer = ({ order, open, onClose, onOrderUpdated }) => {
   const [uploading, setUploading] = useState(false);
+  const { formatPrice } = useCurrency();
 
   if (!open || !order) return null;
 
@@ -122,7 +124,7 @@ const OrderDetailsDrawer = ({ order, open, onClose, onOrderUpdated }) => {
                       </span>
                     </div>
                   </div>
-                  <span className="text-sm font-mono text-atelier-dark">${((item.price || 0) * item.quantity).toFixed(2)}</span>
+                  <span className="text-sm font-mono text-atelier-dark">{formatPrice((item.price || 0) * item.quantity)}</span>
                 </div>
               ))}
             </div>
@@ -131,11 +133,11 @@ const OrderDetailsDrawer = ({ order, open, onClose, onOrderUpdated }) => {
           <div className="space-y-4">
             <h3 className="text-sm font-mono tracking-widest text-atelier-dark uppercase border-b border-atelier-lightgray/50 pb-2">Receipt</h3>
             <div className="space-y-2 text-sm font-mono text-atelier-dark">
-              <div className="flex justify-between text-atelier-gray"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between text-atelier-gray"><span>Shipping</span><span>${order.shippingPrice?.toFixed(2) || '0.00'}</span></div>
-              <div className="flex justify-between text-atelier-gray"><span>Tax</span><span>${order.taxPrice?.toFixed(2) || '0.00'}</span></div>
+              <div className="flex justify-between text-atelier-gray"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
+              <div className="flex justify-between text-atelier-gray"><span>Shipping</span><span>{formatPrice(order.shippingPrice || 0)}</span></div>
+              <div className="flex justify-between text-atelier-gray"><span>Tax</span><span>{formatPrice(order.taxPrice || 0)}</span></div>
               <div className="flex justify-between font-bold pt-2 border-t border-atelier-lightgray/50">
-                <span>Total</span><span>${(order.totalPrice || order.total || subtotal)?.toFixed(2)}</span>
+                <span>Total</span><span>{formatPrice(order.totalPrice || order.total || subtotal || 0)}</span>
               </div>
             </div>
           </div>

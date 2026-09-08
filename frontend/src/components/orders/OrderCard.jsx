@@ -2,6 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, ShoppingBag } from 'lucide-react'
 import StatusBadge from './StatusBadge'
+import { useCurrency } from '../../context/CurrencyContext'
 
 const formatDate = (d) => {
   if (!d) return '—'
@@ -12,6 +13,7 @@ const formatDate = (d) => {
 
 const OrderCard = ({ order }) => {
   const navigate = useNavigate()
+  const { formatPrice } = useCurrency()
   const items = order.orderItems || order.items || []
   const firstImage = items[0]?.image || null
 
@@ -82,7 +84,7 @@ const OrderCard = ({ order }) => {
           </div>
           <div>
             <p className="text-[9px] font-mono text-atelier-gray/60 uppercase tracking-widest">Total Value</p>
-            <p className="text-sm font-mono font-semibold text-atelier-dark mt-0.5">${(order.totalPrice || 0).toFixed(2)}</p>
+            <p className="text-sm font-mono font-semibold text-atelier-dark mt-0.5">{formatPrice(order.totalPrice || 0)}</p>
           </div>
         </div>
         

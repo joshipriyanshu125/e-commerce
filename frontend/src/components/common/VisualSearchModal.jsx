@@ -2,10 +2,12 @@ import React, { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Upload, X, Sparkles, RefreshCw, Eye, Tag, ArrowRight, Zap, CheckCircle2 } from 'lucide-react'
 import api from '../../services/axiosInstance'
+import { useCurrency } from '../../context/CurrencyContext'
 
 export default function VisualSearchModal({ onClose }) {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
+  const { formatPrice } = useCurrency()
 
   const [imagePreview, setImagePreview] = useState(null)
   const [selectedFile, setSelectedFile] = useState(null)
@@ -285,11 +287,11 @@ export default function VisualSearchModal({ onClose }) {
                           </p>
                           <div className="flex items-center gap-1.5 mt-1">
                             <span className="text-xs font-bold font-mono text-white">
-                              ${product.discountPrice || product.price}
+                              {formatPrice(product.discountPrice || product.price)}
                             </span>
                             {product.discountPrice && (
                               <span className="text-[10px] line-through text-white/30 font-mono">
-                                ${product.price}
+                                {formatPrice(product.price)}
                               </span>
                             )}
                           </div>

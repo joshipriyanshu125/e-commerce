@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Flame, TrendingUp, AlertTriangle, DollarSign, RotateCcw, Sparkles, RefreshCw, Bot, ChevronRight } from 'lucide-react'
 import api from '../../services/axiosInstance'
+import { useCurrency } from '../../context/CurrencyContext'
 
 const renderFormattedText = (text) => {
   if (!text) return null
@@ -21,6 +22,7 @@ const AISalesInsightsCard = ({ analytics }) => {
   const [briefing, setBriefing] = useState(null)
   const [loadingBrief, setLoadingBrief] = useState(false)
   const [generatedBy, setGeneratedBy] = useState('system')
+  const { currencySymbol } = useCurrency()
 
   const rawInsights = analytics?.businessInsights || {}
 
@@ -28,8 +30,8 @@ const AISalesInsightsCard = ({ analytics }) => {
     topProduct: {
       name: rawInsights.topProduct?.name || 'Unknown',
       sub: rawInsights.topProduct?.unitsSold
-        ? `${rawInsights.topProduct.unitsSold} units sold ($${(rawInsights.topProduct.revenue || 0).toLocaleString()})`
-        : '0 units sold ($0.00)'
+        ? `${rawInsights.topProduct.unitsSold} units sold (${currencySymbol}${(rawInsights.topProduct.revenue || 0).toLocaleString()})`
+        : `0 units sold (${currencySymbol}0.00)`
     },
     fastestGrowingCategory: {
       name: rawInsights.fastestGrowingCategory?.name || 'Unknown',
@@ -44,8 +46,8 @@ const AISalesInsightsCard = ({ analytics }) => {
     highestRevenueProduct: {
       name: rawInsights.highestRevenueProduct?.name || 'Unknown',
       sub: rawInsights.highestRevenueProduct?.revenue
-        ? `$${(rawInsights.highestRevenueProduct.revenue || 0).toLocaleString()} revenue`
-        : '$0.00 revenue'
+        ? `${currencySymbol}${(rawInsights.highestRevenueProduct.revenue || 0).toLocaleString()} revenue`
+        : `${currencySymbol}0.00 revenue`
     },
     highReturnProduct: {
       name: rawInsights.highReturnProduct?.name || 'No Return Requests',

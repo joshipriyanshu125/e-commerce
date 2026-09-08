@@ -4,10 +4,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Plus, Minus, Trash2, Tag, ArrowRight } from 'lucide-react'
 import { removeFromCart, updateQuantity, applyCoupon, setCartOpen } from '../features/cart/cartSlice'
 import api from '../services/axiosInstance'
+import { useCurrency } from '../context/CurrencyContext'
 
 const Cart = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { formatPrice } = useCurrency()
 
   const { items, discountAmount, couponCode } = useSelector(state => state.cart)
   const [promoInput, setPromoInput] = useState('')
@@ -119,7 +121,7 @@ const Cart = () => {
                     </div>
                   </div>
                   <span className="font-mono text-sm text-atelier-dark font-medium">
-                    ${item.product.price * item.quantity}
+                    {formatPrice(item.product.price * item.quantity)}
                   </span>
                 </div>
 
@@ -161,8 +163,9 @@ const Cart = () => {
               Order Summary
             </h2>
 
-            <form onSubmit={handlePromoSubmit} className="flex space-x-2">
-              <div className="relative flex-grow">
+            {/* Promo Code Input */}
+            <form onSubmit={handlePromoSubmit} className="flex gap-2">
+              <div className="relative flex-1">
                 <input
                   type="text"
                   placeholder="PROMO CODE"
@@ -182,21 +185,21 @@ const Cart = () => {
             <div className="space-y-2 text-xs font-mono tracking-wider text-atelier-gray uppercase">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="text-atelier-dark font-medium">${subtotal}</span>
+                <span className="text-atelier-dark font-medium">{formatPrice(subtotal)}</span>
               </div>
               {discountAmount > 0 && (
                 <div className="flex justify-between text-atelier-accent">
                   <span>Discount {couponCode ? `(${couponCode})` : ''}</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                  <span>-{formatPrice(discountAmount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span className="text-atelier-dark font-medium">{shipping === 0 ? 'FREE' : `$${shipping}`}</span>
+                <span className="text-atelier-dark font-medium">{shipping === 0 ? 'FREE' : formatPrice(shipping)}</span>
               </div>
               <div className="flex justify-between border-t border-atelier-lightgray/60 pt-4 text-sm text-atelier-dark">
                 <span className="font-serif capitalize font-medium text-base">Total</span>
-                <span className="font-medium">${finalTotal}</span>
+                <span className="font-medium">{formatPrice(finalTotal)}</span>
               </div>
             </div>
 

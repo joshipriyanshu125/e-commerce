@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
 import api from '../../services/axiosInstance'
 import { Plus, Pencil, Trash2, Search, ImageOff, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCurrency } from '../../context/CurrencyContext'
 
 const STATUS_COLORS = {
   Active: 'bg-emerald-500/15 text-emerald-400',
@@ -13,6 +14,7 @@ const STATUS_COLORS = {
 const AdminProductsManager = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { formatPrice } = useCurrency()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -140,10 +142,10 @@ const AdminProductsManager = () => {
                             <div>
                               {product.discountPrice
                                 ? <>
-                                    <span className="text-white font-medium">${product.discountPrice}</span>
-                                    <span className="text-white/30 line-through text-xs ml-2">${product.price}</span>
+                                    <span className="text-white font-medium">{formatPrice(product.discountPrice)}</span>
+                                    <span className="text-white/30 line-through text-xs ml-2">{formatPrice(product.price)}</span>
                                   </>
-                                : <span className="text-white font-medium">${product.price}</span>
+                                : <span className="text-white font-medium">{formatPrice(product.price)}</span>
                               }
                             </div>
                           </td>

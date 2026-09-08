@@ -4,10 +4,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { X, Plus, Minus, Trash2, Tag } from 'lucide-react'
 import { toggleCart, setCartOpen, removeFromCart, updateQuantity, applyCoupon } from '../../features/cart/cartSlice'
 import api from '../../services/axiosInstance'
+import { useCurrency } from '../../context/CurrencyContext'
 
 const CartDrawer = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { formatPrice } = useCurrency()
   
   const { items, isCartOpen, couponCode, discountAmount } = useSelector(state => state.cart)
   const [promoInput, setPromoInput] = useState('')
@@ -139,7 +141,7 @@ const CartDrawer = () => {
                             {item.product.category}
                           </span>
                           <span className="text-xs text-atelier-dark font-mono font-medium">
-                            ${item.product.price * item.quantity}
+                            {formatPrice(item.product.price * item.quantity)}
                           </span>
                         </div>
                         <h3 className="font-serif text-sm text-atelier-dark font-medium leading-tight line-clamp-1">
@@ -229,24 +231,24 @@ const CartDrawer = () => {
               <div className="space-y-2 text-xs font-mono tracking-wider text-atelier-gray uppercase">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="text-atelier-dark font-medium">${subtotal}</span>
+                  <span className="text-atelier-dark font-medium">{formatPrice(subtotal)}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-atelier-accent">
                     <span>Discount</span>
-                    <span>-${discountAmount}</span>
+                    <span>-{formatPrice(discountAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span className="text-atelier-dark font-medium">
-                    {subtotal >= 150 ? 'FREE' : '$15'}
+                    {subtotal >= 150 ? 'FREE' : formatPrice(15)}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-atelier-lightgray/60 pt-4 text-sm tracking-widest text-atelier-dark">
                   <span className="font-serif capitalize font-medium text-base">Total</span>
                   <span className="font-medium">
-                    ${finalTotal + (subtotal >= 150 ? 0 : 15)}
+                    {formatPrice(finalTotal + (subtotal >= 150 ? 0 : 15))}
                   </span>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Clock, Search, TrendingUp, X, Camera, Sparkles } from 'lucide-react'
 import api from '../../services/axiosInstance'
 import VisualSearchModal from './VisualSearchModal'
+import { useCurrency } from '../../context/CurrencyContext'
 
 const RECENT_KEY = 'recentSearches'
 const trending = ['Linen shirts', 'Summer dresses', 'Leather bags', 'Sneakers']
@@ -14,6 +15,7 @@ export default function SearchModal({ onClose }) {
   const [suggestions, setSuggestions] = useState([])
   const [recent, setRecent] = useState(() => JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'))
   const [showVisualSearch, setShowVisualSearch] = useState(false)
+  const { formatPrice } = useCurrency()
 
   useEffect(() => { inputRef.current?.focus(); document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function SearchModal({ onClose }) {
         </button>
       </div>
 
-      {suggestions.length > 0 && <section className="mt-7"><p className="font-mono text-xs uppercase tracking-widest text-atelier-gray mb-3">Live suggestions</p>{suggestions.map(p => <button key={p._id} onClick={() => { onClose(); navigate(`/product/${p._id}`) }} className="w-full flex items-center gap-3 border-b border-atelier-lightgray/50 py-3 text-left hover:bg-atelier-cream"><img className="h-12 w-12 object-cover bg-atelier-cream" src={p.images?.[0]?.url || p.image} alt=""/><span className="flex-1"><b className="font-serif">{p.name}</b><small className="block text-atelier-gray">{p.brand || p.category}</small></span><span>${p.discountPrice || p.price}</span></button>)}</section>}
+      {suggestions.length > 0 && <section className="mt-7"><p className="font-mono text-xs uppercase tracking-widest text-atelier-gray mb-3">Live suggestions</p>{suggestions.map(p => <button key={p._id} onClick={() => { onClose(); navigate(`/product/${p._id}`) }} className="w-full flex items-center gap-3 border-b border-atelier-lightgray/50 py-3 text-left hover:bg-atelier-cream"><img className="h-12 w-12 object-cover bg-atelier-cream" src={p.images?.[0]?.url || p.image} alt=""/><span className="flex-1"><b className="font-serif">{p.name}</b><small className="block text-atelier-gray">{p.brand || p.category}</small></span><span>{formatPrice(p.discountPrice || p.price)}</span></button>)}</section>}
       {!query && <div className="grid sm:grid-cols-2 gap-8 mt-8"><section><p className="flex gap-2 font-mono text-xs uppercase tracking-widest text-atelier-gray mb-3"><Clock size={14}/> Recent</p>{recent.length ? recent.map(t => <button key={t} onClick={() => search(t)} className="block py-1 hover:text-atelier-accent">{t}</button>) : <p className="text-sm text-atelier-gray">Your searches will appear here.</p>}</section><section><p className="flex gap-2 font-mono text-xs uppercase tracking-widest text-atelier-gray mb-3"><TrendingUp size={14}/> Trending</p>{trending.map(t => <button key={t} onClick={() => search(t)} className="block py-1 hover:text-atelier-accent">{t}</button>)}</section></div>}
     </div>
   </div>

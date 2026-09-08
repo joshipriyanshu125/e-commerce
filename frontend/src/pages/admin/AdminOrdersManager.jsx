@@ -11,6 +11,7 @@ import api from '../../services/axiosInstance'
 import { io } from 'socket.io-client'
 import StatusBadge from '../../components/orders/StatusBadge'
 import OrderTimeline from '../../components/orders/OrderTimeline'
+import { useCurrency } from '../../context/CurrencyContext'
 
 // Order Status list for filters/dropdown
 const ALL_STATUSES = [
@@ -26,6 +27,7 @@ const ALL_STATUSES = [
 
 const AdminOrdersManager = () => {
   const navigate = useNavigate()
+  const { formatPrice } = useCurrency()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -433,7 +435,7 @@ const AdminOrdersManager = () => {
                               {new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </td>
                             <td className="p-4 text-right font-semibold font-mono text-white/90">
-                              ${o.totalPrice.toFixed(2)}
+                              {formatPrice(o.totalPrice || 0)}
                             </td>
                             <td className="p-4 text-center">
                               <StatusBadge status={o.orderStatus} size="sm" dark />
@@ -499,7 +501,7 @@ const AdminOrdersManager = () => {
                     </div>
                     <div className="bg-white/3 p-3 rounded-xl border border-white/5">
                       <span className="text-[10px] text-white/30 font-mono uppercase block">Total Price</span>
-                      <span className="text-sm font-bold font-mono text-white/95 mt-1 block">${selectedOrder.totalPrice.toFixed(2)}</span>
+                      <span className="text-sm font-bold font-mono text-white/95 mt-1 block">{formatPrice(selectedOrder.totalPrice)}</span>
                     </div>
                   </div>
 
@@ -664,7 +666,7 @@ const AdminOrdersManager = () => {
                       <div className="space-y-2">
                         <div className="text-xs space-y-1">
                           <p className="text-white/60">Invoice No: <span className="font-mono text-white font-semibold">{selectedInvoice.invoiceNumber}</span></p>
-                          <p className="text-white/60">Amount: <span className="font-mono text-white">${selectedInvoice.totalAmount?.toFixed(2)}</span></p>
+                          <p className="text-white/60">Amount: <span className="font-mono text-white">{formatPrice(selectedInvoice.totalAmount || 0)}</span></p>
                         </div>
                         <div className="flex gap-2 pt-1.5">
                           <button

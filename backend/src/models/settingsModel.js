@@ -8,6 +8,9 @@ const settingsSchema = new mongoose.Schema(
             address: { type: String, default: "123 Fashion Ave, Suite 500, New York, NY 10001" },
             phone: { type: String, default: "+1 (555) 234-5678" },
             email: { type: String, default: "support@atelier.com" },
+            currency: { type: String, default: "INR" },
+            currencySymbol: { type: String, default: "₹" },
+            currencyPosition: { type: String, enum: ["prefix", "suffix"], default: "prefix" },
         },
         payment: {
             stripeEnabled: { type: Boolean, default: true },

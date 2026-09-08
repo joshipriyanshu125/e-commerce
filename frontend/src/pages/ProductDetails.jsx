@@ -8,10 +8,12 @@ import ReviewSection from '../components/product/ReviewSection'
 import SizeRecommender from '../components/product/SizeRecommender'
 import SimilarProducts from '../components/product/SimilarProducts'
 import { IMAGES } from '../utils/images'
+import { useCurrency } from '../context/CurrencyContext'
 
 const ProductDetails = () => {
   const { id } = useParams()
   const dispatch = useDispatch()
+  const { formatPrice } = useCurrency()
 
   const selectedProduct = useSelector(state => state.products.selectedProduct)
   const apiLoading = useSelector(state => state.products.apiLoading)
@@ -404,11 +406,11 @@ const ProductDetails = () => {
             {/* Price */}
             <div className="flex items-center space-x-3 pt-2">
               <span className="text-2xl text-atelier-dark font-mono font-medium">
-                ${selectedProduct.price}
+                {formatPrice(selectedProduct.price)}
               </span>
               {selectedProduct.originalPrice && (
                 <span className="text-lg text-atelier-gray line-through font-mono">
-                  ${selectedProduct.originalPrice}
+                  {formatPrice(selectedProduct.originalPrice)}
                 </span>
               )}
             </div>

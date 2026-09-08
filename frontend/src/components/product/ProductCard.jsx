@@ -5,6 +5,7 @@ import { Heart } from 'lucide-react'
 import { deleteWishlistItem, fetchWishlist, optimisticAdd, optimisticRemove, saveWishlistItem } from '../../features/wishlist/wishlistSlice'
 import { toast } from '../common/ToastHost'
 import { optimizeImage } from '../../utils/cloudinary'
+import { useCurrency } from '../../context/CurrencyContext'
 
 const colorToHex = (name) => {
   const map = {
@@ -21,6 +22,7 @@ const colorToHex = (name) => {
 const ProductCard = ({ product }) => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const { formatPrice } = useCurrency()
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated)
   const wishlisted = useSelector(state => state.wishlist.items.some(item => (item.product._id || item.product.id) === (product._id || product.id)))
 
@@ -42,41 +44,46 @@ const ProductCard = ({ product }) => {
     e.stopPropagation()
     setSelectedColor(color)
   }
-  const handleWishlist = async (e) => {
-    e.stopPropagation(); const id = product._id || product.id
+
+  const handleWishlistClick = (e) => {
+    e.stopPropagation()
     if (!isAuthenticated) { toast('Please sign in to save products.', 'error'); return navigate('/login?redirect=/wishlist') }
-    if (wishlisted) { dispatch(optimisticRemove(id)); const r = await dispatch(deleteWishlistItem(id)); if (r.error) { dispatch(fetchWishlist()); toast('Could not update wishlist.', 'error') } else toast('Removed from wishlist.') }
-    else { dispatch(optimisticAdd(product)); const r = await dispatch(saveWishlistItem({ productId: id })); if (r.error) { dispatch(fetchWishlist()); toast('Could not update wishlist.', 'error') } else toast('Added to wishlist.') }
+    const id = product._id || product.id
+    if (wishlisted) {
+      dispatch(optimisticRemove(id))
+      dispatch(deleteWishlistItem(id)).unwrap().catch(() => dispatch(fetchWishlist()))
+    } else {
+      dispatch(optimisticAdd(product))
+      dispatch(saveWishlistItem({ productId: id })).unwrap().catch(() => dispatch(fetchWishlist()))
+    }
   }
 
-  // Normalize image src: DB products have {url} objects, mock products have plain strings
-  const rawImage = product.images?.[0]
-  const imageSrc = optimizeImage(rawImage
-    ? (typeof rawImage === 'string' ? rawImage : rawImage.url)
-    : 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80', { width: 720, height: 720 })
+  const imageUrl = (product.images && product.images[0])
+    ? (typeof product.images[0] === 'string' ? product.images[0] : product.images[0]?.url)
+    : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80'
 
-  const fallbackSrc = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
+  const optimizedSrc = optimizeImage(imageUrl, { width: 600, height: 800, crop: 'fill' })
+  const fallbackSrc = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80'
 
   return (
-    <div 
-      className="group flex flex-col justify-between cursor-pointer text-left transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+    <div
       onClick={handleCardClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      className="group cursor-pointer flex flex-col space-y-3"
     >
-      {/* Product Image Wrapper */}
-      <div className="relative aspect-square w-full bg-atelier-cream overflow-hidden mb-4 border border-atelier-lightgray/30 transition-all duration-300 group-hover:shadow-xl">
-        <button onClick={handleWishlist} className={`absolute z-20 top-3 right-3 p-2 bg-atelier-beige/90 hover:bg-white ${wishlisted ? 'text-red-600' : 'text-atelier-dark'}`} aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}><Heart size={18} fill={wishlisted ? 'currentColor' : 'none'} strokeWidth={1.5}/></button>
-        {/* Badges (New, Sale) */}
-        {product.tag && (
-          <span className="absolute top-3 left-3 bg-atelier-beige border border-atelier-dark/40 font-mono text-sm tracking-widest uppercase py-1 px-2.5 z-10 select-none">
-            {product.tag}
-          </span>
-        )}
+      {/* Image Container with 3:4 Aspect Ratio */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-atelier-beige">
+        <button
+          onClick={handleWishlistClick}
+          aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm text-atelier-dark hover:bg-white transition-colors duration-200"
+        >
+          <Heart size={16} strokeWidth={1.5} className={wishlisted ? 'fill-red-700 text-red-700' : 'text-atelier-dark'} />
+        </button>
 
-        {/* Product image */}
-        <img 
-          src={imageSrc}
+        <img
+          src={optimizedSrc}
           alt={product.name}
           loading="lazy"
           decoding="async"
@@ -95,7 +102,7 @@ const ProductCard = ({ product }) => {
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs font-mono tracking-widest uppercase text-atelier-gray">
           <span>{product.category}</span>
-          <span className="text-atelier-dark font-medium">${product.price}</span>
+          <span className="text-atelier-dark font-medium">{formatPrice(product.price)}</span>
         </div>
 
         <div className="flex items-start justify-between gap-4">
@@ -104,7 +111,7 @@ const ProductCard = ({ product }) => {
           </h3>
           {product.originalPrice && (
             <span className="text-xs text-atelier-gray line-through font-mono">
-              ${product.originalPrice}
+              {formatPrice(product.originalPrice)}
             </span>
           )}
         </div>

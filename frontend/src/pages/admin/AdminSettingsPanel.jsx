@@ -2,20 +2,24 @@ import React, { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import {
   Store, CreditCard, Truck, Percent, Mail, Shield,
-  Save, Check, AlertCircle, RefreshCw, Key, Lock, Eye, EyeOff
+  Save, Check, AlertCircle, RefreshCw, Key, Lock, Eye, EyeOff,
+  Globe, Coins, ArrowRightLeft, Sparkles, CheckCircle2
 } from 'lucide-react'
 import api from '../../services/axiosInstance'
+import { useCurrency } from '../../context/CurrencyContext'
+import { CURRENCY_PRESETS } from '../../utils/currency'
 
 const TABS = [
-  { id: 'store',    label: 'Store Info',  icon: Store },
-  { id: 'payment',  label: 'Payment',     icon: CreditCard },
-  { id: 'shipping', label: 'Shipping',    icon: Truck },
-  { id: 'tax',      label: 'Tax Settings',icon: Percent },
-  { id: 'email',    label: 'Email SMTP',  icon: Mail },
-  { id: 'security', label: 'Security',    icon: Shield },
+  { id: 'store',    label: 'Store & Currency', icon: Store },
+  { id: 'payment',  label: 'Payment',          icon: CreditCard },
+  { id: 'shipping', label: 'Shipping',         icon: Truck },
+  { id: 'tax',      label: 'Tax Settings',     icon: Percent },
+  { id: 'email',    label: 'Email SMTP',       icon: Mail },
+  { id: 'security', label: 'Security',         icon: Shield },
 ]
 
 const AdminSettingsPanel = () => {
+  const { updateCurrency } = useCurrency()
   const [activeTab, setActiveTab] = useState('store')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -33,7 +37,10 @@ const AdminSettingsPanel = () => {
       logo: '',
       address: '123 Fashion Ave, Suite 500, New York, NY 10001',
       phone: '+1 (555) 234-5678',
-      email: 'support@atelier.com'
+      email: 'support@atelier.com',
+      currency: 'INR',
+      currencySymbol: '₹',
+      currencyPosition: 'prefix'
     },
     payment: {
       stripeEnabled: true,
@@ -85,9 +92,17 @@ const AdminSettingsPanel = () => {
       setLoading(true)
       const res = await api.get('settings')
       if (res.data?.success && res.data?.settings) {
+        const s = res.data.settings
         setSettings(prev => ({
           ...prev,
-          ...res.data.settings
+          ...s,
+          storeInfo: {
+            ...prev.storeInfo,
+            ...(s.storeInfo || {}),
+            currency: s.storeInfo?.currency || 'INR',
+            currencySymbol: s.storeInfo?.currencySymbol || '₹',
+            currencyPosition: s.storeInfo?.currencyPosition || 'prefix'
+          }
         }))
       }
     } catch (err) {
@@ -113,6 +128,18 @@ const AdminSettingsPanel = () => {
     }))
   }
 
+  // Quick Currency Switcher handler
+  const handleSelectCurrencyPreset = (preset) => {
+    setSettings(prev => ({
+      ...prev,
+      storeInfo: {
+        ...prev.storeInfo,
+        currency: preset.code,
+        currencySymbol: preset.symbol,
+      }
+    }))
+  }
+
   // Save Settings to Backend
   const handleSaveSettings = async (e) => {
     e.preventDefault()
@@ -124,6 +151,13 @@ const AdminSettingsPanel = () => {
       const res = await api.put('settings', settings)
       if (res.data?.success) {
         setMessage('Settings saved successfully!')
+        if (settings.storeInfo?.currency && settings.storeInfo?.currencySymbol) {
+          updateCurrency(
+            settings.storeInfo.currency,
+            settings.storeInfo.currencySymbol,
+            settings.storeInfo.currencyPosition || 'prefix'
+          )
+        }
         setTimeout(() => setMessage(''), 4000)
       }
     } catch (err) {
@@ -224,63 +258,214 @@ const AdminSettingsPanel = () => {
         ) : (
           <form onSubmit={handleSaveSettings} className="space-y-6">
 
-            {/* TAB 1: STORE INFO */}
+            {/* TAB 1: STORE INFO & CURRENCY */}
             {activeTab === 'store' && (
-              <div className="bg-[#13131a] border border-white/5 rounded-2xl p-6 space-y-5 text-xs font-mono text-white/70">
-                <h3 className="text-sm font-semibold text-white font-sans flex items-center gap-2">
-                  <Store size={16} className="text-amber-400" /> Store Profile & Contact Details
-                </h3>
+              <div className="space-y-6 text-xs font-mono text-white/70">
+                {/* Store Profile Card */}
+                <div className="bg-[#13131a] border border-white/5 rounded-2xl p-6 space-y-5">
+                  <h3 className="text-sm font-semibold text-white font-sans flex items-center gap-2">
+                    <Store size={16} className="text-amber-400" /> Store Profile & Contact Details
+                  </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="block uppercase tracking-wider text-white/40">Store Name</label>
-                    <input
-                      type="text"
-                      value={settings.storeInfo.name}
-                      onChange={e => updateField('storeInfo', 'name', e.target.value)}
-                      className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-1.5">
+                      <label className="block uppercase tracking-wider text-white/40">Store Name</label>
+                      <input
+                        type="text"
+                        value={settings.storeInfo.name}
+                        onChange={e => updateField('storeInfo', 'name', e.target.value)}
+                        className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block uppercase tracking-wider text-white/40">Store Logo URL</label>
+                      <input
+                        type="text"
+                        value={settings.storeInfo.logo}
+                        onChange={e => updateField('storeInfo', 'logo', e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                        className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white placeholder-white/20"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block uppercase tracking-wider text-white/40">Support Email</label>
+                      <input
+                        type="email"
+                        value={settings.storeInfo.email}
+                        onChange={e => updateField('storeInfo', 'email', e.target.value)}
+                        className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block uppercase tracking-wider text-white/40">Support Phone</label>
+                      <input
+                        type="text"
+                        value={settings.storeInfo.phone}
+                        onChange={e => updateField('storeInfo', 'phone', e.target.value)}
+                        className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-1.5">
+                      <label className="block uppercase tracking-wider text-white/40">Physical Address</label>
+                      <textarea
+                        rows={2}
+                        value={settings.storeInfo.address}
+                        onChange={e => updateField('storeInfo', 'address', e.target.value)}
+                        className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white resize-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Currency & Localization Card */}
+                <div className="bg-[#13131a] border border-white/5 rounded-2xl p-6 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white font-sans flex items-center gap-2">
+                        <Coins size={16} className="text-amber-400" /> Currency & Regional Settings
+                      </h3>
+                      <p className="text-white/40 text-[11px] mt-0.5">
+                        Switch your store's default pricing symbol between Indian Rupee (₹), US Dollar ($), and other global currencies.
+                      </p>
+                    </div>
+
+                    {/* Active Currency Badge */}
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                      <Sparkles size={13} />
+                      <span className="font-bold text-xs uppercase tracking-wider">
+                        Active: {settings.storeInfo.currency} ({settings.storeInfo.currencySymbol})
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block uppercase tracking-wider text-white/40">Store Logo URL</label>
-                    <input
-                      type="text"
-                      value={settings.storeInfo.logo}
-                      onChange={e => updateField('storeInfo', 'logo', e.target.value)}
-                      placeholder="https://example.com/logo.png"
-                      className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white placeholder-white/20"
-                    />
+                  {/* 1-Click Quick Currency Switcher Cards */}
+                  <div className="space-y-2">
+                    <label className="block uppercase tracking-wider text-white/40 text-[11px]">
+                      Quick Currency Switcher (1-Click)
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {CURRENCY_PRESETS.slice(0, 4).map((preset) => {
+                        const isSelected = settings.storeInfo.currency === preset.code
+                        return (
+                          <button
+                            key={preset.code}
+                            type="button"
+                            onClick={() => handleSelectCurrencyPreset(preset)}
+                            className={`p-3.5 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between space-y-2 relative group ${
+                              isSelected
+                                ? 'bg-amber-500/15 border-amber-400 text-white shadow-lg shadow-amber-500/10 ring-1 ring-amber-400/40'
+                                : 'bg-white/[0.02] border-white/10 text-white/70 hover:bg-white/[0.05] hover:border-white/20'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl">{preset.flag}</span>
+                              {isSelected && (
+                                <CheckCircle2 size={15} className="text-amber-400" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-white font-sans flex items-center gap-1.5">
+                                <span className="font-mono text-amber-300 font-extrabold">{preset.symbol}</span> {preset.code}
+                              </p>
+                              <p className="text-[10px] text-white/40 truncate">{preset.name.split('(')[0].trim()}</p>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block uppercase tracking-wider text-white/40">Support Email</label>
-                    <input
-                      type="email"
-                      value={settings.storeInfo.email}
-                      onChange={e => updateField('storeInfo', 'email', e.target.value)}
-                      className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white"
-                    />
+                  {/* Detailed Currency Configuration */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
+                    {/* Preset Dropdown */}
+                    <div className="space-y-1.5">
+                      <label className="block uppercase tracking-wider text-white/40">Currency Preset</label>
+                      <select
+                        value={settings.storeInfo.currency}
+                        onChange={(e) => {
+                          const found = CURRENCY_PRESETS.find(p => p.code === e.target.value)
+                          if (found) {
+                            handleSelectCurrencyPreset(found)
+                          } else {
+                            updateField('storeInfo', 'currency', e.target.value)
+                          }
+                        }}
+                        className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white cursor-pointer"
+                      >
+                        {CURRENCY_PRESETS.map((p) => (
+                          <option key={p.code} value={p.code} className="bg-[#1c1c24] text-white">
+                            {p.flag} {p.code} — {p.name} ({p.symbol})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Currency Symbol */}
+                    <div className="space-y-1.5">
+                      <label className="block uppercase tracking-wider text-white/40">Currency Symbol</label>
+                      <input
+                        type="text"
+                        value={settings.storeInfo.currencySymbol}
+                        onChange={e => updateField('storeInfo', 'currencySymbol', e.target.value)}
+                        placeholder="₹ or $"
+                        className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white font-mono text-sm"
+                      />
+                    </div>
+
+                    {/* Symbol Position */}
+                    <div className="space-y-1.5">
+                      <label className="block uppercase tracking-wider text-white/40">Symbol Position</label>
+                      <select
+                        value={settings.storeInfo.currencyPosition || 'prefix'}
+                        onChange={e => updateField('storeInfo', 'currencyPosition', e.target.value)}
+                        className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white cursor-pointer"
+                      >
+                        <option value="prefix" className="bg-[#1c1c24] text-white">
+                          Prefix (e.g. {settings.storeInfo.currencySymbol}1,299)
+                        </option>
+                        <option value="suffix" className="bg-[#1c1c24] text-white">
+                          Suffix (e.g. 1,299 {settings.storeInfo.currencySymbol})
+                        </option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="block uppercase tracking-wider text-white/40">Support Phone</label>
-                    <input
-                      type="text"
-                      value={settings.storeInfo.phone}
-                      onChange={e => updateField('storeInfo', 'phone', e.target.value)}
-                      className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white"
-                    />
-                  </div>
+                  {/* Live Price Preview Box */}
+                  <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4 space-y-3">
+                    <span className="text-[11px] font-semibold text-white/60 uppercase tracking-widest flex items-center gap-1.5">
+                      <Eye size={13} className="text-amber-400" /> Live Storefront Display Preview
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-[#181822] border border-white/5 p-3 rounded-lg">
+                        <p className="text-[10px] text-white/40 uppercase tracking-wider">Product Card Price</p>
+                        <p className="text-base font-bold text-white font-mono mt-1">
+                          {settings.storeInfo.currencyPosition === 'suffix' ? `2,499.00 ${settings.storeInfo.currencySymbol}` : `${settings.storeInfo.currencySymbol}2,499.00`}
+                        </p>
+                        <p className="text-[10px] text-white/30 line-through font-mono">
+                          {settings.storeInfo.currencyPosition === 'suffix' ? `3,999.00 ${settings.storeInfo.currencySymbol}` : `${settings.storeInfo.currencySymbol}3,999.00`}
+                        </p>
+                      </div>
 
-                  <div className="md:col-span-2 space-y-1.5">
-                    <label className="block uppercase tracking-wider text-white/40">Physical Address</label>
-                    <textarea
-                      rows={2}
-                      value={settings.storeInfo.address}
-                      onChange={e => updateField('storeInfo', 'address', e.target.value)}
-                      className="w-full bg-[#1c1c24] border border-white/10 py-2.5 px-3 rounded-xl focus:outline-none focus:border-amber-500 text-white resize-none"
-                    />
+                      <div className="bg-[#181822] border border-white/5 p-3 rounded-lg">
+                        <p className="text-[10px] text-white/40 uppercase tracking-wider">Checkout Total</p>
+                        <p className="text-base font-bold text-amber-400 font-mono mt-1">
+                          {settings.storeInfo.currencyPosition === 'suffix' ? `2,948.82 ${settings.storeInfo.currencySymbol}` : `${settings.storeInfo.currencySymbol}2,948.82`}
+                        </p>
+                        <p className="text-[10px] text-emerald-400/80 font-mono">Free Shipping applied</p>
+                      </div>
+
+                      <div className="bg-[#181822] border border-white/5 p-3 rounded-lg">
+                        <p className="text-[10px] text-white/40 uppercase tracking-wider">Invoice Subtotal</p>
+                        <p className="text-base font-bold text-white font-mono mt-1">
+                          {settings.storeInfo.currencyPosition === 'suffix' ? `2,499.00 ${settings.storeInfo.currencySymbol}` : `${settings.storeInfo.currencySymbol}2,499.00`}
+                        </p>
+                        <p className="text-[10px] text-white/40 font-mono">GST (18%): {settings.storeInfo.currencyPosition === 'suffix' ? `449.82 ${settings.storeInfo.currencySymbol}` : `${settings.storeInfo.currencySymbol}449.82`}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -417,7 +602,7 @@ const AdminSettingsPanel = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1.5">
-                    <label className="block uppercase text-white/40">Standard Flat Rate ($)</label>
+                    <label className="block uppercase text-white/40">Standard Flat Rate ({settings.storeInfo.currencySymbol || '₹'})</label>
                     <input
                       type="number"
                       value={settings.shipping.flatRate}
@@ -427,7 +612,7 @@ const AdminSettingsPanel = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block uppercase text-white/40">Minimum Amount for Free Shipping ($)</label>
+                    <label className="block uppercase text-white/40">Minimum Amount for Free Shipping ({settings.storeInfo.currencySymbol || '₹'})</label>
                     <input
                       type="number"
                       value={settings.shipping.minFreeShippingAmount}
@@ -437,7 +622,7 @@ const AdminSettingsPanel = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block uppercase text-white/40">Express Shipping Rate ($)</label>
+                    <label className="block uppercase text-white/40">Express Shipping Rate ({settings.storeInfo.currencySymbol || '₹'})</label>
                     <input
                       type="number"
                       value={settings.shipping.expressRate}

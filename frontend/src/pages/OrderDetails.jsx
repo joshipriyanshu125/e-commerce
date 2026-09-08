@@ -16,6 +16,7 @@ import OrderTimeline from '../components/orders/OrderTimeline'
 import CancelOrderModal from '../components/orders/CancelOrderModal'
 import ReturnRequestForm from '../components/orders/ReturnRequestForm'
 import api from '../services/axiosInstance'
+import { useCurrency } from '../context/CurrencyContext'
 
 const OrderDetails = () => {
   const { id } = useParams()
@@ -24,6 +25,7 @@ const OrderDetails = () => {
   
   const { user } = useSelector(s => s.auth)
   const { selectedOrder, orderDetailLoading, orderDetailError, cancelLoading } = useSelector(s => s.orders)
+  const { formatPrice } = useCurrency()
 
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showReturnForm, setShowReturnForm] = useState(false)
@@ -252,8 +254,8 @@ const OrderDetails = () => {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-mono font-semibold text-atelier-dark">${((item.price || 0) * item.quantity).toFixed(2)}</p>
-                      <p className="text-[10px] text-atelier-gray/60 font-mono mt-0.5">${(item.price || 0).toFixed(2)} each</p>
+                      <p className="text-sm font-mono font-semibold text-atelier-dark">{formatPrice((item.price || 0) * item.quantity)}</p>
+                      <p className="text-[10px] text-atelier-gray/60 font-mono mt-0.5">{formatPrice(item.price || 0)} each</p>
                     </div>
                   </div>
                 ))}
@@ -403,16 +405,16 @@ const OrderDetails = () => {
               </h3>
               <div className="space-y-2.5 text-xs font-mono text-atelier-gray">
                 <div className="flex justify-between">
-                  <span>Subtotal</span><span>${(selectedOrder.itemsPrice || 0).toFixed(2)}</span>
+                  <span>Subtotal</span><span>{formatPrice(selectedOrder.itemsPrice || 0)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shipping</span><span>${(selectedOrder.shippingPrice || 0).toFixed(2)}</span>
+                  <span>Shipping</span><span>{formatPrice(selectedOrder.shippingPrice || 0)}</span>
                 </div>
                 <div className="flex justify-between border-b border-atelier-lightgray/50 pb-2.5">
-                  <span>Tax</span><span>${(selectedOrder.taxPrice || 0).toFixed(2)}</span>
+                  <span>Tax</span><span>{formatPrice(selectedOrder.taxPrice || 0)}</span>
                 </div>
                 <div className="flex justify-between text-atelier-dark font-bold pt-1.5 text-sm">
-                  <span>Total Amount</span><span>${(selectedOrder.totalPrice || 0).toFixed(2)}</span>
+                  <span>Total Amount</span><span>{formatPrice(selectedOrder.totalPrice || 0)}</span>
                 </div>
               </div>
               <div className="mt-5 pt-4 border-t border-atelier-lightgray/50">

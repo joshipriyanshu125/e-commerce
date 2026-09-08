@@ -10,6 +10,7 @@ import {
 import { Link } from 'react-router-dom'
 import api from '../../services/axiosInstance'
 import { io } from 'socket.io-client'
+import { useCurrency } from '../../context/CurrencyContext'
 
 // ─── Month name helper ────────────────────────────────────────────────────────
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -166,6 +167,7 @@ const AdminDashboard = () => {
   const [error, setError] = useState(null)
   const [analytics, setAnalytics] = useState(null)
   const [recentOrders, setRecentOrders] = useState([])
+  const { formatPrice, currencySymbol } = useCurrency()
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -369,13 +371,13 @@ const AdminDashboard = () => {
                   data={revenueChartData}
                   labelKey="label"
                   valueKey="value"
-                  valuePrefix="$"
+                  valuePrefix={currencySymbol}
                   color="#f59e0b"
                   height={140}
                 />
                 <div className="flex justify-between text-[10px] font-mono text-white/30 pt-1">
-                  <span>$0</span>
-                  <span>${Math.max(...revenueChartData.map(d => d.value)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  <span>{currencySymbol}0</span>
+                  <span>{currencySymbol}{Math.max(...revenueChartData.map(d => d.value)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 </div>
               </>
             )}
@@ -586,7 +588,7 @@ const AdminDashboard = () => {
                       <tr key={order._id} className="hover:bg-white/[0.02] transition-colors">
                         <td className="py-3 font-mono font-medium text-white/80">#{order._id.slice(-6).toUpperCase()}</td>
                         <td className="py-3 text-white/60">{order.shippingInfo?.fullName || 'Guest'}</td>
-                        <td className="py-3 font-mono text-white/80">${order.totalPrice?.toFixed(2)}</td>
+                        <td className="py-3 font-mono text-white/80">{formatPrice(order.totalPrice || 0)}</td>
                         <td className="py-3">
                           <span className={`inline-flex px-2 py-0.5 rounded-full font-mono text-[9px] uppercase tracking-wide border ${style}`}>
                             {order.orderStatus}

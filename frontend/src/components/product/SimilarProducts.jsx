@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { Star, ChevronLeft, ChevronRight, ArrowRight, Truck } from 'lucide-react'
 import axios from 'axios'
+import { useCurrency } from '../../context/CurrencyContext'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
@@ -48,6 +49,7 @@ const getCategorySection = (category) => {
 
 const SimilarProducts = ({ productId, currentProduct }) => {
   const navigate = useNavigate()
+  const { formatPrice } = useCurrency()
   const scrollRef = useRef(null)
   const [similarProducts, setSimilarProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -307,13 +309,13 @@ const SimilarProducts = ({ productId, currentProduct }) => {
                     {/* Struck original price */}
                     {product.originalPrice ? (
                       <span className="text-xs text-atelier-gray line-through font-mono">
-                        ${product.originalPrice}
+                        {formatPrice(product.originalPrice)}
                       </span>
                     ) : null}
 
                     {/* Current Price */}
                     <span className="text-sm font-semibold font-mono text-atelier-dark">
-                      ${product.price}
+                      {formatPrice(product.price)}
                     </span>
                   </div>
 
