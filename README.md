@@ -1,12 +1,73 @@
-# e-commerce
+# 🛒 E-Commerce Platform
 
+A modern, full-stack e-commerce platform built with **React, Vite, Node.js, Express.js, MongoDB Atlas, Google OAuth, Razorpay, and AI-powered features**.
 
-## Razorpay payments
+The application provides a complete online shopping experience with product discovery, authentication, cart and wishlist management, order processing, online payments, newsletter subscriptions, and intelligent AI-assisted shopping capabilities.
 
-The checkout uses Razorpay Standard Checkout. Copy `backend/.env.example` to `backend/.env` and add Razorpay **test** keys before running the app. The key secret and webhook secret must remain on the backend.
+---
 
-In the Razorpay Dashboard, add the production webhook URL `https://your-api-domain/api/payments/webhook`, set the same `RAZORPAY_WEBHOOK_SECRET`, and enable `payment.captured`. Use test mode first, then replace the test keys with live keys only after a successful end-to-end test.
+## 🌐 Live Application
 
-The backend recalculates product prices from MongoDB, creates the Razorpay order, and verifies the HMAC signature before marking the local order paid. Configure catalogue prices in INR when `RAZORPAY_CURRENCY=INR`.
+### 🛍️ Frontend
 
-An e-commerce website is an online platform where people can buy and sell products or services over the internet. It allows users to browse items, add them to a cart, make payments, and get products delivered, while sellers manage products, orders, and customers digitally.
+**Live Website:**  
+https://e-commerce-eosin-one-13.vercel.app/
+
+### ⚙️ Backend API
+
+**Production API:**  
+https://e-commerce-cvkw.onrender.com/api
+
+---
+
+# ✨ Features
+
+## 🛍️ E-Commerce
+
+The platform provides all major e-commerce functionality required for a complete shopping experience.
+
+- Product listing
+- Product details
+- Product categories
+- Product search
+- Product filtering
+- Product sorting
+- Product availability
+- Product images
+- Shopping cart
+- Add to cart
+- Remove from cart
+- Increase/decrease product quantity
+- Wishlist
+- Product checkout
+- Order creation
+- Order history
+- User-specific orders
+- Responsive shopping interface
+
+---
+
+# 🤖 AI-Powered Features
+
+The application integrates AI capabilities to provide a smarter and more interactive shopping experience.
+
+### AI Shopping Assistant
+
+Users can interact with an AI-powered shopping assistant using natural-language queries.
+
+The assistant can help users with:
+
+- Product discovery
+- Shopping-related questions
+- Product-related information
+- Finding suitable products
+- General shopping assistance
+
+### AI Product Discovery
+
+Users can use natural language to discover products instead of relying only on traditional filters and search.
+
+Example:
+
+```text
+"Show me affordable running shoes for daily use."
