@@ -732,7 +732,7 @@ const ProductDetails = () => {
               <span className="text-atelier-gray group-open:rotate-180 transition-transform">&darr;</span>
             </summary>
             <div className="mt-3 text-xs text-atelier-gray leading-relaxed font-light pl-2 space-y-2">
-              <p>Enjoy complimentary standard shipping on all orders over $150. Delivery takes between 3-5 business days.</p>
+              <p>Enjoy complimentary standard shipping on all orders over {formatPrice(150)}. Delivery takes between 3-5 business days.</p>
               <p>Items can be returned within 30 days of shipment in their original condition and packaging. Pre-paid shipping labels are provided.</p>
             </div>
           </details>

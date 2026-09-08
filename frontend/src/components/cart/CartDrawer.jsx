@@ -57,7 +57,7 @@ const CartDrawer = () => {
           discountValue: res.data.discountValue,
           discountAmount: res.data.discountAmount,
         }))
-        setPromoSuccess(`Promo applied! You save $${res.data.discountAmount.toFixed(2)}`)
+        setPromoSuccess(`Promo applied! You save ${formatPrice(res.data.discountAmount)}`)
         setPromoError('')
         setPromoInput('')
       }
@@ -223,7 +223,7 @@ const CartDrawer = () => {
               {discountAmount > 0 && (
                 <div className="flex items-center justify-between text-xs font-mono uppercase text-atelier-accent tracking-wider pt-2">
                   <span>Discount Active:</span>
-                  <span>-${discountAmount.toFixed(2)} OFF</span>
+                  <span>-{formatPrice(discountAmount)} OFF</span>
                 </div>
               )}
 

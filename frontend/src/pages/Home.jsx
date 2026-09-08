@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
+import { useCurrency } from '../context/CurrencyContext'
 import { setType, setCategory, setSortOption, fetchAPIProducts } from '../features/products/productSlice'
 import ProductCard from '../components/product/ProductCard'
 import { ArrowRight, SlidersHorizontal } from 'lucide-react'
@@ -8,6 +9,7 @@ import { IMAGES } from '../utils/images'
 import PromotionStrip from '../components/common/PromotionStrip'
 
 const Home = () => {
+  const { formatPrice } = useCurrency()
   const [searchParams] = useSearchParams()
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -337,7 +339,7 @@ const Home = () => {
 
             {/* Bottom mini announcement */}
             <div className="flex items-center space-x-6 font-mono text-xs sm:text-sm tracking-widest text-atelier-gray uppercase border-t border-atelier-lightgray/40 pt-6">
-              <span>Free shipping over $150</span>
+              <span>Free shipping over {formatPrice(150)}</span>
               <span>&bull;</span>
               <span>30-day returns</span>
             </div>

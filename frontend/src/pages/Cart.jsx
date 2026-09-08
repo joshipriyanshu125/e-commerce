@@ -44,7 +44,7 @@ const Cart = () => {
           discountValue: res.data.discountValue,
           discountAmount: res.data.discountAmount,
         }))
-        setPromoSuccess(`Promo applied! You save $${res.data.discountAmount.toFixed(2)}`)
+        setPromoSuccess(`Promo applied! You save ${formatPrice(res.data.discountAmount)}`)
         setPromoError('')
         setPromoInput('')
       }

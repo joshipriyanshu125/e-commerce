@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { Tag, Plus, Trash2, Calendar, Percent, DollarSign, ToggleLeft, ToggleRight, RefreshCw, AlertCircle, CheckCircle, X } from 'lucide-react'
+import { useCurrency } from '../../context/CurrencyContext'
 import api from '../../services/axiosInstance'
 
 // Toast Component
@@ -21,6 +22,7 @@ const Toast = ({ toasts, removeToast }) => (
 )
 
 const AdminCouponsManager = () => {
+  const { currency, formatPrice } = useCurrency()
   const [coupons, setCoupons] = useState([])
   const [loading, setLoading] = useState(true)
   const [toasts, setToasts] = useState([])
@@ -133,7 +135,7 @@ const AdminCouponsManager = () => {
   useEffect(() => { fetchCoupons() }, [])
 
   const formatDiscount = (c) => {
-    if (c.discountType === 'flat') return `$${c.discountValue} OFF`
+    if (c.discountType === 'flat') return `${formatPrice(c.discountValue)} OFF`
     // legacy percentage field support
     const pct = c.discountValue ?? c.discountPercentage
     return `${pct}% OFF`
@@ -238,12 +240,12 @@ const AdminCouponsManager = () => {
               {/* Discount Value */}
               <div className="space-y-1.5">
                 <label className="block uppercase tracking-wider text-white/40">
-                  {discountType === 'percentage' ? 'Discount % (1–100)' : 'Flat Discount ($)'}
+                  {discountType === 'percentage' ? 'Discount % (1–100)' : `Flat Discount (${currency.symbol})`}
                 </label>
                 <div className="relative">
                   {discountType === 'percentage'
                     ? <Percent size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                    : <DollarSign size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                    : <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono text-xs font-bold">{currency.symbol}</span>
                   }
                   <input
                     type="number"
@@ -275,9 +277,9 @@ const AdminCouponsManager = () => {
 
               {/* Optional: Min Purchase */}
               <div className="space-y-1.5">
-                <label className="block uppercase tracking-wider text-white/40">Min Purchase ($) <span className="text-white/20">optional</span></label>
+                <label className="block uppercase tracking-wider text-white/40">Min Purchase ({currency.symbol}) <span className="text-white/20">optional</span></label>
                 <div className="relative">
-                  <DollarSign size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono text-xs font-bold">{currency.symbol}</span>
                   <input
                     type="number"
                     value={minPurchase}
@@ -293,9 +295,9 @@ const AdminCouponsManager = () => {
               {/* Optional: Max Discount (only for percentage) */}
               {discountType === 'percentage' && (
                 <div className="space-y-1.5">
-                  <label className="block uppercase tracking-wider text-white/40">Max Discount ($) <span className="text-white/20">optional</span></label>
+                  <label className="block uppercase tracking-wider text-white/40">Max Discount ({currency.symbol}) <span className="text-white/20">optional</span></label>
                   <div className="relative">
-                    <DollarSign size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-mono text-xs font-bold">{currency.symbol}</span>
                     <input
                       type="number"
                       value={maxDiscount}
@@ -387,8 +389,8 @@ const AdminCouponsManager = () => {
 
                           {/* Min / Max */}
                           <td className="py-4 font-mono text-white/50">
-                            <div>Min: {c.minPurchase > 0 ? `$${c.minPurchase}` : '—'}</div>
-                            <div>Cap: {c.maxDiscount ? `$${c.maxDiscount}` : '—'}</div>
+                            <div>Min: {c.minPurchase > 0 ? formatPrice(c.minPurchase) : '—'}</div>
+                            <div>Cap: {c.maxDiscount ? formatPrice(c.maxDiscount) : '—'}</div>
                           </td>
 
                           {/* Usage */}
