@@ -112,6 +112,9 @@ COMPARE PASSWORD
 ==================================================
 */
 userSchema.methods.matchPassword = async function (enteredPassword) {
+    if (!this.password || !enteredPassword) {
+        return false;
+    }
     return await bcrypt.compare(
         enteredPassword,
         this.password

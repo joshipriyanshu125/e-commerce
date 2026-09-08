@@ -27,7 +27,9 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanEmail || !password) {
       setError("Please fill in all fields.");
       return;
     }
@@ -37,7 +39,7 @@ const Login = () => {
       setError("");
 
       const { data } = await api.post("auth/login", {
-        email,
+        email: cleanEmail,
         password,
       });
 
@@ -65,10 +67,14 @@ const Login = () => {
         }
       }, 100);
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Login failed. Please check your credentials."
-      );
+      if (!err.response) {
+        setError("Unable to reach the server. Please ensure the backend is running.");
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Login failed. Please check your credentials."
+        );
+      }
     } finally {
       setLoading(false);
     }

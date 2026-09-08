@@ -36,8 +36,8 @@ const Register = () => {
       setError("");
 
       const { data } = await api.post("auth/register", {
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
 
@@ -56,10 +56,14 @@ const Register = () => {
         setShowOnboarding(true);
       }, 100);
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Registration failed. Please try again."
-      );
+      if (!err.response) {
+        setError("Unable to reach the server. Please ensure the backend is running.");
+      } else {
+        setError(
+          err.response?.data?.message ||
+            "Registration failed. Please try again."
+        );
+      }
     } finally {
       setLoading(false);
     }

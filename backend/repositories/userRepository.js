@@ -6,7 +6,8 @@ FIND USER BY EMAIL
 ==================================================
 */
 const findUserByEmail = async (email) => {
-    return await User.findOne({ email });
+    if (!email || typeof email !== "string") return null;
+    return await User.findOne({ email: email.trim().toLowerCase() });
 };
 
 /*

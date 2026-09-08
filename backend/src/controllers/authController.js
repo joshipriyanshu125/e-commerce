@@ -14,25 +14,41 @@ REGISTER USER
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
 
-    const { user: mongoUser, token } = await registerUserService({
-        name,
-        email,
-        password,
-    });
+    if (!name || !email || !password) {
+        res.status(400);
+        throw new Error("Please provide name, email, and password");
+    }
 
-    res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        user: {
-            _id: mongoUser._id,
-            name: mongoUser.name,
-            email: mongoUser.email,
-            role: mongoUser.role,
-            avatar: mongoUser.avatar,
-            onboardingCompleted: mongoUser.onboardingCompleted,
-        },
-        token,
-    });
+    try {
+        const { user: mongoUser, token } = await registerUserService({
+            name,
+            email,
+            password,
+        });
+
+        res.status(201).json({
+            success: true,
+            message: "User registered successfully",
+            user: {
+                _id: mongoUser._id,
+                name: mongoUser.name,
+                email: mongoUser.email,
+                role: mongoUser.role,
+                avatar: mongoUser.avatar,
+                onboardingCompleted: mongoUser.onboardingCompleted,
+            },
+            token,
+        });
+    } catch (err) {
+        if (!res.statusCode || res.statusCode === 200) {
+            if (err.message && err.message.toLowerCase().includes("already exists")) {
+                res.status(409);
+            } else {
+                res.status(400);
+            }
+        }
+        throw err;
+    }
 });
 
 /*
@@ -43,29 +59,45 @@ LOGIN USER
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    const { user: mongoUser, token } = await loginUserService({
-        email,
-        password,
-    });
-
-    if (mongoUser.isBlocked) {
-        res.status(403);
-        throw new Error("Your account has been blocked. Please contact support.");
+    if (!email || !password) {
+        res.status(400);
+        throw new Error("Please enter both email and password");
     }
 
-    res.status(200).json({
-        success: true,
-        message: "Login successful",
-        user: {
-            _id: mongoUser._id,
-            name: mongoUser.name,
-            email: mongoUser.email,
-            role: mongoUser.role,
-            avatar: mongoUser.avatar,
-            onboardingCompleted: mongoUser.onboardingCompleted,
-        },
-        token,
-    });
+    try {
+        const { user: mongoUser, token } = await loginUserService({
+            email,
+            password,
+        });
+
+        if (mongoUser.isBlocked) {
+            res.status(403);
+            throw new Error("Your account has been blocked. Please contact support.");
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Login successful",
+            user: {
+                _id: mongoUser._id,
+                name: mongoUser.name,
+                email: mongoUser.email,
+                role: mongoUser.role,
+                avatar: mongoUser.avatar,
+                onboardingCompleted: mongoUser.onboardingCompleted,
+            },
+            token,
+        });
+    } catch (err) {
+        if (!res.statusCode || res.statusCode === 200) {
+            if (err.message && err.message.toLowerCase().includes("blocked")) {
+                res.status(403);
+            } else {
+                res.status(401);
+            }
+        }
+        throw err;
+    }
 });
 
 /*

@@ -37,9 +37,14 @@ const registerUserService = async ({
     email,
     password,
 }) => {
+    if (!name || !email || !password) {
+        throw new Error("Please provide name, email, and password");
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
 
     const existingUser =
-        await findUserByEmail(email);
+        await findUserByEmail(cleanEmail);
 
     if (existingUser) {
         throw new Error("User already exists");
@@ -47,15 +52,15 @@ const registerUserService = async ({
 
     const user =
         await createUser({
-            name,
-            email,
+            name: name.trim(),
+            email: cleanEmail,
             password,
         });
 
     // Notify admins about new user registration (non-blocking)
     notifyAdmins({
         title: "New User Registered",
-        message: `New user registered: ${name} (${email})`,
+        message: `New user registered: ${name} (${cleanEmail})`,
         type: "new_user",
     }).catch(err => console.error("Admin user registration notify error:", err));
 
@@ -75,12 +80,21 @@ const loginUserService = async ({
     email,
     password,
 }) => {
+    if (!email || !password) {
+        throw new Error("Please provide both email and password");
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
 
     const user =
-        await findUserByEmail(email);
+        await findUserByEmail(cleanEmail);
 
     if (!user) {
         throw new Error("Invalid email or password");
+    }
+
+    if (!user.password) {
+        throw new Error("This account is registered using Google Sign-In. Please sign in with Google or reset your password.");
     }
 
     const isMatch =
