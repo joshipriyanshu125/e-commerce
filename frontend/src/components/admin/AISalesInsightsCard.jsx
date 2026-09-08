@@ -22,7 +22,7 @@ const AISalesInsightsCard = ({ analytics }) => {
   const [briefing, setBriefing] = useState(null)
   const [loadingBrief, setLoadingBrief] = useState(false)
   const [generatedBy, setGeneratedBy] = useState('system')
-  const { currencySymbol } = useCurrency()
+  const { currencySymbol, formatPrice } = useCurrency()
 
   const rawInsights = analytics?.businessInsights || {}
 
@@ -30,8 +30,8 @@ const AISalesInsightsCard = ({ analytics }) => {
     topProduct: {
       name: rawInsights.topProduct?.name || 'Unknown',
       sub: rawInsights.topProduct?.unitsSold
-        ? `${rawInsights.topProduct.unitsSold} units sold (${currencySymbol}${(rawInsights.topProduct.revenue || 0).toLocaleString()})`
-        : `0 units sold (${currencySymbol}0.00)`
+        ? `${rawInsights.topProduct.unitsSold} units sold (${formatPrice(rawInsights.topProduct.revenue || 0)})`
+        : `0 units sold (${formatPrice(0)})`
     },
     fastestGrowingCategory: {
       name: rawInsights.fastestGrowingCategory?.name || 'Unknown',
@@ -46,8 +46,8 @@ const AISalesInsightsCard = ({ analytics }) => {
     highestRevenueProduct: {
       name: rawInsights.highestRevenueProduct?.name || 'Unknown',
       sub: rawInsights.highestRevenueProduct?.revenue
-        ? `${currencySymbol}${(rawInsights.highestRevenueProduct.revenue || 0).toLocaleString()} revenue`
-        : `${currencySymbol}0.00 revenue`
+        ? `${formatPrice(rawInsights.highestRevenueProduct.revenue || 0)} revenue`
+        : `${formatPrice(0)} revenue`
     },
     highReturnProduct: {
       name: rawInsights.highReturnProduct?.name || 'No Return Requests',

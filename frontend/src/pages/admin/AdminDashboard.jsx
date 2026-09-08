@@ -128,7 +128,7 @@ const DonutChart = ({ slices, size = 120 }) => {
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard = ({ label, value, icon: Icon, gradient, sub, loading }) => (
+const StatCard = ({ label, value, icon: Icon, customIcon, gradient, sub, loading }) => (
   <div className={`relative overflow-hidden rounded-2xl border border-white/[0.07] p-5 group hover:border-white/[0.13] transition-all duration-300`}
     style={{ background: 'rgba(19,19,26,0.9)' }}>
     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -143,8 +143,8 @@ const StatCard = ({ label, value, icon: Icon, gradient, sub, loading }) => (
           <p className="text-[10px] text-white/30 font-mono mt-1">{sub}</p>
         )}
       </div>
-      <div className="p-2.5 rounded-xl flex-shrink-0" style={{ background: gradient }}>
-        <Icon size={16} className="text-white" />
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: gradient }}>
+        {customIcon ? customIcon : <Icon size={16} className="text-white" />}
       </div>
     </div>
   </div>
@@ -269,14 +269,14 @@ const AdminDashboard = () => {
   const stats = [
     {
       label: "Today's Sales",
-      value: `$${(analytics?.todaySales || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: formatPrice(analytics?.todaySales || 0),
       icon: TrendingUp,
       gradient: 'linear-gradient(135deg,#10b981,#059669)',
       sub: `${analytics?.todayOrders || 0} orders today`
     },
     {
       label: 'Monthly Sales',
-      value: `$${(analytics?.monthlySales || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: formatPrice(analytics?.monthlySales || 0),
       icon: BarChart2,
       gradient: 'linear-gradient(135deg,#f59e0b,#d97706)',
       sub: 'This month'
@@ -304,8 +304,9 @@ const AdminDashboard = () => {
     },
     {
       label: 'Total Revenue',
-      value: `$${(analytics?.totalRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: formatPrice(analytics?.totalRevenue || 0),
       icon: DollarSign,
+      customIcon: <span className="text-white font-mono font-bold text-sm leading-none">{currencySymbol}</span>,
       gradient: 'linear-gradient(135deg,#f43f5e,#e11d48)',
       sub: 'All time (paid)'
     },
