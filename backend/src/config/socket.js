@@ -3,9 +3,21 @@ import { Server } from "socket.io";
 let io;
 
 export const initSocket = (server) => {
+    const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        process.env.FRONTEND_URL,
+    ].filter(Boolean);
+
     io = new Server(server, {
         cors: {
-            origin: "http://localhost:5173",
+            origin: (origin, callback) => {
+                if (!origin) return callback(null, true);
+                if (allowedOrigins.some(o => origin.startsWith(o)) || process.env.NODE_ENV === "production" || origin.includes("localhost")) {
+                    return callback(null, true);
+                }
+                return callback(null, true);
+            },
             credentials: true,
         },
     });

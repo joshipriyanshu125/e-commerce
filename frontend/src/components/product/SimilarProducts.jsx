@@ -5,7 +5,9 @@ import { Star, ChevronLeft, ChevronRight, ArrowRight, Truck } from 'lucide-react
 import axios from 'axios'
 import { useCurrency } from '../../context/CurrencyContext'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const cleanBaseUrl = rawApiUrl.replace(/\/+$/, '')
+const API_URL = cleanBaseUrl.endsWith('/api') ? cleanBaseUrl : `${cleanBaseUrl}/api`
 
 export const detectProductType = (product) => {
   if (!product) return 'other'
