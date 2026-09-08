@@ -162,36 +162,25 @@ const createNodemailerTransporter = () => {
                     process.env.SMTP_HOST === "smtp.gmail.com" || 
                     process.env.SMTP_MAIL?.endsWith("@gmail.com");
 
-    const transporterObj = nodemailer.createTransport(
-        isGmail
-            ? {
-                service: "gmail",
-                pool: true,
-                maxConnections: 5,
-                maxMessages: 100,
-                connectionTimeout: 10000,
-                greetingTimeout: 10000,
-                socketTimeout: 15000,
-                auth: {
-                    user: process.env.SMTP_MAIL,
-                    pass: process.env.SMTP_PASSWORD,
-                },
-            }
-            : {
-                service: process.env.SMTP_SERVICE || undefined,
-                host: process.env.SMTP_HOST || "smtp.gmail.com",
-                port: Number(process.env.SMTP_PORT) || 587,
-                secure: Number(process.env.SMTP_PORT) === 465,
-                pool: true,
-                maxConnections: 5,
-                connectionTimeout: 10000,
-                socketTimeout: 15000,
-                auth: {
-                    user: process.env.SMTP_MAIL,
-                    pass: process.env.SMTP_PASSWORD,
-                },
-            }
-    );
+    const host = process.env.SMTP_HOST || (isGmail ? "smtp.gmail.com" : undefined);
+    const port = Number(process.env.SMTP_PORT) || (isGmail ? 465 : 587);
+    const secure = port === 465;
+
+    const transporterObj = nodemailer.createTransport({
+        host: host || "smtp.gmail.com",
+        port: port,
+        secure: secure,
+        auth: {
+            user: process.env.SMTP_MAIL,
+            pass: process.env.SMTP_PASSWORD ? process.env.SMTP_PASSWORD.replace(/\s+/g, "") : "",
+        },
+        tls: {
+            rejectUnauthorized: false,
+        },
+        connectionTimeout: 20000,
+        greetingTimeout: 20000,
+        socketTimeout: 30000,
+    });
 
     return {
         provider: "nodemailer",
